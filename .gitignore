@@ -1,0 +1,28 @@
+# Godot 4+ specific ignores
+.godot/
+.nomedia
+
+# Godot-specific ignores
+.import/
+export.cfg
+export_credentials.cfg
+*.tmp
+
+# Imported translations (automatically generated from CSV files)
+*.translation
+
+# Mono / C# specific ignores
+.mono/
+data_*/
+mono_crash.*.json
+
+# Builds & Exports
+builds/
+*.exe
+*.pck
+*.apk
+*.aab
+
+# OS / Editor temp files
+.DS_Store
+Thumbs.db

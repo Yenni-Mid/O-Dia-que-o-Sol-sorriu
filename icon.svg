@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <defs>
+    <radialGradient id="bgGlow" cx="50%" cy="46%" r="54%">
+      <stop offset="0%" stop-color="#4d1c0c" />
+      <stop offset="55%" stop-color="#190b10" />
+      <stop offset="100%" stop-color="#070508" />
+    </radialGradient>
+    <radialGradient id="sunDisc" cx="50%" cy="45%" r="55%">
+      <stop offset="0%" stop-color="#ffcf70" />
+      <stop offset="65%" stop-color="#e86a24" />
+      <stop offset="100%" stop-color="#8a1d14" />
+    </radialGradient>
+  </defs>
+  <rect width="128" height="128" rx="20" fill="url(#bgGlow)" />
+  <g stroke="#d95b1e" stroke-width="3" stroke-linecap="round" opacity="0.65">
+    <line x1="64" y1="10" x2="64" y2="20" />
+    <line x1="64" y1="108" x2="64" y2="118" />
+    <line x1="10" y1="64" x2="20" y2="64" />
+    <line x1="108" y1="64" x2="118" y2="64" />
+    <line x1="26" y1="26" x2="33" y2="33" />
+    <line x1="95" y1="95" x2="102" y2="102" />
+    <line x1="102" y1="26" x2="95" y2="33" />
+    <line x1="33" y1="95" x2="26" y2="102" />
+  </g>
+  <circle cx="64" cy="64" r="34" fill="url(#sunDisc)" />
+  <circle cx="52" cy="54" r="4" fill="#12060a" />
+  <circle cx="76" cy="54" r="4" fill="#12060a" />
+  <path d="M 43 70 Q 64 91 85 70" fill="none" stroke="#12060a" stroke-width="4.5" stroke-linecap="round" />
+</svg>
