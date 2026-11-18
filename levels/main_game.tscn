@@ -1,0 +1,85 @@
+[gd_scene format=3 uid="uid://du0a6ujdybavb"]
+
+[ext_resource type="Script" uid="uid://dnou20pb7y5s6" path="res://levels/main_game.gd" id="1_d7clk"]
+[ext_resource type="PackedScene" path="res://levels/greybox_test.tscn" id="2_be87d"]
+[ext_resource type="PackedScene" uid="uid://b6hp513v0ix1b" path="res://entities/player/Player.tscn" id="3_o5002"]
+[ext_resource type="Shader" uid="uid://bfbk1am8grsvq" path="res://shaders/psx_post_process.gdshader" id="4_u4di8"]
+[ext_resource type="PackedScene" uid="uid://bprtj4bvgsgaq" path="res://ui/hud.tscn" id="5_32443"]
+[ext_resource type="PackedScene" uid="uid://c4wjvfgrkxcj8" path="res://ui/echo_reader_ui.tscn" id="6_4qlv2"]
+[ext_resource type="Script" path="res://levels/smiling_sun.gd" id="7_sun"]
+[ext_resource type="PackedScene" path="res://ui/pause_menu.tscn" id="8_pause"]
+
+[sub_resource type="Environment" id="Environment_cl5jp"]
+background_mode = 1
+background_color = Color(0.14, 0.15, 0.18, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.72, 0.74, 0.78, 1)
+ambient_light_energy = 0.75
+tonemap_mode = 2
+fog_enabled = true
+fog_light_color = Color(0.22, 0.22, 0.24, 1)
+fog_density = 0.005
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_5lvy4"]
+shader = ExtResource("4_u4di8")
+shader_parameter/color_depth = 6
+shader_parameter/dither_strength = 0.35
+shader_parameter/target_resolution = Vector2(320, 240)
+
+[node name="MainGame" type="Node" unique_id=1124641948]
+script = ExtResource("1_d7clk")
+
+[node name="SubViewportContainer" type="SubViewportContainer" parent="." unique_id=119004833]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 0
+stretch = true
+stretch_shrink = 4
+
+[node name="SubViewport" type="SubViewport" parent="SubViewportContainer" unique_id=597888868]
+handle_input_locally = false
+snap_2d_transforms_to_pixel = true
+snap_2d_vertices_to_pixel = true
+size = Vector2i(288, 162)
+render_target_update_mode = 4
+
+[node name="World3D" type="Node3D" parent="SubViewportContainer/SubViewport" unique_id=1898193296]
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="SubViewportContainer/SubViewport/World3D" unique_id=1030224757]
+transform = Transform3D(0.90630794, -0.298836, 0.29883608, 0, 0.7071069, 0.70710665, -0.42261797, -0.6408564, 0.64085656, 0, 15, 0)
+light_color = Color(1, 0.94, 0.8, 1)
+light_energy = 1.15
+shadow_enabled = true
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="SubViewportContainer/SubViewport/World3D" unique_id=1182771471]
+environment = SubResource("Environment_cl5jp")
+
+[node name="SmilingSun" type="Node3D" parent="SubViewportContainer/SubViewport/World3D" unique_id=774411223]
+transform = Transform3D(0.90630794, -0.298836, 0.29883608, 0, 0.7071069, 0.70710665, -0.42261797, -0.6408564, 0.64085656, 25.4, 60.1, 54.5)
+script = ExtResource("7_sun")
+
+[node name="GreyboxTest" parent="SubViewportContainer/SubViewport/World3D" unique_id=229286503 instance=ExtResource("2_be87d")]
+
+[node name="Player" parent="SubViewportContainer/SubViewport/World3D" unique_id=649988602 instance=ExtResource("3_o5002")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.15, 22)
+
+[node name="CanvasLayer_UI" type="CanvasLayer" parent="." unique_id=1765596317]
+layer = 2
+
+[node name="PSXPostProcess" type="ColorRect" parent="CanvasLayer_UI" unique_id=1846404820]
+material = SubResource("ShaderMaterial_5lvy4")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+
+[node name="HUD" parent="CanvasLayer_UI" unique_id=587539975 instance=ExtResource("5_32443")]
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="EchoReaderUI" parent="CanvasLayer_UI" unique_id=474013184 instance=ExtResource("6_4qlv2")]
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="PauseMenu" parent="CanvasLayer_UI" unique_id=885522114 instance=ExtResource("8_pause")]

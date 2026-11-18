@@ -1,0 +1,29 @@
+[gd_scene format=3 uid="uid://bvw8rer4rlcwo"]
+
+[ext_resource type="Script" uid="uid://mqe2pwlf6ptd" path="res://entities/enemies/shadow_hazard.gd" id="1_3x2ab"]
+[ext_resource type="Shader" path="res://shaders/shadow_tentacles.gdshader" id="2_tent"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_shadow"]
+render_priority = 0
+shader = ExtResource("2_tent")
+
+[sub_resource type="BoxMesh" id="BoxMesh_n7q1c"]
+size = Vector3(4, 0.18, 4)
+subdivide_width = 8
+subdivide_depth = 8
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_72abc"]
+size = Vector3(4, 1.2, 4)
+
+[node name="ShadowHazard" type="Area3D" unique_id=1873891490]
+collision_layer = 32
+collision_mask = 18
+script = ExtResource("1_3x2ab")
+
+[node name="ShadowMesh" type="MeshInstance3D" parent="." unique_id=203948102]
+material_override = SubResource("ShaderMaterial_shadow")
+mesh = SubResource("BoxMesh_n7q1c")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=102938475]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("BoxShape3D_72abc")

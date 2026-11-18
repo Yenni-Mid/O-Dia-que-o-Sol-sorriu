@@ -1,0 +1,58 @@
+[gd_scene format=3 uid="uid://cgf5eikiexgjd"]
+
+[ext_resource type="Script" uid="uid://dfwns5hko8xkq" path="res://entities/enemies/state_machine.gd" id="1_q2o5b"]
+[ext_resource type="Script" uid="uid://bs08gjdfwvscf" path="res://entities/enemies/patrol_state.gd" id="2_r2038"]
+[ext_resource type="Script" uid="uid://chref0galo0la" path="res://entities/enemies/chase_state.gd" id="3_aj723"]
+[ext_resource type="Script" path="res://entities/enemies/suspicious_state.gd" id="4_susp"]
+[ext_resource type="Script" path="res://entities/enemies/attack_state.gd" id="5_attk"]
+[ext_resource type="Script" path="res://entities/enemies/lunatic_visual.gd" id="6_vis"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_0bcn7"]
+radius = 0.4
+height = 1.8
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ta6aw"]
+albedo_color = Color(0.85, 0.7, 0.25, 1)
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_ns1b8"]
+radius = 0.4
+height = 1.8
+radial_segments = 8
+rings = 2
+
+[node name="LunaticBase" type="CharacterBody3D" unique_id=2079065413]
+collision_layer = 4
+collision_mask = 3
+script = ExtResource("6_vis")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=917447049]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("CapsuleShape3D_0bcn7")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=2052811461]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+material_override = SubResource("StandardMaterial3D_ta6aw")
+mesh = SubResource("CapsuleMesh_ns1b8")
+
+[node name="VisionRay" type="RayCast3D" parent="." unique_id=1882718674]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
+target_position = Vector3(0, 0, -10)
+collision_mask = 3
+
+[node name="NavigationAgent3D" type="NavigationAgent3D" parent="." unique_id=593798577]
+
+[node name="StateMachine" type="Node" parent="." unique_id=1727374569]
+script = ExtResource("1_q2o5b")
+initial_state = NodePath("PatrolState")
+
+[node name="PatrolState" type="Node" parent="StateMachine" unique_id=1269943349]
+script = ExtResource("2_r2038")
+
+[node name="SuspiciousState" type="Node" parent="StateMachine" unique_id=1269943350]
+script = ExtResource("4_susp")
+
+[node name="ChaseState" type="Node" parent="StateMachine" unique_id=248956150]
+script = ExtResource("3_aj723")
+
+[node name="AttackState" type="Node" parent="StateMachine" unique_id=248956151]
+script = ExtResource("5_attk")

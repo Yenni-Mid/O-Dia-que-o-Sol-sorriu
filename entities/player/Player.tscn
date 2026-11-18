@@ -1,0 +1,92 @@
+[gd_scene format=3 uid="uid://b6hp513v0ix1b"]
+
+[ext_resource type="Script" uid="uid://vphkeb8gokye" path="res://entities/player/player_controller.gd" id="1_g3lhm"]
+[ext_resource type="Script" uid="uid://bybgs1vrp142x" path="res://entities/player/interaction_ray.gd" id="2_4pwj0"]
+[ext_resource type="Script" uid="uid://d01r685mxtrot" path="res://entities/player/lantern_system.gd" id="3_fmb3c"]
+[ext_resource type="Script" uid="uid://b6iw65xjapt4e" path="res://entities/player/sanity_component.gd" id="4_rl6fg"]
+[ext_resource type="Script" uid="uid://214it837h32w" path="res://entities/player/health_component.gd" id="5_q57vx"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_ak4un"]
+radius = 0.35
+height = 1.8
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_1ms0h"]
+radius = 0.35
+height = 1.0
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_2rv2u"]
+top_radius = 0.06
+bottom_radius = 0.08
+height = 0.22
+radial_segments = 8
+rings = 1
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_mq27t"]
+radius = 5.5
+
+[node name="Player" type="CharacterBody3D" unique_id=649988602]
+collision_layer = 2
+collision_mask = 37
+script = ExtResource("1_g3lhm")
+
+[node name="StandingCollision" type="CollisionShape3D" parent="." unique_id=1974047824]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("CapsuleShape3D_ak4un")
+
+[node name="CrouchingCollision" type="CollisionShape3D" parent="." unique_id=440064694]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+shape = SubResource("CapsuleShape3D_1ms0h")
+disabled = true
+
+[node name="CeilingCheck" type="RayCast3D" parent="." unique_id=152032893]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 0)
+target_position = Vector3(0, 1.8, 0)
+
+[node name="SunExposureRay" type="RayCast3D" parent="." unique_id=1605966143]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6, 0)
+target_position = Vector3(0, 100, 0)
+
+[node name="HeadPivot" type="Node3D" parent="." unique_id=388937371]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6, 0)
+
+[node name="Camera3D" type="Camera3D" parent="HeadPivot" unique_id=508110989]
+current = true
+
+[node name="InteractionRay" type="RayCast3D" parent="HeadPivot/Camera3D" unique_id=615151657]
+target_position = Vector3(0, 0, -2.2)
+collision_mask = 8
+collide_with_areas = true
+script = ExtResource("2_4pwj0")
+
+[node name="HandPivot" type="Node3D" parent="HeadPivot" unique_id=970785756]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.28, -0.24, -0.42)
+
+[node name="LanternSystem" type="Node3D" parent="HeadPivot/HandPivot" unique_id=65907137]
+script = ExtResource("3_fmb3c")
+
+[node name="LanternMesh" type="MeshInstance3D" parent="HeadPivot/HandPivot/LanternSystem" unique_id=1326864348]
+mesh = SubResource("CylinderMesh_2rv2u")
+
+[node name="OmniLight3D" type="OmniLight3D" parent="HeadPivot/HandPivot/LanternSystem" unique_id=2139733489]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.05, 0)
+visible = false
+light_color = Color(1, 0.615686, 0.231373, 1)
+light_energy = 1.35
+shadow_enabled = true
+omni_range = 6.5
+omni_attenuation = 1.5
+
+[node name="SafeZoneArea" type="Area3D" parent="HeadPivot/HandPivot/LanternSystem" unique_id=1508801649]
+collision_layer = 16
+collision_mask = 36
+monitoring = false
+monitorable = false
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="HeadPivot/HandPivot/LanternSystem/SafeZoneArea" unique_id=1007009483]
+shape = SubResource("SphereShape3D_mq27t")
+
+[node name="SanityComponent" type="Node" parent="." unique_id=1245093512]
+script = ExtResource("4_rl6fg")
+
+[node name="HealthComponent" type="Node" parent="." unique_id=1857816815]
+script = ExtResource("5_q57vx")

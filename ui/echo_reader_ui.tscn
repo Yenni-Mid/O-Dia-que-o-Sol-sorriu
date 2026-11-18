@@ -1,0 +1,50 @@
+[gd_scene format=3 uid="uid://c4wjvfgrkxcj8"]
+
+[ext_resource type="Script" uid="uid://b16cf1bi0wkyc" path="res://ui/echo_reader_ui.gd" id="1_gld74"]
+
+[node name="EchoReaderUI" type="Control" unique_id=474013184]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+script = ExtResource("1_gld74")
+
+[node name="Panel" type="Panel" parent="." unique_id=756784176]
+custom_minimum_size = Vector2(560, 320)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -280.0
+offset_top = -160.0
+offset_right = 280.0
+offset_bottom = 160.0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Panel" unique_id=514527054]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = 16.0
+offset_right = -16.0
+offset_bottom = -16.0
+
+[node name="TitleLabel" type="Label" parent="Panel/VBoxContainer" unique_id=5264551]
+layout_mode = 2
+text = "Eco Encontrado"
+
+[node name="BodyLabel" type="Label" parent="Panel/VBoxContainer" unique_id=514345531]
+layout_mode = 2
+size_flags_vertical = 3
+text = "Texto do diário..."
+autowrap_mode = 2
+
+[node name="HintLabel" type="Label" parent="Panel/VBoxContainer" unique_id=94464167]
+layout_mode = 2
+text = "Pressione [E] ou [ESC] para fechar"
+horizontal_alignment = 2

@@ -1,0 +1,78 @@
+[gd_scene format=3]
+
+[ext_resource type="Shader" uid="uid://cgtn8e667k3uo" path="res://shaders/psx_lit.gdshader" id="1_psx"]
+[ext_resource type="PackedScene" uid="uid://bvw8rer4rlcwo" path="res://entities/enemies/shadow_hazard.tscn" id="2_shadow"]
+[ext_resource type="PackedScene" uid="uid://5lw5j2ruqmkt" path="res://systems/interactables/oil_pickup.tscn" id="3_oil"]
+[ext_resource type="PackedScene" uid="uid://djj7pl17x21g" path="res://systems/interactables/echo_note.tscn" id="4_echo"]
+[ext_resource type="PackedScene" uid="uid://dqjlxaublmu4a" path="res://levels/level_01_streets.tscn" id="5_streets"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_corridor"]
+render_priority = 0
+shader = ExtResource("1_psx")
+shader_parameter/modulate_color = Color(0.56, 0.54, 0.5, 1)
+shader_parameter/uv_scale = Vector2(1, 1)
+shader_parameter/uv_offset = Vector2(0, 0)
+shader_parameter/jitter_intensity = 0.5
+shader_parameter/snap_resolution = Vector2(320, 240)
+shader_parameter/affine_amount = 1.0
+
+[node name="GreyboxTest" type="Node3D"]
+
+[node name="CorridorFloor" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.2, 17)
+use_collision = true
+collision_layer = 1
+collision_mask = 0
+size = Vector3(6, 0.4, 14)
+material = SubResource("ShaderMaterial_corridor")
+
+[node name="CorridorWallLeft" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3, 1.8, 17)
+use_collision = true
+collision_layer = 1
+collision_mask = 0
+size = Vector3(0.4, 3.6, 14)
+material = SubResource("ShaderMaterial_corridor")
+
+[node name="CorridorWallRight" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 1.8, 17)
+use_collision = true
+collision_layer = 1
+collision_mask = 0
+size = Vector3(0.4, 3.6, 14)
+material = SubResource("ShaderMaterial_corridor")
+
+[node name="CorridorBackWall" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.8, 24)
+use_collision = true
+collision_layer = 1
+collision_mask = 0
+size = Vector3(6.4, 3.6, 0.4)
+material = SubResource("ShaderMaterial_corridor")
+
+[node name="CorridorCeilingStart" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.7, 21.75)
+use_collision = true
+collision_layer = 1
+collision_mask = 0
+size = Vector3(6, 0.4, 4.5)
+material = SubResource("ShaderMaterial_corridor")
+
+[node name="CorridorCeilingEnd" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.7, 12.75)
+use_collision = true
+collision_layer = 1
+collision_mask = 0
+size = Vector3(6, 0.4, 5.5)
+material = SubResource("ShaderMaterial_corridor")
+
+[node name="ShadowHazard_Corridor" parent="." instance=ExtResource("2_shadow")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.05, 12.5)
+
+[node name="OilPickup_Start" parent="." instance=ExtResource("3_oil")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.8, 0.35, 21.5)
+
+[node name="EchoNote_Start" parent="." instance=ExtResource("4_echo")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.8, 0.25, 21.5)
+
+[node name="Level01Streets" parent="." instance=ExtResource("5_streets")]

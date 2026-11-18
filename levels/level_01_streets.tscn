@@ -1,0 +1,109 @@
+[gd_scene format=3 uid="uid://dqjlxaublmu4a"]
+
+[ext_resource type="Shader" uid="uid://cgtn8e667k3uo" path="res://shaders/psx_lit.gdshader" id="1_dk7hp"]
+[ext_resource type="PackedScene" uid="uid://5lw5j2ruqmkt" path="res://systems/interactables/oil_pickup.tscn" id="2_isfup"]
+[ext_resource type="PackedScene" uid="uid://djj7pl17x21g" path="res://systems/interactables/echo_note.tscn" id="3_3ybw4"]
+[ext_resource type="PackedScene" uid="uid://bvw8rer4rlcwo" path="res://entities/enemies/shadow_hazard.tscn" id="4_corlq"]
+[ext_resource type="PackedScene" uid="uid://cgf5eikiexgjd" path="res://entities/enemies/lunatic_base.tscn" id="5_d8n8u"]
+[ext_resource type="PackedScene" uid="uid://53ob74ldlfdl" path="res://levels/two_story_house.tscn" id="6_isfup"]
+[ext_resource type="Script" path="res://levels/navigation_baker.gd" id="7_navbk"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_775fo"]
+render_priority = 0
+shader = ExtResource("1_dk7hp")
+shader_parameter/modulate_color = Color(0.22, 0.19, 0.18, 1)
+shader_parameter/uv_scale = Vector2(1, 1)
+shader_parameter/uv_offset = Vector2(0, 0)
+shader_parameter/jitter_intensity = 0.5
+shader_parameter/snap_resolution = Vector2(320, 240)
+shader_parameter/affine_amount = 1.0
+
+[sub_resource type="BoxMesh" id="BoxMesh_1p83w"]
+size = Vector3(80, 0.5, 80)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_2ajc6"]
+size = Vector3(80, 0.5, 80)
+
+[node name="Level01Streets" type="Node3D" unique_id=229286503]
+
+[node name="NavigationRegion3D" type="NavigationRegion3D" parent="." unique_id=314159265]
+script = ExtResource("7_navbk")
+
+[node name="StreetGround" type="StaticBody3D" parent="NavigationRegion3D" unique_id=949637029]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, 0)
+collision_mask = 0
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="NavigationRegion3D/StreetGround" unique_id=1757635145]
+material_override = SubResource("ShaderMaterial_775fo")
+mesh = SubResource("BoxMesh_1p83w")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="NavigationRegion3D/StreetGround" unique_id=1884472124]
+shape = SubResource("BoxShape3D_2ajc6")
+
+[node name="TwoStoryHouse" parent="NavigationRegion3D" unique_id=884745507 instance=ExtResource("6_isfup")]
+
+[node name="PatrolWaypoints" type="Node3D" parent="." unique_id=401001001]
+
+[node name="WP_FrontWest" type="Marker3D" parent="PatrolWaypoints" unique_id=401001002]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9, 0.1, 8.9)
+
+[node name="WP_CorridorLeft" type="Marker3D" parent="PatrolWaypoints" unique_id=401001003]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.5, 0.1, 13.5)
+
+[node name="WP_PorchCenter" type="Marker3D" parent="PatrolWaypoints" unique_id=401001004]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 8.9)
+
+[node name="WP_FrontEast" type="Marker3D" parent="PatrolWaypoints" unique_id=401001005]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 0.1, 8.9)
+
+[node name="WP_CorridorRight" type="Marker3D" parent="PatrolWaypoints" unique_id=401001006]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.5, 0.1, 13.5)
+
+[node name="WP_PorchReturn" type="Marker3D" parent="PatrolWaypoints" unique_id=401001007]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 8.9)
+
+[node name="OilPickup" parent="." unique_id=1570513945 instance=ExtResource("2_isfup")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.6, 0.95, -3.4)
+
+[node name="OilPickup_Study" parent="." unique_id=1570513999 instance=ExtResource("2_isfup")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.2, 4.56, -3.5)
+
+[node name="EchoNote" parent="." unique_id=408746381 instance=ExtResource("3_3ybw4")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.3, 4.42, 0.85)
+
+[node name="EchoNote_Porch" parent="." unique_id=408746382 instance=ExtResource("3_3ybw4")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.8, 0.52, 8.2)
+fallback_id = "echo_porch_02"
+fallback_author = "Vizinha Clara"
+fallback_date = "Mês 3 após o Sorriso"
+fallback_text = "Os lunáticos usam máscaras de papelão porque não conseguem parar de sorrir depois que a Epidemia da Verdade queima suas mentes. Se eles vigiam a varanda, entre agachado ou apague o lampião antes de passar pelas janelas."
+
+[node name="EchoNote_Kitchen" parent="." unique_id=408746383 instance=ExtResource("3_3ybw4")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.6, 0.93, -6.35)
+fallback_id = "echo_kitchen_03"
+fallback_author = "Bilhete Rasgado (Sem Nome)"
+fallback_date = "Há 2 semanas"
+fallback_text = "Levaram o filho do sargento para a torre central no centro da cidade. O culto prepara o Espelho da Alma Partida para quando o sol alinhar. Fique longe da luz direta da rua e use o guarda-roupa lá em cima se alguém invadir a casa."
+
+[node name="ShadowHazard" parent="." unique_id=1873891490 instance=ExtResource("4_corlq")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 0.05, -3.5)
+
+[node name="LunaticBase" parent="." unique_id=2079065413 instance=ExtResource("5_d8n8u")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7, 0.1, 8.9)
+
+[node name="LunaticYard" parent="." unique_id=2079065499 instance=ExtResource("5_d8n8u")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11, 0.1, -8.5)
+
+[node name="PatrolWaypoints" type="Node3D" parent="LunaticYard" unique_id=402001001]
+
+[node name="WP_WestYard" type="Marker3D" parent="LunaticYard/PatrolWaypoints" unique_id=402001002]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11, 0.1, 4)
+
+[node name="WP_NorthWest" type="Marker3D" parent="LunaticYard/PatrolWaypoints" unique_id=402001003]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11, 0.1, -9)
+
+[node name="WP_NorthEast" type="Marker3D" parent="LunaticYard/PatrolWaypoints" unique_id=402001004]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11, 0.1, -9)
+
+[node name="WP_EastYard" type="Marker3D" parent="LunaticYard/PatrolWaypoints" unique_id=402001005]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11, 0.1, 4)

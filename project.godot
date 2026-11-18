@@ -8,10 +8,38 @@
 
 config_version=5
 
+[animation]
+
+compatibility/default_parent_skeleton_in_mesh_instance_3d=true
+
 [application]
 
 config/name="O Dia que o Sol sorriu"
 config/description="Terror psicológico 3D desenvolvido na Godot Engine."
-run/main_scene="res://scenes/main/main.tscn"
-config/features=PackedStringArray("4.3", "Forward Plus")
+run/main_scene="res://ui/main_menu.tscn"
+config/features=PackedStringArray("4.7", "Forward Plus")
 config/icon="res://icon.svg"
+
+[autoload]
+
+MCPRuntimeServer="*res://addons/godot_mcp_toolkit/runtime/mcp_runtime_server.gd"
+GameEvents="*uid://djkk50b3sojo3"
+AudioManager="*uid://2gtoj71ccm74"
+SaveManager="*uid://xe3ux1ku5d3j"
+
+[dotnet]
+
+project/assembly_name="O Dia que o Sol sorriu"
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/godot_mcp_toolkit/plugin.cfg")
+
+[layer_names]
+
+3d_physics/layer_1="Environment"
+3d_physics/layer_2="Player"
+3d_physics/layer_3="Enemies"
+3d_physics/layer_4="Interactables"
+3d_physics/layer_5="LanternLight"
+3d_physics/layer_6="CorruptedShadows"
