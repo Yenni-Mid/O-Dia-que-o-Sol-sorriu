@@ -2,10 +2,10 @@ extends Node
 ## Controla o ciclo contínuo de Dia e Noite do quarteirão.
 ## De dia o Sol Sorridente drena sanidade; à noite (19:00..06:00) o sol se põe e os Cultistas saem para caçar a luz do lampião.
 
-@export var full_day_duration_sec: float = 160.0
-@export var start_hour: float = 15.5
+@export var full_day_duration_sec: float = 260.0
+@export var start_hour: float = 14.5
 
-var current_hour: float = 15.5
+var current_hour: float = 14.5
 var is_night: bool = false
 
 var _sun_light: DirectionalLight3D
@@ -58,6 +58,19 @@ func is_nighttime() -> bool:
 
 func get_hour() -> float:
 	return current_hour
+
+
+func skip_to_hour(target_hour: float) -> void:
+	current_hour = fposmod(target_hour, 24.0)
+	var next_night: bool = _compute_is_night(current_hour)
+	if next_night != is_night:
+		is_night = next_night
+		if is_night:
+			GameEvents.night_started.emit()
+		else:
+			GameEvents.day_started.emit()
+	_apply_lighting()
+	_emit_time(true)
 
 
 func get_formatted_time() -> String:

@@ -15,6 +15,16 @@
 [ext_resource type="Script" path="res://systems/interactables/bandage_pickup.gd" id="13_bandage"]
 [ext_resource type="Script" path="res://systems/interactables/key_pickup.gd" id="14_key"]
 [ext_resource type="Script" path="res://systems/interactables/vhs_recorder.gd" id="15_vhs"]
+[ext_resource type="Script" path="res://levels/zones/gas_station_zone.gd" id="16_gas"]
+[ext_resource type="Script" path="res://levels/zones/school_zone.gd" id="17_school"]
+[ext_resource type="Script" path="res://levels/zones/chapel_zone.gd" id="18_chapel"]
+[ext_resource type="Script" path="res://levels/zones/sewer_network.gd" id="19_sewer"]
+[ext_resource type="Script" path="res://systems/interactables/tool_pickup.gd" id="20_tool"]
+[ext_resource type="Script" path="res://systems/interactables/blocked_passage.gd" id="21_block"]
+[ext_resource type="Script" path="res://systems/interactables/fire_barrel.gd" id="22_barrel"]
+[ext_resource type="Script" path="res://systems/interactables/code_safe.gd" id="23_safe"]
+[ext_resource type="Script" path="res://systems/interactables/npc_survivor.gd" id="24_npc"]
+[ext_resource type="Script" path="res://entities/enemies/lantern_cultist.gd" id="25_cultist"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_775fo"]
 render_priority = 0
@@ -27,12 +37,12 @@ shader_parameter/snap_resolution = Vector2(320, 180)
 shader_parameter/affine_amount = 1.0
 
 [sub_resource type="BoxMesh" id="BoxMesh_1p83w"]
-size = Vector3(100, 0.5, 90)
-subdivide_width = 24
-subdivide_depth = 24
+size = Vector3(180, 0.5, 160)
+subdivide_width = 32
+subdivide_depth = 32
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_2ajc6"]
-size = Vector3(100, 0.5, 90)
+size = Vector3(180, 0.5, 160)
 
 [node name="Level01Streets" type="Node3D" unique_id=229286503]
 
@@ -40,7 +50,7 @@ size = Vector3(100, 0.5, 90)
 script = ExtResource("7_navbk")
 
 [node name="StreetGround" type="StaticBody3D" parent="NavigationRegion3D" unique_id=949637029]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, -4.5, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -4.5, -24)
 collision_mask = 0
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="NavigationRegion3D/StreetGround" unique_id=1757635145]
@@ -54,6 +64,18 @@ shape = SubResource("BoxShape3D_2ajc6")
 
 [node name="NeighborhoodBlock" type="Node3D" parent="NavigationRegion3D" unique_id=314159888]
 script = ExtResource("9_block")
+
+[node name="GasStationZone" type="Node3D" parent="NavigationRegion3D" unique_id=314159891]
+script = ExtResource("16_gas")
+
+[node name="SchoolZone" type="Node3D" parent="NavigationRegion3D" unique_id=314159892]
+script = ExtResource("17_school")
+
+[node name="ChapelZone" type="Node3D" parent="NavigationRegion3D" unique_id=314159893]
+script = ExtResource("18_chapel")
+
+[node name="SewerNetwork" type="Node3D" parent="NavigationRegion3D" unique_id=314159894]
+script = ExtResource("19_sewer")
 
 [node name="PatrolWaypoints" type="Node3D" parent="." unique_id=401001001]
 
@@ -102,6 +124,56 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 27.0, 0.1, -6.0)
 
 [node name="WP_PlazaRoad" type="Marker3D" parent="PreacherEnemy_Waypoints" unique_id=402002005]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 27.5, 0.1, 11.8)
+
+[node name="LanternCultist_West_Waypoints" type="Node3D" parent="." unique_id=402003001]
+
+[node name="WP_GS_Road1" type="Marker3D" parent="LanternCultist_West_Waypoints" unique_id=402003002]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -28.0, 0.1, 12.9)
+
+[node name="WP_GS_Road2" type="Marker3D" parent="LanternCultist_West_Waypoints" unique_id=402003003]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -43.0, 0.1, 12.9)
+
+[node name="WP_GS_Pump" type="Marker3D" parent="LanternCultist_West_Waypoints" unique_id=402003004]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -43.0, 0.1, 4.5)
+
+[node name="WP_GS_East" type="Marker3D" parent="LanternCultist_West_Waypoints" unique_id=402003005]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -30.0, 0.1, 4.5)
+
+[node name="LanternCultist_School_Waypoints" type="Node3D" parent="." unique_id=402004001]
+
+[node name="WP_Sch_SW" type="Marker3D" parent="LanternCultist_School_Waypoints" unique_id=402004002]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10.0, 0.1, -26.0)
+
+[node name="WP_Sch_SE" type="Marker3D" parent="LanternCultist_School_Waypoints" unique_id=402004003]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10.0, 0.1, -26.0)
+
+[node name="WP_Sch_NE" type="Marker3D" parent="LanternCultist_School_Waypoints" unique_id=402004004]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10.0, 0.1, -43.0)
+
+[node name="WP_Sch_NW" type="Marker3D" parent="LanternCultist_School_Waypoints" unique_id=402004005]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10.0, 0.1, -43.0)
+
+[node name="LunaticSchool_Waypoints" type="Node3D" parent="." unique_id=402005001]
+
+[node name="WP_HallW" type="Marker3D" parent="LunaticSchool_Waypoints" unique_id=402005002]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10.0, 0.1, -55.0)
+
+[node name="WP_HallE" type="Marker3D" parent="LunaticSchool_Waypoints" unique_id=402005003]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10.0, 0.1, -55.0)
+
+[node name="WP_WingW" type="Marker3D" parent="LunaticSchool_Waypoints" unique_id=402005004]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15.0, 0.1, -55.0)
+
+[node name="LunaticChapel_Waypoints" type="Node3D" parent="." unique_id=402006001]
+
+[node name="WP_CemSW" type="Marker3D" parent="LunaticChapel_Waypoints" unique_id=402006002]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 40.0, 0.1, 6.0)
+
+[node name="WP_CemSE" type="Marker3D" parent="LunaticChapel_Waypoints" unique_id=402006003]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 60.0, 0.1, 6.0)
+
+[node name="WP_CemN" type="Marker3D" parent="LunaticChapel_Waypoints" unique_id=402006004]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 60.0, 0.1, -1.0)
 
 [node name="OilPickup" parent="." unique_id=1570513945 instance=ExtResource("2_isfup")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.6, 0.95, -3.4)
@@ -241,6 +313,217 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11.5, 0.1, -12)
 [node name="PreacherEnemy" type="CharacterBody3D" parent="." unique_id=2079065550]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 30.5, 0.1, 4.0)
 script = ExtResource("11_preacher")
+
+[node name="ToolPickup_Radio" type="Area3D" parent="." unique_id=407001001]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11.6, 0.48, 10.05)
+script = ExtResource("20_tool")
+tool_id = "radio"
+tool_name = "Rádio Portátil"
+
+[node name="ToolPickup_BoltCutters" type="Area3D" parent="." unique_id=407001002]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.8, 4.1, 3.95)
+script = ExtResource("20_tool")
+tool_id = "bolt_cutters"
+tool_name = "Alicate de Corte"
+
+[node name="ToolPickup_Crowbar_Sewer" type="Area3D" parent="." unique_id=407001003]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -51.5, -3.15, -24.5)
+script = ExtResource("20_tool")
+tool_id = "crowbar"
+tool_name = "Pé de Cabra"
+
+[node name="BlockedPassage_SchoolGate" type="StaticBody3D" parent="." unique_id=407002001]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -20)
+script = ExtResource("21_block")
+passage_type = "chain_gate"
+required_tool = "bolt_cutters"
+passage_size = Vector3(4.2, 2.8, 0.3)
+label_name = "Portão da Escola"
+
+[node name="BlockedPassage_NeighborDoor" type="StaticBody3D" parent="." unique_id=407002002]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20.5, 0, 7.38)
+script = ExtResource("21_block")
+passage_type = "boarded_door"
+required_tool = "crowbar"
+passage_size = Vector3(1.6, 2.4, 0.28)
+label_name = "Casa Vizinha"
+
+[node name="BlockedPassage_SchoolClass1" type="StaticBody3D" parent="." unique_id=407002003]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14, 0, -59)
+script = ExtResource("21_block")
+passage_type = "boarded_door"
+required_tool = "crowbar"
+passage_size = Vector3(2.9, 2.8, 0.26)
+label_name = "Sala de Aula 01"
+
+[node name="FireBarrel_Yard" type="StaticBody3D" parent="." unique_id=407003001]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9.5, 0, 8.2)
+script = ExtResource("22_barrel")
+barrel_id = "barrel_yard"
+barrel_name = "Tambor do Quintal"
+starts_lit = true
+
+[node name="FireBarrel_GasStation" type="StaticBody3D" parent="." unique_id=407003002]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -42.5, 0, -3.5)
+script = ExtResource("22_barrel")
+barrel_id = "barrel_gas"
+barrel_name = "Tambor do Posto"
+
+[node name="FireBarrel_SchoolCourt" type="StaticBody3D" parent="." unique_id=407003003]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, -30.5)
+script = ExtResource("22_barrel")
+barrel_id = "barrel_school"
+barrel_name = "Tambor da Escola"
+
+[node name="NpcSurvivor_Marcos" type="StaticBody3D" parent="." unique_id=407004001]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -51.8, 0.02, -0.8)
+script = ExtResource("24_npc")
+npc_id = "marcos"
+npc_name = "Seu Marcos"
+coat_color = Color(0.24, 0.28, 0.22, 1)
+intro_line = "Abaixe essa luz! Se você tiver uma bandagem pro meu braço, te passo o meu Pé de Cabra."
+reward_line = "Valeu! Fique com o Pé de Cabra. Ouvi dizer que o cofre da Escola usa a data do eclipse solar."
+post_line = "Desci pro esgoto uma vez, mas ouvi passos na água... cuidado lá embaixo."
+request_item = "bandage"
+reward_tool_id = "crowbar"
+reward_tool_name = "Pé de Cabra"
+
+[node name="NpcSurvivor_Helena" type="StaticBody3D" parent="." unique_id=407004002]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20.5, 0.06, 2.5)
+script = ExtResource("24_npc")
+npc_id = "helena"
+npc_name = "Dona Helena"
+coat_color = Color(0.34, 0.21, 0.26, 1)
+intro_line = "Pensei que nunca abririam essas tábuas... O cofre da Diretoria na Escola usa a data 1710 (17 de Outubro)."
+post_line = "Código 1710 na Diretoria da Escola. Lá dentro trancaram a Chave da Capela."
+request_item = "none"
+
+[node name="CodeSafe_School" type="StaticBody3D" parent="." unique_id=407005001]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 17.5, 0.05, -70.6)
+script = ExtResource("23_safe")
+safe_id = "safe_school"
+safe_title = "Cofre da Diretoria"
+expected_code = "1710"
+reward_key_id = "chapel_key"
+reward_key_name = "Chave da Capela"
+reward_oil = 30.0
+reward_bandages = 1
+
+[node name="OilPickup_Neighbor" parent="." unique_id=1570514004 instance=ExtResource("2_isfup")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 23.6, 0.84, 1)
+
+[node name="OilPickup_GasPumps" parent="." unique_id=1570514005 instance=ExtResource("2_isfup")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -38.2, 0.3, 5.2)
+
+[node name="OilPickup_SewerCistern" parent="." unique_id=1570514006 instance=ExtResource("2_isfup")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -51.8, -3.15, -27.5)
+
+[node name="OilPickup_SchoolClassroom" parent="." unique_id=1570514007 instance=ExtResource("2_isfup")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -16, 0.76, -67.5)
+
+[node name="OilPickup_Chapel" parent="." unique_id=1570514008 instance=ExtResource("2_isfup")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 48, 0.8, -10)
+
+[node name="BandagePickup_GasStore" type="Area3D" parent="." unique_id=406003004]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -53.5, 0.05, 1.5)
+script = ExtResource("13_bandage")
+
+[node name="BandagePickup_SchoolInfirmary" type="Area3D" parent="." unique_id=406003005]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 0.05, -52)
+script = ExtResource("13_bandage")
+
+[node name="BottlePickup_SchoolCourt" type="Area3D" parent="." unique_id=406002004]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.2, 0.5, -33)
+script = ExtResource("12_bottle")
+
+[node name="VHSRecorder_GasStore" type="Area3D" parent="." unique_id=406004004]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -50.8, 1.0, -0.2)
+script = ExtResource("15_vhs")
+tape_id = "tape_gas"
+tape_title = "Fita #04 — O Apagão no Posto"
+tape_lines = PackedStringArray("[Seu Marcos]: Os caminhões-pipa não voltaram depois da segunda semana...", "[Estática]: A chave da Capela foi trancada na Diretoria da Escola antes do toque de recolher.", "[Rádio ao fundo]: Sintonizem a faixa baixa se ouvirem os lampiões na neblina.")
+
+[node name="VHSRecorder_Chapel" type="Area3D" parent="." unique_id=406004005]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 52, 1.36, -18.3)
+script = ExtResource("15_vhs")
+tape_id = "tape_chapel"
+tape_title = "Fita #05 — A Vigília da Capela"
+tape_lines = PackedStringArray("[Coro da Capela]: Quem teme a luz do dia será guiado pelo fogo à noite...", "[Pregador]: As três chaves e o menino estão a caminho da Torre Central...", "[Ruído distorcido]: Nenhuma porta acorrentada deterá a alvorada.")
+
+[node name="EchoNote_GasStation" parent="." unique_id=408746387 instance=ExtResource("3_3ybw4")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -34.8, 0.3, 2.8)
+fallback_id = "echo_gas_08"
+fallback_author = "Frentista Beto"
+fallback_date = "Semana 2"
+fallback_text = "O tambor de fogo aqui do posto salvou nossa sanidade quando o céu rachou. Há um alçapão de esgoto nos fundos que leva direto pro pátio da escola."
+
+[node name="EchoNote_Neighbor" parent="." unique_id=408746388 instance=ExtResource("3_3ybw4")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 23.6, 0.84, 1.4)
+fallback_id = "echo_neighbor_09"
+fallback_author = "Helena (Casa Vizinha)"
+fallback_date = "Antes do Isolamento"
+fallback_text = "Pregar tábuas não deteve o Pregador na pracinha, só bloqueou a fuga. Deixei anotado o código do cofre da diretoria: 1710 — o dia em que o Sol sorriu."
+
+[node name="EchoNote_Sewer" parent="." unique_id=408746389 instance=ExtResource("3_3ybw4")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -49.5, -3.15, -26)
+fallback_id = "echo_sewer_10"
+fallback_author = "Inspetor de Drenagem"
+fallback_date = "Dia 19"
+fallback_text = "Quem descer pelo túnel do mercado pode seguir para o norte até a saída sob a escola sem cruzar o portão acorrentado. Cuidado com as Sombras."
+
+[node name="EchoNote_SchoolLibrary" parent="." unique_id=408746390 instance=ExtResource("3_3ybw4")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14.5, 0.05, -52.5)
+fallback_id = "echo_school_lib_11"
+fallback_author = "Registro Escolar"
+fallback_date = "17 de Outubro (17/10)"
+fallback_text = "17/10 — Suspensão definitiva das aulas após o fenômeno solar. O diretor reforçou a senha do cofre com a data de hoje antes de ir para a capela."
+
+[node name="EchoNote_SchoolOffice" parent="." unique_id=408746391 instance=ExtResource("3_3ybw4")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13.5, 0.88, -66)
+fallback_id = "echo_school_office_12"
+fallback_author = "Diretor Arnaldo"
+fallback_date = "Última Anotação"
+fallback_text = "Guardei a Chave da Capela dentro do cofre aqui da diretoria (1710). Não deixem o Leo atravessar a praça até lá."
+
+[node name="EchoNote_ChapelCemetery" parent="." unique_id=408746392 instance=ExtResource("3_3ybw4")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 42.5, 0.15, 4.5)
+fallback_id = "echo_cemetery_13"
+fallback_author = "Coveiro Sebastião"
+fallback_date = "Mês 4"
+fallback_text = "Os cultistas carregam lampiões na ronda entre o cemitério e o posto. Se o feixe de luz passar por você no escuro, corra antes do sino."
+
+[node name="EchoNote_ChapelAltar" parent="." unique_id=408746393 instance=ExtResource("3_3ybw4")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 53.1, 1.36, -18.3)
+fallback_id = "echo_chapel_14"
+fallback_author = "Escritura do Altar"
+fallback_date = "Vigília Final"
+fallback_text = "Este quarteirão é apenas a antessala do Espelho da Alma Partida. A Torre Central ergue-se ao norte além dos muros da escola."
+
+[node name="ShadowHazard_Sewer1" parent="." unique_id=1873891504 instance=ExtResource("4_corlq")]
+transform = Transform3D(1.1, 0, 0, 0, 1, 0, 0, 0, 0.72, -34.6, -3.15, -5.3)
+
+[node name="ShadowHazard_SewerSpine" parent="." unique_id=1873891505 instance=ExtResource("4_corlq")]
+transform = Transform3D(0.75, 0, 0, 0, 1, 0, 0, 0, 1.2, -46, -3.15, -20)
+
+[node name="ShadowHazard_SewerNorth" parent="." unique_id=1873891506 instance=ExtResource("4_corlq")]
+transform = Transform3D(0.75, 0, 0, 0, 1, 0, 0, 0, 1.2, -46, -3.15, -39)
+
+[node name="ShadowHazard_SchoolHall" parent="." unique_id=1873891507 instance=ExtResource("4_corlq")]
+transform = Transform3D(0.95, 0, 0, 0, 1, 0, 0, 0, 0.95, -9.5, 0.05, -55)
+
+[node name="LanternCultist_West" type="CharacterBody3D" parent="." unique_id=2079065561]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -34, 0.1, 12.9)
+script = ExtResource("25_cultist")
+
+[node name="LanternCultist_School" type="CharacterBody3D" parent="." unique_id=2079065562]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, 0.1, -35)
+script = ExtResource("25_cultist")
+
+[node name="LunaticSchool" parent="." unique_id=2079065571 instance=ExtResource("5_d8n8u")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, -55)
+
+[node name="LunaticChapel" parent="." unique_id=2079065572 instance=ExtResource("5_d8n8u")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 46, 0.1, 4)
 
 [node name="SunShaft_LivingWindow" type="Node3D" parent="." unique_id=404001001]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 2.2, 6.9)

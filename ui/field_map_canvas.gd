@@ -1,23 +1,66 @@
 extends Control
-## Tela do Mapa Rabiscado à Mão do Quarteirão (estilo survival horror PS1).
-## Converte coordenadas 3D reais para o mapa e desenha a posição e direção do jogador em tempo real.
+## Tela do Mapa Rabiscado à Mão de todo o quarteirão expandido (zoom e arraste).
 
-const WORLD_MIN: Vector2 = Vector2(-28.0, -22.0)
-const WORLD_MAX: Vector2 = Vector2(38.0, 27.0)
+const WORLD_MIN: Vector2 = Vector2(-68.0, -78.0)
+const WORLD_MAX: Vector2 = Vector2(72.0, 27.0)
 const PAPER_BG: Color = Color(0.84, 0.79, 0.65)
 const GRID_COL: Color = Color(0.58, 0.64, 0.68, 0.28)
 const INK_COL: Color = Color(0.18, 0.13, 0.08)
-const SUB_COL: Color = Color(0.18, 0.30, 0.45, 0.75)
+const SUB_COL: Color = Color(0.18, 0.30, 0.45, 0.80)
+
+var _zoom: float = 1.0
+var _pan_offset: Vector2 = Vector2.ZERO
+var _dragging: bool = false
+
+
+func _ready() -> void:
+	mouse_filter = Control.MOUSE_FILTER_STOP
+	clip_contents = true
+
+
+func reset_view() -> void:
+	_zoom = 1.0
+	_pan_offset = Vector2.ZERO
+	queue_redraw()
+
+
+func _gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton:
+		var mb: InputEventMouseButton = event as InputEventMouseButton
+		if mb.button_index == MOUSE_BUTTON_WHEEL_UP and mb.pressed:
+			_zoom = clampf(_zoom * 1.15, 0.7, 2.4)
+			queue_redraw()
+			accept_event()
+		elif mb.button_index == MOUSE_BUTTON_WHEEL_DOWN and mb.pressed:
+			_zoom = clampf(_zoom / 1.15, 0.7, 2.4)
+			queue_redraw()
+			accept_event()
+		elif mb.button_index == MOUSE_BUTTON_RIGHT and mb.pressed:
+			reset_view()
+			accept_event()
+		elif mb.button_index == MOUSE_BUTTON_LEFT:
+			_dragging = mb.pressed
+			accept_event()
+	elif event is InputEventMouseMotion and _dragging:
+		var mm: InputEventMouseMotion = event as InputEventMouseMotion
+		_pan_offset += mm.relative
+		var limit: Vector2 = size * 0.45 * _zoom
+		_pan_offset.x = clampf(_pan_offset.x, -limit.x, limit.x)
+		_pan_offset.y = clampf(_pan_offset.y, -limit.y, limit.y)
+		queue_redraw()
+		accept_event()
 
 
 func _world_to_canvas(world_xz: Vector2) -> Vector2:
-	var pad: float = 24.0
+	var pad: float = 20.0
 	var draw_w: float = maxf(10.0, size.x - pad * 2.0)
 	var draw_h: float = maxf(10.0, size.y - pad * 2.0)
 	var span: Vector2 = WORLD_MAX - WORLD_MIN
 	var nx: float = (world_xz.x - WORLD_MIN.x) / span.x
 	var ny: float = (world_xz.y - WORLD_MIN.y) / span.y
-	return Vector2(pad + nx * draw_w, pad + ny * draw_h)
+	var base: Vector2 = Vector2(pad + nx * draw_w, pad + ny * draw_h)
+	var center: Vector2 = size * 0.5
+	return center + (base - center) * _zoom + _pan_offset
 
 
 func _world_rect(x0: float, z0: float, x1: float, z1: float) -> Rect2:
@@ -27,7 +70,6 @@ func _world_rect(x0: float, z0: float, x1: float, z1: float) -> Rect2:
 
 
 func _draw() -> void:
-	# Papel quadriculado
 	draw_rect(Rect2(Vector2.ZERO, size), PAPER_BG, true)
 	var step: float = 24.0
 	var x_line: float = step
@@ -39,36 +81,50 @@ func _draw() -> void:
 		draw_line(Vector2(0.0, y_line), Vector2(size.x, y_line), GRID_COL, 1.0)
 		y_line += step
 
-	draw_rect(Rect2(Vector2(4, 4), size - Vector2(8, 8)), INK_COL, false, 2.0)
-
 	var fnt: Font = get_theme_default_font()
 
-	# Rua Principal
-	_draw_area(-26.0, 10.6, 36.0, 15.2, Color(0.58, 0.54, 0.48, 0.55), INK_COL, "RUA PRINCIPAL", fnt, 11)
-	# Abrigo Inicial
-	_draw_area(-3.0, 15.5, 3.0, 25.0, Color(0.65, 0.60, 0.50, 0.7), INK_COL, "ABRIGO", fnt, 10)
-	# Casa de Dois Andares
-	_draw_area(-8.0, -7.0, 8.0, 7.0, Color(0.72, 0.64, 0.48, 0.85), INK_COL, "CASA (2 ANDARES)", fnt, 12)
-	# Varanda
-	_draw_area(-3.0, 7.0, 3.0, 10.0, Color(0.68, 0.58, 0.42, 0.8), INK_COL, "", fnt, 10)
-	# Mini-Mercado
-	_draw_area(-25.5, -7.5, -17.5, 7.0, Color(0.72, 0.58, 0.48, 0.85), INK_COL, "MINI-MERCADO", fnt, 10)
-	# Pracinha do Culto
-	_draw_area(25.5, -20.0, 36.0, 9.6, Color(0.64, 0.60, 0.56, 0.75), INK_COL, "PRACINHA DO CULTO", fnt, 10)
-	# Ponto de Ônibus
-	_draw_area(10.7, 9.2, 14.3, 11.4, Color(0.52, 0.56, 0.62, 0.8), INK_COL, "PONTO", fnt, 9)
-	# Carro Abandonado
-	_draw_area(-8.5, 12.1, -4.5, 13.9, Color(0.55, 0.32, 0.25, 0.85), INK_COL, "CARRO", fnt, 9)
+	# Ruas e avenidas principais
+	_draw_area(-66.0, 10.6, 70.0, 15.2, Color(0.56, 0.52, 0.46, 0.55), INK_COL, "AVENIDA PRINCIPAL", fnt, 10)
+	_draw_area(-2.6, -48.0, 2.6, -20.0, Color(0.58, 0.55, 0.49, 0.65), INK_COL, "", fnt, 9)
 
-	# Passagem Subterrânea (Porão + Túnel traçados em azul rabiscado)
-	_draw_dashed_box(-8.0, -7.2, 4.0, 1.0, SUB_COL)
-	_draw_dashed_box(-24.8, -6.8, -8.0, -3.8, SUB_COL)
-	_draw_dashed_box(-1.3, -13.2, 1.3, -7.2, SUB_COL)
+	# Terrenos & Pontos conhecidos
+	_draw_area(-3.0, 15.5, 3.0, 25.0, Color(0.65, 0.60, 0.50, 0.7), INK_COL, "ABRIGO", fnt, 8)
+	_draw_area(-8.0, -7.0, 8.0, 7.0, Color(0.72, 0.64, 0.48, 0.85), INK_COL, "CASA", fnt, 10)
+	_draw_area(-25.5, -7.5, -17.5, 7.0, Color(0.72, 0.58, 0.48, 0.85), INK_COL, "MERCADO", fnt, 9)
+	_draw_area(17.5, -7.0, 25.5, 7.5, Color(0.68, 0.62, 0.54, 0.80), INK_COL, "VIZINHA", fnt, 8)
+	_draw_area(25.5, -20.0, 36.0, 9.6, Color(0.64, 0.60, 0.56, 0.75), INK_COL, "PRACINHA", fnt, 9)
+
+	# Zona Oeste: Posto Sol & Óleo
+	_draw_area(-57.0, -16.5, -32.0, 9.6, Color(0.60, 0.58, 0.52, 0.50), INK_COL, "", fnt, 9)
+	_draw_area(-57.0, -6.0, -46.0, 4.0, Color(0.74, 0.50, 0.42, 0.85), INK_COL, "POSTO", fnt, 9)
+	_draw_area(-41.0, 0.5, -32.0, 7.5, Color(0.78, 0.45, 0.35, 0.75), INK_COL, "BOMBAS", fnt, 8)
+
+	# Zona Norte: Escola Municipal Aurora Solar
+	_draw_area(-26.0, -48.0, 24.0, -20.0, Color(0.58, 0.56, 0.50, 0.40), INK_COL, "PÁTIO DA ESCOLA", fnt, 9)
+	_draw_area(-24.0, -72.0, 22.0, -48.0, Color(0.70, 0.66, 0.52, 0.88), INK_COL, "ESCOLA MUNICIPAL AURORA SOLAR", fnt, 10)
+
+	# Zona Leste: Cemitério e Capela
+	_draw_area(36.0, -24.0, 66.0, 9.6, Color(0.52, 0.54, 0.48, 0.45), INK_COL, "", fnt, 9)
+	_draw_area(44.0, -21.0, 60.0, -3.0, Color(0.72, 0.62, 0.46, 0.88), INK_COL, "CAPELA", fnt, 10)
 	if fnt != null:
-		var cellar_pt: Vector2 = _world_to_canvas(Vector2(-13.0, -8.2))
-		draw_string(fnt, cellar_pt, "SUBSOLO: TÚNEL / PORÃO (SOMBRAS)", HORIZONTAL_ALIGNMENT_LEFT, -1, 10, SUB_COL)
-		var north_pt: Vector2 = Vector2(size.x * 0.5 - 95.0, 18.0)
-		draw_string(fnt, north_pt, "↑ NORTE — TORRE CENTRAL", HORIZONTAL_ALIGNMENT_CENTER, 190, 12, Color(0.58, 0.12, 0.08))
+		draw_string(fnt, _world_to_canvas(Vector2(38.5, 4.5)), "CEMITÉRIO", HORIZONTAL_ALIGNMENT_LEFT, -1, 9, INK_COL)
+
+	# Subsolo: Porão, Túnel e Rede de Esgotos
+	_draw_dashed_box(-8.0, -7.2, 4.0, 1.0, SUB_COL)
+	_draw_dashed_box(-44.4, -6.8, -8.0, -3.8, SUB_COL)
+	_draw_dashed_box(-47.6, -47.6, -44.4, -3.7, SUB_COL)
+	_draw_dashed_box(-53.6, -29.0, -47.6, -23.0, SUB_COL)
+	_draw_dashed_box(-44.4, -15.4, -38.4, -12.6, SUB_COL)
+	_draw_dashed_box(-44.4, -47.4, -38.4, -44.6, SUB_COL)
+
+	# Tambores-Fogueira em tempo real
+	for b_node: Node in get_tree().get_nodes_in_group("fire_barrel"):
+		if b_node is Node3D:
+			var b3: Node3D = b_node as Node3D
+			var b_pos: Vector2 = _world_to_canvas(Vector2(b3.global_position.x, b3.global_position.z))
+			var lit: bool = bool(b3.get("is_lit"))
+			draw_circle(b_pos, 4.5 if lit else 3.5, Color(1.0, 0.48, 0.12) if lit else Color(0.35, 0.32, 0.28))
+			draw_arc(b_pos, 5.0 if lit else 3.8, 0.0, TAU, 10, INK_COL, 1.2)
 
 	# Jogador em tempo real
 	var player: PlayerController = get_tree().get_first_node_in_group("player") as PlayerController
@@ -81,31 +137,35 @@ func _draw() -> void:
 		fwd2 = fwd2.normalized()
 		var side2: Vector2 = Vector2(-fwd2.y, fwd2.x)
 
-		var tip: Vector2 = p_pos + fwd2 * 13.0
-		var wing_l: Vector2 = p_pos - fwd2 * 5.0 + side2 * 7.0
-		var wing_r: Vector2 = p_pos - fwd2 * 5.0 - side2 * 7.0
-		var tri: PackedVector2Array = PackedVector2Array([tip, wing_l, wing_r])
-		draw_colored_polygon(tri, Color(0.82, 0.14, 0.10))
-		draw_circle(p_pos, 4.5, Color(0.98, 0.88, 0.35))
-		draw_arc(p_pos, 4.5, 0.0, TAU, 12, INK_COL, 1.5)
+		var tip: Vector2 = p_pos + fwd2 * 11.0
+		var wing_l: Vector2 = p_pos - fwd2 * 4.5 + side2 * 6.0
+		var wing_r: Vector2 = p_pos - fwd2 * 4.5 - side2 * 6.0
+		draw_colored_polygon(PackedVector2Array([tip, wing_l, wing_r]), Color(0.82, 0.14, 0.10))
+		draw_circle(p_pos, 4.0, Color(0.98, 0.88, 0.35))
+		draw_arc(p_pos, 4.0, 0.0, TAU, 12, INK_COL, 1.5)
 		if fnt != null:
-			var label_y: String = "SUBSOLO" if player.global_position.y < -1.2 else ("2º ANDAR" if player.global_position.y > 2.5 else "VOCÊ")
-			draw_string(fnt, p_pos + Vector2(8.0, 4.0), label_y, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(0.70, 0.10, 0.08))
+			var label_y: String = "ESGOTO" if player.global_position.y < -1.2 else ("2º ANDAR" if player.global_position.y > 2.5 else "VOCÊ")
+			draw_string(fnt, p_pos + Vector2(8.0, 4.0), label_y, HORIZONTAL_ALIGNMENT_LEFT, -1, 10, Color(0.70, 0.10, 0.08))
+
+	draw_rect(Rect2(Vector2(4, 4), size - Vector2(8, 8)), INK_COL, false, 2.0)
+	if fnt != null:
+		draw_string(fnt, Vector2(size.x * 0.5 - 105.0, 18.0), "↑ NORTE — ESCOLA / TORRE", HORIZONTAL_ALIGNMENT_CENTER, 210, 11, Color(0.58, 0.12, 0.08))
+		draw_string(fnt, Vector2(12.0, size.y - 10.0), "Scroll: Zoom (%.1fx) | Arrastar: Mover | Dir.: Resetar" % _zoom, HORIZONTAL_ALIGNMENT_LEFT, -1, 10, SUB_COL)
 
 
 func _draw_area(x0: float, z0: float, x1: float, z1: float, fill: Color, border: Color, label: String, fnt: Font, font_size: int) -> void:
 	var r: Rect2 = _world_rect(x0, z0, x1, z1)
 	draw_rect(r, fill, true)
-	draw_rect(r, border, false, 1.8)
-	if not label.is_empty() and fnt != null:
-		var center: Vector2 = r.position + Vector2(4.0, r.size.y * 0.5 + float(font_size) * 0.35)
-		draw_string(fnt, center, label, HORIZONTAL_ALIGNMENT_CENTER, int(maxf(40.0, r.size.x - 8.0)), font_size, border)
+	draw_rect(r, border, false, 1.5)
+	if not label.is_empty() and fnt != null and r.size.x > 26.0:
+		var center: Vector2 = r.position + Vector2(3.0, r.size.y * 0.5 + float(font_size) * 0.35)
+		draw_string(fnt, center, label, HORIZONTAL_ALIGNMENT_CENTER, int(maxf(28.0, r.size.x - 6.0)), font_size, border)
 
 
 func _draw_dashed_box(x0: float, z0: float, x1: float, z1: float, col: Color) -> void:
 	var r: Rect2 = _world_rect(x0, z0, x1, z1)
 	draw_rect(r, Color(col.r, col.g, col.b, 0.14), true)
-	draw_dashed_line(r.position, r.position + Vector2(r.size.x, 0), col, 1.8, 5.0)
-	draw_dashed_line(r.position + Vector2(r.size.x, 0), r.position + r.size, col, 1.8, 5.0)
-	draw_dashed_line(r.position + r.size, r.position + Vector2(0, r.size.y), col, 1.8, 5.0)
-	draw_dashed_line(r.position + Vector2(0, r.size.y), r.position, col, 1.8, 5.0)
+	draw_dashed_line(r.position, r.position + Vector2(r.size.x, 0), col, 1.6, 4.0)
+	draw_dashed_line(r.position + Vector2(r.size.x, 0), r.position + r.size, col, 1.6, 4.0)
+	draw_dashed_line(r.position + r.size, r.position + Vector2(0, r.size.y), col, 1.6, 4.0)
+	draw_dashed_line(r.position + Vector2(0, r.size.y), r.position, col, 1.6, 4.0)

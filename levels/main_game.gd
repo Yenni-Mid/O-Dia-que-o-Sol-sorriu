@@ -18,3 +18,9 @@ func _ready() -> void:
 		var mat: ShaderMaterial = psx_post_process.material as ShaderMaterial
 		if mat != null:
 			mat.set_shader_parameter("pixel_scale", float(scale_val))
+
+	if SaveManager.has_checkpoint:
+		var player: Node3D = get_node_or_null("SubViewportContainer/SubViewport/World3D/Player") as Node3D
+		if player != null:
+			player.global_position = SaveManager.checkpoint_position
+			GameEvents.status_message_requested.emit("Retornando ao último Tambor-Fogueira aceso.")

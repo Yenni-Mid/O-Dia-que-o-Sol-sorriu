@@ -7,6 +7,7 @@ extends Node
 var bottles: int = 1
 var bandages: int = 1
 var keys: Array[String] = []
+var tools: Array[String] = []
 
 
 func _ready() -> void:
@@ -69,5 +70,22 @@ func get_keys() -> Array[String]:
 	return keys.duplicate()
 
 
+func add_tool(tool_id: String) -> bool:
+	if tool_id.is_empty() or tools.has(tool_id):
+		return false
+	tools.append(tool_id)
+	emit_state()
+	return true
+
+
+func has_tool(tool_id: String) -> bool:
+	return tools.has(tool_id)
+
+
+func get_tools() -> Array[String]:
+	return tools.duplicate()
+
+
 func emit_state() -> void:
 	GameEvents.inventory_changed.emit(bottles, bandages, keys.duplicate())
+	GameEvents.tools_changed.emit(tools.duplicate())

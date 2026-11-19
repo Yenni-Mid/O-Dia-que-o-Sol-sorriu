@@ -41,6 +41,9 @@ var _stream_locked: AudioStreamWAV
 var _stream_bell_alarm: AudioStreamWAV
 var _stream_vhs_static: AudioStreamWAV
 var _stream_phase_chime: AudioStreamWAV
+var _stream_metal_cut: AudioStreamWAV
+var _stream_wood_break: AudioStreamWAV
+var _stream_radio_static: AudioStreamWAV
 
 var _heartbeat_intensity: float = 0.0
 var _heartbeat_timer: float = 0.0
@@ -197,6 +200,18 @@ func play_phase_chime() -> void:
 	play_sfx(_stream_phase_chime, -4.0)
 
 
+func play_metal_cut() -> void:
+	play_sfx(_stream_metal_cut, -4.0)
+
+
+func play_wood_break() -> void:
+	play_sfx(_stream_wood_break, -3.5)
+
+
+func get_radio_static_stream() -> AudioStreamWAV:
+	return _stream_radio_static
+
+
 func set_master_volume(linear: float) -> void:
 	var clamped: float = clampf(linear, 0.0, 1.0)
 	AudioServer.set_bus_mute(0, clamped <= 0.005)
@@ -291,6 +306,9 @@ func _build_procedural_streams() -> void:
 	_stream_bell_alarm = _synth_wave(1.1, 440.0, 415.0, 0.08, false)
 	_stream_vhs_static = _synth_noise_loop(2.5, 0.65, 67)
 	_stream_phase_chime = _synth_wave(1.4, 98.0, 65.0, 0.2, false)
+	_stream_metal_cut = _synth_wave(0.24, 960.0, 320.0, 0.72, false)
+	_stream_wood_break = _synth_noise_burst(0.36, 0.45, 79)
+	_stream_radio_static = _synth_noise_loop(2.2, 0.42, 91)
 
 
 func _synth_wave(duration: float, freq_start: float, freq_end: float, noise_mix: float, loop_enabled: bool) -> AudioStreamWAV:

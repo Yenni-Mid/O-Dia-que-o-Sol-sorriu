@@ -42,7 +42,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if _is_game_over:
 		return
 	if event.is_action_pressed("ui_cancel"):
-		for modal_name: String in ["EchoReaderUI", "FieldJournalUI", "VHSTapeOverlay"]:
+		for modal_name: String in ["EchoReaderUI", "FieldJournalUI", "VHSTapeOverlay", "KeypadUI"]:
 			var modal: Control = get_parent().get_node_or_null(modal_name) as Control
 			if modal != null and modal.visible:
 				return
@@ -95,6 +95,7 @@ func _on_restart_pressed() -> void:
 func _on_quit_pressed() -> void:
 	AudioManager.play_ui_click()
 	get_tree().paused = false
+	SaveManager.clear_checkpoint()
 	AudioManager.stop_all_tension()
 	get_tree().change_scene_to_file(MAIN_MENU_SCENE)
 

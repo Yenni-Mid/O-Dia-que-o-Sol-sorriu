@@ -49,7 +49,7 @@ func _can_open_journal() -> bool:
 		return false
 	var ui_layer: Node = get_parent()
 	if ui_layer != null:
-		for other_name: String in ["EchoReaderUI", "VHSTapeOverlay", "PauseMenu"]:
+		for other_name: String in ["EchoReaderUI", "VHSTapeOverlay", "PauseMenu", "KeypadUI"]:
 			var other: Control = ui_layer.get_node_or_null(other_name) as Control
 			if other != null and other.visible:
 				return false
@@ -100,6 +100,7 @@ func _refresh_summary() -> void:
 	var bottles: int = 0
 	var bandages: int = 0
 	var keys: Array = []
+	var tools: Array = []
 	var inv: Node = get_tree().get_first_node_in_group("inventory")
 	if inv != null:
 		if inv.has_method("get_bottles"):
@@ -108,16 +109,31 @@ func _refresh_summary() -> void:
 			bandages = int(inv.call("get_bandages"))
 		if inv.has_method("get_keys"):
 			keys = inv.call("get_keys") as Array
+		if inv.has_method("get_tools"):
+			tools = inv.call("get_tools") as Array
 	var keys_str: String = "Nenhuma" if keys.is_empty() else ", ".join(PackedStringArray(keys))
+	var tool_names: Array[String] = []
+	for t: Variant in tools:
+		var tid: String = str(t)
+		if tid == "bolt_cutters":
+			tool_names.append("Alicate de Corte")
+		elif tid == "crowbar":
+			tool_names.append("Pé de Cabra")
+		elif tid == "radio":
+			tool_names.append("Rádio")
+		else:
+			tool_names.append(tid)
+	var tools_str: String = "Nenhuma" if tool_names.is_empty() else ", ".join(PackedStringArray(tool_names))
 	var hour_str: String = "--:--"
 	var dn: Node = get_tree().get_first_node_in_group("day_night")
 	if dn != null and dn.has_method("get_formatted_time"):
 		hour_str = str(dn.call("get_formatted_time"))
 
-	bag_summary.text = "RELÓGIO: %s\n\nITENS DE CAMPO:\n• [G] Garrafas (isca): %d\n• [H] Bandagens (+40 HP): %d\n• Chaves: %s\n\nANOTAÇÕES:\n• De dia: o Sol drena sanidade na rua.\n• À noite (19h–06h): os Cultistas saem e caçam a luz do lampião.\n• O túnel do Porão liga a Casa ao Mini-Mercado.\n\n[Q / C] Espreitar esquinas." % [
+	bag_summary.text = "RELÓGIO: %s\n\nITENS DE CAMPO:\n• [G] Garrafas (isca): %d\n• [H] Bandagens (+40 HP): %d\n• Ferramentas: %s\n• Chaves: %s\n\nANOTAÇÕES:\n• De dia: o Sol drena sanidade na rua.\n• À noite (19h–06h): os Cultistas saem e caçam a luz do lampião.\n• Tambores-Fogueira: acenda com óleo para salvar e descansar.\n• Esgoto liga Porão ao Mercado, Posto e Escola.\n\n[Q / C] Espreitar esquinas." % [
 		hour_str,
 		bottles,
 		bandages,
+		tools_str,
 		keys_str,
 	]
 

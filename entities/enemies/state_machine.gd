@@ -114,6 +114,7 @@ func _ready() -> void:
 	var enemy_parent: Node3D = get_parent() as Node3D
 	if enemy_parent != null:
 		_spawn_position = enemy_parent.global_position
+		enemy_parent.add_to_group("enemies")
 	for child: Node in get_children():
 		_states[child.name.to_lower()] = child
 		if child.has_method("setup"):

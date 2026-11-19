@@ -5,6 +5,10 @@ const SAVE_FILE_PATH: String = "user://savegame.cfg"
 
 var collected_echoes: Array[String] = []
 var collected_echo_records: Dictionary = {}
+var unlocked_safes: Array[String] = []
+
+var has_checkpoint: bool = false
+var checkpoint_position: Vector3 = Vector3.ZERO
 
 var mouse_sensitivity: float = 0.0022
 var master_volume: float = 0.85
@@ -50,13 +54,40 @@ func save_settings() -> void:
 func reset_progress() -> void:
 	collected_echoes.clear()
 	collected_echo_records.clear()
+	unlocked_safes.clear()
+	has_checkpoint = false
+	checkpoint_position = Vector3.ZERO
 	save_game()
+
+
+func set_checkpoint(pos: Vector3) -> void:
+	has_checkpoint = true
+	checkpoint_position = pos
+	GameEvents.checkpoint_saved.emit(pos)
+
+
+func clear_checkpoint() -> void:
+	has_checkpoint = false
+	checkpoint_position = Vector3.ZERO
+
+
+func mark_safe_unlocked(safe_id: String) -> void:
+	if safe_id.is_empty():
+		return
+	if not unlocked_safes.has(safe_id):
+		unlocked_safes.append(safe_id)
+		save_game()
+
+
+func is_safe_unlocked(safe_id: String) -> bool:
+	return unlocked_safes.has(safe_id)
 
 
 func save_game() -> void:
 	var config: ConfigFile = ConfigFile.new()
 	config.set_value("progress", "collected_echoes", collected_echoes)
 	config.set_value("progress", "collected_echo_records", collected_echo_records)
+	config.set_value("progress", "unlocked_safes", unlocked_safes)
 	config.set_value("settings", "mouse_sensitivity", mouse_sensitivity)
 	config.set_value("settings", "master_volume", master_volume)
 	config.set_value("settings", "psx_scale", psx_scale)
@@ -77,6 +108,12 @@ func load_game() -> void:
 	var saved_records: Variant = config.get_value("progress", "collected_echo_records", {})
 	if saved_records is Dictionary:
 		collected_echo_records = (saved_records as Dictionary).duplicate(true)
+
+	var saved_safes: Variant = config.get_value("progress", "unlocked_safes", [])
+	if saved_safes is Array:
+		unlocked_safes.clear()
+		for safe_item: Variant in saved_safes:
+			unlocked_safes.append(str(safe_item))
 
 	mouse_sensitivity = clampf(float(config.get_value("settings", "mouse_sensitivity", 0.0022)), 0.0005, 0.008)
 	master_volume = clampf(float(config.get_value("settings", "master_volume", 0.85)), 0.0, 1.0)

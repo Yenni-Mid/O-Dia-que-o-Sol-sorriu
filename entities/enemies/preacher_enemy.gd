@@ -31,6 +31,7 @@ var _step_audio: AudioStreamPlayer3D
 func _ready() -> void:
 	_spawn_pos = global_position
 	add_to_group("night_enemy")
+	add_to_group("enemies")
 	collision_mask = 3
 	_ensure_collision_and_ray()
 	_build_preacher_visual()

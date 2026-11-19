@@ -17,7 +17,7 @@ func _ready() -> void:
 		nav_mesh.agent_height = 1.75
 		nav_mesh.agent_max_climb = 0.5
 		nav_mesh.agent_max_slope = 46.0
-		nav_mesh.cell_size = 0.25
+		nav_mesh.cell_size = 0.5
 		nav_mesh.cell_height = 0.25
 		navigation_mesh = nav_mesh
 	call_deferred("_bake_safe")

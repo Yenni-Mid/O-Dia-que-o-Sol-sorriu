@@ -378,9 +378,20 @@ func _build_ground_and_street() -> void:
 
 func _build_perimeter_walls() -> void:
 	var walls: Node3D = _create_group("PerimeterWalls")
-	_add_box(walls, "WallNorth", Vector3(62.4, 2.8, 0.4), Vector3(5.0, 1.4, -20.0), "concrete")
-	_add_box(walls, "WallWest", Vector3(0.4, 3.2, 45.2), Vector3(-26.0, 1.6, 2.4), "concrete")
-	_add_box(walls, "WallEast", Vector3(0.4, 3.2, 45.2), Vector3(36.0, 1.6, 2.4), "concrete")
+	# Muro Norte com portão para a Avenida da Escola (vão livre X: -2.1..+2.1)
+	_add_box(walls, "WallNorthWest", Vector3(22.7, 2.8, 0.4), Vector3(-14.85, 1.4, -20.0), "concrete")
+	_add_box(walls, "WallNorthEast", Vector3(32.7, 2.8, 0.4), Vector3(19.85, 1.4, -20.0), "concrete")
+	_add_box(walls, "SchoolGatePillarW", Vector3(1.4, 3.4, 0.7), Vector3(-2.8, 1.7, -20.0), "concrete_dark")
+	_add_box(walls, "SchoolGatePillarE", Vector3(1.4, 3.4, 0.7), Vector3(2.8, 1.7, -20.0), "concrete_dark")
+
+	# Muro Oeste aberto na pista da Rua Principal (Z: +9.6..+16.2) rumo ao Posto de Gasolina
+	_add_box(walls, "WallWestNorth", Vector3(0.4, 3.2, 29.8), Vector3(-26.0, 1.6, -5.3), "concrete")
+	_add_box(walls, "WallWestSouth", Vector3(0.4, 3.2, 8.8), Vector3(-26.0, 1.6, 20.6), "concrete")
+
+	# Muro Leste aberto na pista da Rua Principal (Z: +9.6..+16.2) rumo ao Cemitério e Capela
+	_add_box(walls, "WallEastNorth", Vector3(0.4, 3.2, 29.8), Vector3(36.0, 1.6, -5.3), "concrete")
+	_add_box(walls, "WallEastSouth", Vector3(0.4, 3.2, 8.8), Vector3(36.0, 1.6, 20.6), "concrete")
+
 	_add_box(walls, "WallSouthWest", Vector3(23.0, 3.0, 0.4), Vector3(-14.5, 1.5, 16.4), "concrete_dark")
 	_add_box(walls, "WallSouthEast", Vector3(33.0, 3.0, 0.4), Vector3(19.5, 1.5, 16.4), "concrete_dark")
 
@@ -506,8 +517,8 @@ func _build_basement_and_tunnel() -> void:
 	_add_box(bsm, "TunnelWallNorth", Vector3(16.8, 3.1, 0.25), Vector3(-16.4, -1.8, -6.8), "basement_wall")
 	_add_box(bsm, "TunnelWallSouth", Vector3(14.0, 3.1, 0.25), Vector3(-14.9, -1.8, -3.8), "basement_wall")
 
-	# 4. Poço e Rampa Oeste saindo dentro do Mini-Mercado (X: -24.8..-21.8, Z: -6.8..+0.5)
-	_add_box(bsm, "MarketPitWallW", Vector3(0.25, 3.4, 7.4), Vector3(-24.8, -1.65, -3.1), "basement_wall")
+	# 4. Poço e Rampa Oeste saindo dentro do Mini-Mercado (abertura em Z: -6.8..-3.8 liga ao Esgoto Oeste)
+	_add_box(bsm, "MarketPitWallW_South", Vector3(0.25, 3.4, 4.4), Vector3(-24.8, -1.65, -1.6), "basement_wall")
 	_add_box(bsm, "MarketPitWallE", Vector3(0.25, 3.4, 4.4), Vector3(-21.8, -1.65, -1.6), "basement_wall")
 	_add_box(bsm, "MarketPitSouthCap", Vector3(3.1, 3.4, 0.25), Vector3(-23.3, -1.65, 0.55), "basement_wall")
 	_add_box(bsm, "MarketExitRamp", Vector3(2.75, 0.2, 6.0), Vector3(-23.3, -1.65, -2.0), "concrete_dark", Vector3(-32.6, 0.0, 0.0))
@@ -518,16 +529,28 @@ func _build_basement_and_tunnel() -> void:
 func _build_neighbor_buildings() -> void:
 	var bldgs: Node3D = _create_group("NeighborBuildings")
 
-	# Casa Vizinha Abandonada (Leste, X: +17.5..+25.5, Z: -7.0..+7.5)
+	# Casa Vizinha Semi-Explorável (Leste, X: +17.5..+25.5, Z: -7.0..+7.5)
 	var neighbor: Node3D = Node3D.new()
 	neighbor.name = "NeighborHouse"
 	bldgs.add_child(neighbor)
-	_add_box(neighbor, "NeighborBody", Vector3(8.0, 6.2, 14.5), Vector3(21.5, 3.1, 0.25), "neighbor_stucco")
+	_add_box(neighbor, "NeighborFloor", Vector3(7.6, 0.06, 14.2), Vector3(21.5, 0.03, 0.25), "wood_old")
+	_add_box(neighbor, "NeighborUpperMass", Vector3(8.0, 3.2, 14.5), Vector3(21.5, 4.8, 0.25), "neighbor_stucco")
 	_add_box(neighbor, "NeighborRoof", Vector3(8.6, 0.45, 15.1), Vector3(21.5, 6.42, 0.25), "roof_dark")
+	_add_box(neighbor, "NeighborWallW", Vector3(0.25, 3.2, 14.5), Vector3(17.62, 1.6, 0.25), "neighbor_stucco")
+	_add_box(neighbor, "NeighborWallE", Vector3(0.25, 3.2, 14.5), Vector3(25.38, 1.6, 0.25), "neighbor_stucco")
+	_add_box(neighbor, "NeighborWallN", Vector3(8.0, 3.2, 0.25), Vector3(21.5, 1.6, -6.88), "neighbor_stucco")
+	# Fachada Sul com vão de porta em X=20.5 (largura 1.6m) e janela lateral em X=23.3
+	_add_box(neighbor, "NeighborFrontW", Vector3(2.2, 3.2, 0.25), Vector3(18.6, 1.6, 7.38), "neighbor_stucco")
+	_add_box(neighbor, "NeighborDoorTop", Vector3(1.6, 0.8, 0.25), Vector3(20.5, 2.8, 7.38), "neighbor_stucco")
+	_add_box(neighbor, "NeighborFrontMid", Vector3(1.2, 3.2, 0.25), Vector3(21.9, 1.6, 7.38), "neighbor_stucco")
+	_add_box(neighbor, "NeighborWinSill", Vector3(1.6, 1.05, 0.25), Vector3(23.3, 0.52, 7.38), "neighbor_stucco")
+	_add_box(neighbor, "NeighborWinTop", Vector3(1.6, 1.0, 0.25), Vector3(23.3, 2.7, 7.38), "neighbor_stucco")
+	_add_box(neighbor, "NeighborFrontE", Vector3(1.4, 3.2, 0.25), Vector3(24.8, 1.6, 7.38), "neighbor_stucco")
+	_add_box(neighbor, "NeighborTable", Vector3(1.8, 0.78, 0.9), Vector3(23.6, 0.42, 1.0), "wood_old")
 	_add_box(neighbor, "NeighborPorchRoof", Vector3(4.0, 0.22, 2.2), Vector3(20.5, 3.2, 8.6), "roof_dark")
-	_add_box(neighbor, "NeighborBoardWin1", Vector3(1.8, 1.3, 0.12), Vector3(20.5, 1.6, 7.56), "wood_old")
 	_add_box(neighbor, "NeighborBoardWin2", Vector3(1.8, 1.3, 0.12), Vector3(20.5, 4.6, 7.56), "wood_old")
-	_add_box(neighbor, "NeighborLowWall", Vector3(7.6, 0.95, 0.25), Vector3(21.5, 0.48, 9.4), "concrete_dark")
+	_add_box(neighbor, "NeighborLowWallW", Vector3(1.9, 0.95, 0.25), Vector3(18.65, 0.48, 9.4), "concrete_dark")
+	_add_box(neighbor, "NeighborLowWallE", Vector3(3.9, 0.95, 0.25), Vector3(23.35, 0.48, 9.4), "concrete_dark")
 
 	# Garagens / Muros Sul atrás da calçada sul
 	var south_row: Node3D = Node3D.new()
@@ -651,7 +674,7 @@ func _build_distant_horizon_tower() -> void:
 	var horizon: Node3D = _create_group("HorizonSkyline")
 	var tower: Node3D = Node3D.new()
 	tower.name = "CentralTower"
-	tower.position = Vector3(14.0, 0.0, -78.0)
+	tower.position = Vector3(14.0, 0.0, -125.0)
 	horizon.add_child(tower)
 	_add_box(tower, "TowerBase", Vector3(14.0, 16.0, 14.0), Vector3(0.0, 8.0, 0.0), "skyline", Vector3.ZERO, false)
 	_add_box(tower, "TowerShaft", Vector3(10.5, 40.0, 10.5), Vector3(0.0, 36.0, 0.0), "skyline", Vector3.ZERO, false)
@@ -660,10 +683,10 @@ func _build_distant_horizon_tower() -> void:
 	_add_box(tower, "BrokenMirrorAltar", Vector3(4.2, 5.2, 0.6), Vector3(0.0, 59.5, 0.0), "tower_altar", Vector3(0.0, 0.0, 6.0), false)
 
 	var buildings: Array[Dictionary] = [
-		{"pos": Vector3(-38.0, 0.0, -84.0), "size": Vector3(12.0, 34.0, 12.0)},
-		{"pos": Vector3(-16.0, 0.0, -88.0), "size": Vector3(10.0, 26.0, 10.0)},
-		{"pos": Vector3(36.0, 0.0, -82.0), "size": Vector3(13.0, 30.0, 11.0)},
-		{"pos": Vector3(56.0, 0.0, -90.0), "size": Vector3(14.0, 22.0, 12.0)},
+		{"pos": Vector3(-54.0, 0.0, -132.0), "size": Vector3(12.0, 34.0, 12.0)},
+		{"pos": Vector3(-22.0, 0.0, -138.0), "size": Vector3(10.0, 26.0, 10.0)},
+		{"pos": Vector3(42.0, 0.0, -130.0), "size": Vector3(13.0, 30.0, 11.0)},
+		{"pos": Vector3(68.0, 0.0, -140.0), "size": Vector3(14.0, 22.0, 12.0)},
 	]
 	for idx: int in range(buildings.size()):
 		var b: Dictionary = buildings[idx]

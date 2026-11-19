@@ -430,11 +430,12 @@ func _build_structure(root: Node3D) -> void:
 	_add_box(root, "PorchPillarLeft", Vector3(0.25, 3.4, 0.25), Vector3(-2.8, 1.7, 9.8), "wood_dark")
 	_add_box(root, "PorchPillarRight", Vector3(0.25, 3.4, 0.25), Vector3(2.8, 1.7, 9.8), "wood_dark")
 
-	# Laje do 2º Andar (y = 3.6) com abertura central para a escada (X: -1.2..1.2, Z: -2.5..2.5)
-	_add_box(root, "SecondFloorSlabWest", Vector3(6.8, 0.2, 14.0), Vector3(-4.6, 3.5, 0.0), "floor_wood")
-	_add_box(root, "SecondFloorSlabEast", Vector3(6.8, 0.2, 14.0), Vector3(4.6, 3.5, 0.0), "floor_wood")
-	_add_box(root, "SecondFloorSlabNorth", Vector3(2.4, 0.2, 4.5), Vector3(0.0, 3.5, -4.75), "floor_wood")
-	_add_box(root, "SecondFloorSlabSouth", Vector3(2.4, 0.2, 4.5), Vector3(0.0, 3.5, 4.75), "floor_wood")
+	# Laje do 2º Andar (y = 3.6) com abertura no lado Leste do hall (X: +0.60..+1.90, Z: -2.5..+2.5)
+	# Mantém corredor amplo (~2.38m) no 2º andar para acesso livre a todos os quartos
+	_add_box(root, "SecondFloorSlabWest", Vector3(8.6, 0.2, 14.0), Vector3(-3.7, 3.5, 0.0), "floor_wood")
+	_add_box(root, "SecondFloorSlabEast", Vector3(6.1, 0.2, 14.0), Vector3(4.95, 3.5, 0.0), "floor_wood")
+	_add_box(root, "SecondFloorSlabNorth", Vector3(1.3, 0.2, 4.5), Vector3(1.25, 3.5, -4.75), "floor_wood")
+	_add_box(root, "SecondFloorSlabSouth", Vector3(1.3, 0.2, 4.5), Vector3(1.25, 3.5, 4.75), "floor_wood")
 
 	# Telhado / Teto do 2º Andar (y = 7.2) com claraboia estreita no corredor
 	_add_box(root, "RoofSlabWest", Vector3(7.6, 0.3, 14.6), Vector3(-4.2, 7.35, 0.0), "roof")
@@ -472,20 +473,20 @@ func _build_structure(root: Node3D) -> void:
 	_add_box(root, "IntWall2_WestDivider", Vector3(6.0, 3.6, 0.18), Vector3(-5.0, 5.4, 0.0), "wall_int")
 	_add_box(root, "IntWall2_EastDivider", Vector3(6.0, 3.6, 0.18), Vector3(5.0, 5.4, 0.0), "wall_int")
 
-	# Escadaria Central (sobe de Z = +2.5 [y = 0] até Z = -2.5 [y = 3.6])
+	# Escadaria encostada ao lado Leste do hall (X: +0.60..+1.90, sobe de Z = +2.5 [y = 0] até Z = -2.5 [y = 3.6])
+	# Deixa todo o corredor Oeste livre no 1º e no 2º andar para acesso fácil aos quartos
 	var stairs: Node3D = _create_group("Staircase", root)
-	_add_box(stairs, "StairRampCollider", Vector3(2.0, 0.2, 6.18), Vector3(0.0, 1.75, 0.0), "wood_dark", Vector3(35.75, 0.0, 0.0), true)
+	_add_box(stairs, "StairRampCollider", Vector3(1.28, 0.2, 6.18), Vector3(1.25, 1.75, 0.0), "wood_dark", Vector3(35.75, 0.0, 0.0), true)
 	var step_count: int = 12
 	for i: int in range(step_count):
 		var t: float = float(i) / float(step_count)
 		var step_y: float = 0.15 + t * 3.45
 		var step_z: float = 2.3 - t * 4.6
-		_add_box(stairs, "Step_%02d" % i, Vector3(2.1, 0.12, 0.42), Vector3(0.0, step_y, step_z), "wood_med", Vector3.ZERO, false)
+		_add_box(stairs, "Step_%02d" % i, Vector3(1.30, 0.12, 0.42), Vector3(1.25, step_y, step_z), "wood_med", Vector3.ZERO, false)
 
-	# Guarda-corpos do vão da escada no 2º andar
-	_add_box(stairs, "RailWest", Vector3(0.12, 1.0, 5.0), Vector3(-1.15, 4.1, 0.0), "wood_dark")
-	_add_box(stairs, "RailEast", Vector3(0.12, 1.0, 5.0), Vector3(1.15, 4.1, 0.0), "wood_dark")
-	_add_box(stairs, "RailSouth", Vector3(2.2, 1.0, 0.12), Vector3(0.0, 4.1, 2.55), "wood_dark")
+	# Guarda-corpos do vão da escada no 2º andar (lado Leste encosta na parede do hall em X = +1.91)
+	_add_box(stairs, "RailWest", Vector3(0.12, 1.0, 5.0), Vector3(0.52, 4.1, 0.0), "wood_dark")
+	_add_box(stairs, "RailSouth", Vector3(1.4, 1.0, 0.12), Vector3(1.22, 4.1, 2.52), "wood_dark")
 
 
 func _build_ground_floor_furniture(root: Node3D) -> void:

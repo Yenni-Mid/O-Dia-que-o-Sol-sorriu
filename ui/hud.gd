@@ -31,6 +31,7 @@ var _confession_label: Label
 var _objective_label: Label
 var _toast_label: Label
 var _clock_label: Label
+var _radio_label: Label
 var _inventory_label: Label
 var _crosshair: ColorRect
 var _hiding_overlay: Control
@@ -38,6 +39,11 @@ var _hiding_overlay: Control
 var _confession_timer: float = 0.0
 var _toast_timer: float = 0.0
 var _pulse_time: float = 0.0
+var _radio_level: float = 0.0
+var _cached_bottles: int = 1
+var _cached_bandages: int = 1
+var _cached_keys_count: int = 0
+var _cached_tools_count: int = 0
 var _collected_ids: Dictionary = {}
 var _total_echoes: int = 0
 
@@ -60,6 +66,8 @@ func _ready() -> void:
 	GameEvents.echo_opened.connect(_on_echo_opened)
 	GameEvents.time_of_day_changed.connect(_on_time_of_day_changed)
 	GameEvents.inventory_changed.connect(_on_inventory_changed)
+	GameEvents.tools_changed.connect(_on_tools_changed)
+	GameEvents.radio_interference_changed.connect(_on_radio_interference_changed)
 	GameEvents.status_message_requested.connect(_on_status_message_requested)
 	call_deferred("_count_echoes")
 
@@ -88,6 +96,9 @@ func _process(delta: float) -> void:
 	if _toast_timer > 0.0 and _toast_label != null:
 		_toast_timer -= delta
 		_toast_label.modulate.a = clampf(_toast_timer / 0.8, 0.0, 1.0)
+	if _radio_label != null and _radio_level > 0.03:
+		var freq: float = lerpf(4.0, 16.0, _radio_level)
+		_radio_label.modulate.a = 0.5 + 0.5 * absf(sin(_pulse_time * freq))
 
 
 # --------------------------------------------------------------------------- Layout
@@ -201,8 +212,20 @@ func _build_layout() -> void:
 	_clock_label.offset_top = 18.0
 	_clock_label.offset_bottom = 44.0
 	_clock_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	_clock_label.text = "15:30 — DIA [SOL SORRIDENTE]"
+	_clock_label.text = "14:30 — DIA [SOL SORRIDENTE]"
 	add_child(_clock_label)
+
+	# Alerta de estática do Rádio (abaixo do relógio)
+	_radio_label = _make_label(13, Color(1.0, 0.42, 0.25))
+	_radio_label.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	_radio_label.offset_left = -360.0
+	_radio_label.offset_right = -22.0
+	_radio_label.offset_top = 46.0
+	_radio_label.offset_bottom = 70.0
+	_radio_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_radio_label.text = ""
+	_radio_label.visible = false
+	add_child(_radio_label)
 
 	# Barra compacta de inventário e diário (canto inferior direito)
 	_inventory_label = _make_label(13, UiTheme.INK)
@@ -366,10 +389,38 @@ func _on_time_of_day_changed(hour: float, is_night: bool, phase_name: String) ->
 
 
 func _on_inventory_changed(bottles: int, bandages: int, keys: Array) -> void:
+	_cached_bottles = bottles
+	_cached_bandages = bandages
+	_cached_keys_count = keys.size()
+	_refresh_inventory_label()
+
+
+func _on_tools_changed(tools: Array) -> void:
+	_cached_tools_count = tools.size()
+	_refresh_inventory_label()
+
+
+func _refresh_inventory_label() -> void:
 	if _inventory_label == null:
 		return
-	var key_str: String = "" if keys.is_empty() else ("   |   Chaves: %d" % keys.size())
-	_inventory_label.text = "[G] Garrafas: %d   |   [H] Bandagens: %d%s   |   [Tab] Mapa" % [bottles, bandages, key_str]
+	var key_str: String = "" if _cached_keys_count <= 0 else ("   |   Chaves: %d" % _cached_keys_count)
+	var tool_str: String = "" if _cached_tools_count <= 0 else ("   |   Ferramentas: %d" % _cached_tools_count)
+	_inventory_label.text = "[G] Garrafas: %d   |   [H] Bandagens: %d%s%s   |   [Tab] Mapa" % [_cached_bottles, _cached_bandages, tool_str, key_str]
+
+
+func _on_radio_interference_changed(level: float) -> void:
+	_radio_level = clampf(level, 0.0, 1.0)
+	if _radio_label == null:
+		return
+	if _radio_level <= 0.03:
+		_radio_label.visible = false
+		return
+	_radio_label.visible = true
+	var bars: int = clampi(int(round(_radio_level * 4.0)), 1, 4)
+	var meter: String = "|".repeat(bars) + ".".repeat(4 - bars)
+	_radio_label.text = "RÁDIO [%s] AMEAÇA PRÓXIMA" % meter
+	var col: Color = Color(1.0, 0.72, 0.25) if _radio_level < 0.6 else Color(1.0, 0.28, 0.22)
+	_radio_label.add_theme_color_override("font_color", col)
 
 
 func _on_status_message_requested(text: String) -> void:
