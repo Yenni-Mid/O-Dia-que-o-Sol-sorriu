@@ -35,9 +35,9 @@ anchor_top = 0.5
 anchor_right = 1.0
 anchor_bottom = 0.5
 offset_left = -360.0
-offset_top = -140.0
+offset_top = -180.0
 offset_right = -80.0
-offset_bottom = 140.0
+offset_bottom = 100.0
 grow_horizontal = 0
 grow_vertical = 2
 stretch_mode = 5
@@ -48,11 +48,11 @@ anchors_preset = 4
 anchor_top = 0.5
 anchor_bottom = 0.5
 offset_left = 72.0
-offset_top = -170.0
+offset_top = -190.0
 offset_right = 560.0
-offset_bottom = 190.0
+offset_bottom = 220.0
 grow_vertical = 2
-theme_override_constants/separation = 14
+theme_override_constants/separation = 12
 
 [node name="TitleLabel" type="Label" parent="MenuContainer"]
 layout_mode = 2
@@ -69,8 +69,14 @@ theme_override_colors/font_color = Color(0.78, 0.75, 0.66, 1)
 theme_override_font_sizes/font_size = 16
 text = "Protótipo Vertical Slice — PSX Survival Horror"
 
+[node name="EchoCountLabel" type="Label" parent="MenuContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.68, 0.78, 0.92, 0.9)
+theme_override_font_sizes/font_size = 14
+text = "Ecos Descobertos: 0"
+
 [node name="Spacer" type="Control" parent="MenuContainer"]
-custom_minimum_size = Vector2(0, 14)
+custom_minimum_size = Vector2(0, 8)
 layout_mode = 2
 
 [node name="ButtonList" type="VBoxContainer" parent="MenuContainer"]
@@ -78,28 +84,35 @@ layout_mode = 2
 theme_override_constants/separation = 10
 
 [node name="NewGameButton" type="Button" parent="MenuContainer/ButtonList"]
-custom_minimum_size = Vector2(360, 42)
+custom_minimum_size = Vector2(360, 40)
 layout_mode = 2
 theme_override_font_sizes/font_size = 18
 text = "Novo Jogo (Intro VHS)"
 alignment = 0
 
 [node name="DirectDemoButton" type="Button" parent="MenuContainer/ButtonList"]
-custom_minimum_size = Vector2(360, 42)
+custom_minimum_size = Vector2(360, 40)
 layout_mode = 2
 theme_override_font_sizes/font_size = 18
-text = "Jogar Demo Direto (Casa + Greybox)"
+text = "Jogar Demo Direto (Quarteirão + Casa)"
 alignment = 0
 
 [node name="ControlsButton" type="Button" parent="MenuContainer/ButtonList"]
-custom_minimum_size = Vector2(360, 42)
+custom_minimum_size = Vector2(360, 40)
 layout_mode = 2
 theme_override_font_sizes/font_size = 18
 text = "Controles"
 alignment = 0
 
+[node name="OptionsButton" type="Button" parent="MenuContainer/ButtonList"]
+custom_minimum_size = Vector2(360, 40)
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Opções"
+alignment = 0
+
 [node name="QuitButton" type="Button" parent="MenuContainer/ButtonList"]
-custom_minimum_size = Vector2(360, 42)
+custom_minimum_size = Vector2(360, 40)
 layout_mode = 2
 theme_override_font_sizes/font_size = 18
 text = "Sair"
@@ -116,7 +129,7 @@ anchor_bottom = 0.5
 offset_left = -520.0
 offset_top = 80.0
 offset_right = -64.0
-offset_bottom = 290.0
+offset_bottom = 300.0
 grow_horizontal = 0
 grow_vertical = 2
 
@@ -126,11 +139,78 @@ theme_override_colors/font_color = Color(0.92, 0.90, 0.82, 1)
 theme_override_font_sizes/font_size = 15
 text = "CONTROLES:
 • WASD — Mover
-• Shift — Correr (emite muito ruído)
-• Ctrl — Agachar (furtivo / cabe em frestas)
+• Shift — Correr (gasta fôlego / emite muito ruído)
+• Ctrl — Agachar (furtivo / reduz silhueta nas janelas)
 • F ou Botão Direito — Acender / Apagar Lampião
 • E — Interagir (Ler Ecos, Óleo, Portas, Esconderijo)
 • Esc — Pausar / Sensibilidade"
+
+[node name="OptionsPanel" type="PanelContainer" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -520.0
+offset_top = 80.0
+offset_right = -64.0
+offset_bottom = 320.0
+grow_horizontal = 0
+grow_vertical = 2
+
+[node name="VBox" type="VBoxContainer" parent="OptionsPanel"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="OptionsTitle" type="Label" parent="OptionsPanel/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.76, 0.32, 1)
+theme_override_font_sizes/font_size = 16
+text = "OPÇÕES"
+
+[node name="VolumeLabel" type="Label" parent="OptionsPanel/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Volume Geral: 85%"
+
+[node name="VolumeSlider" type="HSlider" parent="OptionsPanel/VBox"]
+layout_mode = 2
+min_value = 0.0
+max_value = 1.0
+step = 0.05
+value = 0.85
+
+[node name="SensitivityLabel" type="Label" parent="OptionsPanel/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Sensibilidade do Mouse"
+
+[node name="SensitivitySlider" type="HSlider" parent="OptionsPanel/VBox"]
+layout_mode = 2
+min_value = 0.0008
+max_value = 0.006
+step = 0.0002
+value = 0.0022
+
+[node name="ScaleRow" type="HBoxContainer" parent="OptionsPanel/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="ScaleLabel" type="Label" parent="OptionsPanel/VBox/ScaleRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 14
+text = "Resolução PSX (Shrink)"
+
+[node name="ScaleOption" type="OptionButton" parent="OptionsPanel/VBox/ScaleRow"]
+layout_mode = 2
+
+[node name="ResetProgressButton" type="Button" parent="OptionsPanel/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "Limpar Ecos Salvos"
 
 [node name="VersionHint" type="Label" parent="."]
 layout_mode = 1

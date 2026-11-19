@@ -15,11 +15,42 @@ var _right_arm: Node3D
 var _left_leg: Node3D
 var _right_leg: Node3D
 var _walk_phase: float = 0.0
+var _step_triggered: bool = false
+var _whisper_timer: float = 4.0
+
+var _step_3d: AudioStreamPlayer3D
+var _alert_3d: AudioStreamPlayer3D
+var _whisper_3d: AudioStreamPlayer3D
 
 
 func _ready() -> void:
 	_fsm = get_node_or_null("StateMachine") as EnemyStateMachine
 	_build_mask_and_badge()
+	_setup_audio_3d()
+	_whisper_timer = randf_range(4.0, 9.0)
+
+
+func _setup_audio_3d() -> void:
+	_step_3d = AudioStreamPlayer3D.new()
+	_step_3d.name = "StepAudio3D"
+	_step_3d.stream = AudioManager.get_lunatic_step_stream()
+	_step_3d.max_distance = 16.0
+	_step_3d.volume_db = -6.0
+	add_child(_step_3d)
+
+	_alert_3d = AudioStreamPlayer3D.new()
+	_alert_3d.name = "AlertAudio3D"
+	_alert_3d.stream = AudioManager.get_alert_stream()
+	_alert_3d.max_distance = 24.0
+	_alert_3d.volume_db = -3.0
+	add_child(_alert_3d)
+
+	_whisper_3d = AudioStreamPlayer3D.new()
+	_whisper_3d.name = "WhisperAudio3D"
+	_whisper_3d.stream = AudioManager.get_whisper_stream()
+	_whisper_3d.max_distance = 12.0
+	_whisper_3d.volume_db = -10.0
+	add_child(_whisper_3d)
 
 
 func _process(delta: float) -> void:
@@ -29,7 +60,11 @@ func _process(delta: float) -> void:
 		if st_name != _last_state_name:
 			_last_state_name = st_name
 			if st_name == "SuspiciousState" or st_name == "ChaseState":
-				AudioManager.play_enemy_alert()
+				if _alert_3d != null and _alert_3d.stream != null:
+					_alert_3d.pitch_scale = randf_range(0.92, 1.08)
+					_alert_3d.play()
+				else:
+					AudioManager.play_enemy_alert()
 		if _alert_badge != null:
 			if st_name == "SuspiciousState":
 				_alert_badge.visible = true
@@ -39,6 +74,14 @@ func _process(delta: float) -> void:
 				_alert_badge.material_override = _mat_chase
 			else:
 				_alert_badge.visible = false
+
+	if st_name == "PatrolState" or st_name == "SuspiciousState":
+		_whisper_timer -= delta
+		if _whisper_timer <= 0.0:
+			_whisper_timer = randf_range(5.0, 11.0)
+			if _whisper_3d != null and _whisper_3d.stream != null and not _whisper_3d.playing:
+				_whisper_3d.pitch_scale = randf_range(0.75, 1.05)
+				_whisper_3d.play()
 
 	_animate_limbs(delta, st_name)
 
@@ -54,8 +97,17 @@ func _animate_limbs(delta: float, state_name: String) -> void:
 
 	if horiz_speed > 0.2:
 		_walk_phase += delta * horiz_speed * 2.8
-		var leg_swing: float = sin(_walk_phase) * 0.55
-		var arm_swing: float = sin(_walk_phase) * 0.42
+		var sin_phase: float = sin(_walk_phase)
+		var leg_swing: float = sin_phase * 0.55
+		var arm_swing: float = sin_phase * 0.42
+		if absf(sin_phase) > 0.88:
+			if not _step_triggered:
+				_step_triggered = true
+				if _step_3d != null and _step_3d.stream != null:
+					_step_3d.pitch_scale = randf_range(0.85, 1.1)
+					_step_3d.play()
+		else:
+			_step_triggered = false
 		if _left_leg != null:
 			_left_leg.rotation.x = leg_swing
 		if _right_leg != null:
@@ -65,6 +117,7 @@ func _animate_limbs(delta: float, state_name: String) -> void:
 		if _right_arm != null:
 			_right_arm.rotation.x = (0.85 if is_chasing else 0.0) + arm_swing
 	else:
+		_step_triggered = false
 		var idle_sway: float = sin(Time.get_ticks_msec() * 0.003) * 0.05
 		if _left_leg != null:
 			_left_leg.rotation.x = lerpf(_left_leg.rotation.x, 0.0, minf(1.0, 8.0 * delta))

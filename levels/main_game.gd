@@ -1,9 +1,20 @@
 extends Node
-## Nó raiz da arquitetura PSX (320x240 SubViewport + CanvasLayer_UI).
+## Nó raiz da arquitetura PSX (SubViewport em baixa resolução + CanvasLayer_UI).
 
-@onready var sub_viewport: SubViewport = get_node_or_null("SubViewportContainer/SubViewport") as SubViewport
+@onready var sub_viewport_container: SubViewportContainer = get_node_or_null("SubViewportContainer") as SubViewportContainer
+@onready var psx_post_process: ColorRect = get_node_or_null("CanvasLayer_UI/PSXPostProcess") as ColorRect
 
 
-func _unhandled_input(event: InputEvent) -> void:
-	if sub_viewport != null:
-		sub_viewport.push_input(event)
+func _ready() -> void:
+	get_tree().paused = false
+	AudioManager.stop_all_tension()
+	AudioManager.set_wind_active(true)
+	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+
+	var scale_val: int = clampi(SaveManager.psx_scale, 2, 4)
+	if sub_viewport_container != null:
+		sub_viewport_container.stretch_shrink = scale_val
+	if psx_post_process != null:
+		var mat: ShaderMaterial = psx_post_process.material as ShaderMaterial
+		if mat != null:
+			mat.set_shader_parameter("pixel_scale", float(scale_val))

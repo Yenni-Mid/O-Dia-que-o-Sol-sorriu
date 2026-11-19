@@ -1,6 +1,7 @@
 class_name SuspiciousState
 extends Node
-## Estado de investigação quando o Lunático ouve passos dentro do noise_radius do jogador.
+## Estado de investigação quando o Lunático ouve passos ou perde o jogador de vista.
+## Atualiza alvo ao ouvir novos barulhos e abre portas fechadas no caminho.
 
 @export var investigate_speed: float = 3.0
 @export var reach_distance: float = 0.9
@@ -12,12 +13,15 @@ var target_position: Vector3 = Vector3.ZERO
 var _enemy: CharacterBody3D
 var _fsm: EnemyStateMachine
 var _wait_timer: float = 0.0
+var _door_cooldown: float = 0.0
 var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity") as float
 
 
 func setup(enemy_node: Node, fsm_node: EnemyStateMachine) -> void:
 	_enemy = enemy_node as CharacterBody3D
 	_fsm = fsm_node
+	if not GameEvents.player_noise_emitted.is_connected(_on_player_noise_emitted):
+		GameEvents.player_noise_emitted.connect(_on_player_noise_emitted)
 
 
 func set_investigation_target(pos: Vector3) -> void:
@@ -27,6 +31,7 @@ func set_investigation_target(pos: Vector3) -> void:
 
 func enter() -> void:
 	_wait_timer = look_around_duration
+	_door_cooldown = 0.0
 
 
 func exit() -> void:
@@ -40,6 +45,8 @@ func physics_update(delta: float) -> void:
 		return
 	if not _enemy.is_on_floor():
 		_enemy.velocity.y -= _gravity * delta
+	if _door_cooldown > 0.0:
+		_door_cooldown -= delta
 
 	var player: PlayerController = _find_player()
 	if player != null and _can_see_player(player):
@@ -57,6 +64,9 @@ func physics_update(delta: float) -> void:
 			_fsm.transition_to("PatrolState")
 		return
 
+	if _door_cooldown <= 0.0 and _fsm.try_open_blocking_door(_enemy):
+		_door_cooldown = 1.5
+
 	var dir: Vector3 = _fsm.compute_steered_direction(_enemy, target_position)
 	if dir.length_squared() > 0.0025:
 		_enemy.velocity.x = dir.x * investigate_speed
@@ -69,26 +79,17 @@ func physics_update(delta: float) -> void:
 	_enemy.move_and_slide()
 
 
+func _on_player_noise_emitted(origin: Vector3, radius: float) -> void:
+	if _enemy == null or _fsm == null or _fsm.current_state != self:
+		return
+	if _enemy.global_position.distance_to(origin) <= radius:
+		target_position = origin
+		_wait_timer = look_around_duration
+
+
 func _can_see_player(player: PlayerController) -> bool:
-	var dist: float = _enemy.global_position.distance_to(player.global_position)
-	if dist > player.get_detection_distance(base_dark_vision_range, lit_vision_range):
-		return false
-	var vision_ray: RayCast3D = _enemy.get_node_or_null("VisionRay") as RayCast3D
-	if vision_ray == null:
-		return true
-	var world_to_player: Vector3 = (player.global_position + Vector3(0.0, 1.2, 0.0)) - vision_ray.global_position
-	vision_ray.target_position = vision_ray.global_transform.basis.inverse() * world_to_player
-	vision_ray.force_raycast_update()
-	if not vision_ray.is_colliding():
-		return true
-	return vision_ray.get_collider() == player
+	return _fsm.can_see_player(_enemy, player, base_dark_vision_range, lit_vision_range)
 
 
 func _find_player() -> PlayerController:
-	var scene_root: Node = get_tree().current_scene
-	if scene_root == null:
-		return null
-	var players: Array[Node] = scene_root.find_children("*", "PlayerController", true, false)
-	if players.is_empty():
-		return null
-	return players[0] as PlayerController
+	return _fsm.get_player() if _fsm != null else null

@@ -54,10 +54,4 @@ func physics_update(delta: float) -> void:
 
 
 func _find_player() -> PlayerController:
-	var scene_root: Node = get_tree().current_scene
-	if scene_root == null:
-		return null
-	var players: Array[Node] = scene_root.find_children("*", "PlayerController", true, false)
-	if players.is_empty():
-		return null
-	return players[0] as PlayerController
+	return _fsm.get_player() if _fsm != null else null

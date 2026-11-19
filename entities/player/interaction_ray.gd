@@ -17,6 +17,13 @@ func _ready() -> void:
 
 
 func _physics_process(_delta: float) -> void:
+	var player: PlayerController = get_tree().get_first_node_in_group("player") as PlayerController
+	if player != null and player.is_hidden:
+		if not _last_prompt.is_empty():
+			_last_prompt = ""
+			GameEvents.interaction_prompt_changed.emit("")
+		return
+
 	var target: Object = _get_interactable_target()
 	var next_prompt: String = ""
 	if target != null:
@@ -30,10 +37,15 @@ func _physics_process(_delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event.is_action_pressed("interact"):
-		var target: Object = _get_interactable_target()
-		if target != null:
-			target.call("interact")
+	if not event.is_action_pressed("interact"):
+		return
+	var player: PlayerController = get_tree().get_first_node_in_group("player") as PlayerController
+	if player != null and player.is_hidden:
+		return
+	var target: Object = _get_interactable_target()
+	if target != null:
+		target.call("interact")
+		get_viewport().set_input_as_handled()
 
 
 func _get_interactable_target() -> Object:

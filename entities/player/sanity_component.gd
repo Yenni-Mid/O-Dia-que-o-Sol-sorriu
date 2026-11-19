@@ -34,14 +34,21 @@ var current_zone: LightingZone = LightingZone.ABSOLUTE_DARKNESS
 var _depleted_emitted: bool = false
 var _confession_timer: float = 2.0
 var _confession_index: int = 0
+var _light_search_cooldown: float = 0.0
+var _last_emitted_sanity: float = -1.0
 
 
 func _ready() -> void:
 	current_sanity = clampf(current_sanity, 0.0, max_sanity)
 	_resolve_dependencies()
 	_configure_raycast()
-	GameEvents.sanity_changed.emit(current_sanity, max_sanity)
+	_emit_sanity()
 	GameEvents.lighting_zone_changed.emit(int(current_zone))
+
+
+func _emit_sanity() -> void:
+	_last_emitted_sanity = current_sanity
+	GameEvents.sanity_changed.emit(current_sanity, max_sanity)
 
 
 func _physics_process(delta: float) -> void:
@@ -92,13 +99,18 @@ func _update_confessions_and_heartbeat(delta: float) -> void:
 			var line: String = CONFESSIONS[_confession_index % CONFESSIONS.size()]
 			_confession_index += 1
 			GameEvents.confession_triggered.emit(line)
+			AudioManager.play_whisper()
 	else:
 		_confession_timer = 1.5
 
 
 func _check_sun_exposure() -> bool:
 	if directional_light == null:
-		_find_directional_light()
+		# Busca na árvore no máximo 1x por segundo (antes rodava find_children a cada frame se não achasse).
+		_light_search_cooldown -= get_physics_process_delta_time()
+		if _light_search_cooldown <= 0.0:
+			_light_search_cooldown = 1.0
+			_find_directional_light()
 	if sun_exposure_ray == null or directional_light == null:
 		return false
 	if not directional_light.visible:
@@ -117,7 +129,9 @@ func _apply_sanity_delta(delta_amount: float) -> void:
 	var previous_sanity: float = current_sanity
 	current_sanity = clampf(current_sanity + delta_amount, 0.0, max_sanity)
 	if not is_equal_approx(previous_sanity, current_sanity):
-		GameEvents.sanity_changed.emit(current_sanity, max_sanity)
+		var at_bound: bool = current_sanity <= 0.0 or current_sanity >= max_sanity
+		if absf(current_sanity - _last_emitted_sanity) >= 0.2 or at_bound:
+			_emit_sanity()
 		if current_sanity <= 0.0 and not _depleted_emitted:
 			_depleted_emitted = true
 			GameEvents.sanity_depleted.emit()
@@ -149,6 +163,10 @@ func _resolve_dependencies() -> void:
 
 
 func _find_directional_light() -> void:
+	var grouped: Node = get_tree().get_first_node_in_group("sun_light")
+	if grouped is DirectionalLight3D:
+		directional_light = grouped as DirectionalLight3D
+		return
 	var scene_root: Node = get_tree().current_scene
 	if scene_root == null:
 		return

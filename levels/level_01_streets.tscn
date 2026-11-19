@@ -7,19 +7,24 @@
 [ext_resource type="PackedScene" uid="uid://cgf5eikiexgjd" path="res://entities/enemies/lunatic_base.tscn" id="5_d8n8u"]
 [ext_resource type="PackedScene" uid="uid://53ob74ldlfdl" path="res://levels/two_story_house.tscn" id="6_isfup"]
 [ext_resource type="Script" path="res://levels/navigation_baker.gd" id="7_navbk"]
+[ext_resource type="Script" path="res://levels/dust_motes.gd" id="8_dust"]
+[ext_resource type="Script" path="res://levels/neighborhood_block.gd" id="9_block"]
+[ext_resource type="Script" path="res://levels/sun_shaft.gd" id="10_shaft"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_775fo"]
 render_priority = 0
 shader = ExtResource("1_dk7hp")
-shader_parameter/modulate_color = Color(0.22, 0.19, 0.18, 1)
+shader_parameter/modulate_color = Color(0.18, 0.16, 0.15, 1)
 shader_parameter/uv_scale = Vector2(1, 1)
 shader_parameter/uv_offset = Vector2(0, 0)
 shader_parameter/jitter_intensity = 0.5
-shader_parameter/snap_resolution = Vector2(320, 240)
+shader_parameter/snap_resolution = Vector2(320, 180)
 shader_parameter/affine_amount = 1.0
 
 [sub_resource type="BoxMesh" id="BoxMesh_1p83w"]
 size = Vector3(80, 0.5, 80)
+subdivide_width = 24
+subdivide_depth = 24
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_2ajc6"]
 size = Vector3(80, 0.5, 80)
@@ -30,7 +35,7 @@ size = Vector3(80, 0.5, 80)
 script = ExtResource("7_navbk")
 
 [node name="StreetGround" type="StaticBody3D" parent="NavigationRegion3D" unique_id=949637029]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.35, 0)
 collision_mask = 0
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="NavigationRegion3D/StreetGround" unique_id=1757635145]
@@ -42,25 +47,42 @@ shape = SubResource("BoxShape3D_2ajc6")
 
 [node name="TwoStoryHouse" parent="NavigationRegion3D" unique_id=884745507 instance=ExtResource("6_isfup")]
 
+[node name="NeighborhoodBlock" type="Node3D" parent="NavigationRegion3D" unique_id=314159888]
+script = ExtResource("9_block")
+
 [node name="PatrolWaypoints" type="Node3D" parent="." unique_id=401001001]
 
-[node name="WP_FrontWest" type="Marker3D" parent="PatrolWaypoints" unique_id=401001002]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9, 0.1, 8.9)
+[node name="WP_MarketCross" type="Marker3D" parent="PatrolWaypoints" unique_id=401001002]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15.5, 0.1, 12.2)
 
-[node name="WP_CorridorLeft" type="Marker3D" parent="PatrolWaypoints" unique_id=401001003]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.5, 0.1, 13.5)
+[node name="WP_BehindCar" type="Marker3D" parent="PatrolWaypoints" unique_id=401001003]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.5, 0.1, 11.0)
 
-[node name="WP_PorchCenter" type="Marker3D" parent="PatrolWaypoints" unique_id=401001004]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 8.9)
+[node name="WP_PorchFront" type="Marker3D" parent="PatrolWaypoints" unique_id=401001004]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 11.2)
 
-[node name="WP_FrontEast" type="Marker3D" parent="PatrolWaypoints" unique_id=401001005]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 0.1, 8.9)
+[node name="WP_StreetEast" type="Marker3D" parent="PatrolWaypoints" unique_id=401001005]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9.5, 0.1, 12.2)
 
-[node name="WP_CorridorRight" type="Marker3D" parent="PatrolWaypoints" unique_id=401001006]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.5, 0.1, 13.5)
+[node name="WP_BusStopRoad" type="Marker3D" parent="PatrolWaypoints" unique_id=401001006]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14.5, 0.1, 12.5)
 
-[node name="WP_PorchReturn" type="Marker3D" parent="PatrolWaypoints" unique_id=401001007]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 8.9)
+[node name="WP_ReturnFront" type="Marker3D" parent="PatrolWaypoints" unique_id=401001007]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 11.2)
+
+[node name="LunaticYard_Waypoints" type="Node3D" parent="." unique_id=402001001]
+
+[node name="WP_WestYard" type="Marker3D" parent="LunaticYard_Waypoints" unique_id=402001002]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11, 0.1, 5.5)
+
+[node name="WP_NorthWest" type="Marker3D" parent="LunaticYard_Waypoints" unique_id=402001003]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11, 0.1, -11)
+
+[node name="WP_NorthEast" type="Marker3D" parent="LunaticYard_Waypoints" unique_id=402001004]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11, 0.1, -11)
+
+[node name="WP_EastYard" type="Marker3D" parent="LunaticYard_Waypoints" unique_id=402001005]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11, 0.1, 5.5)
 
 [node name="OilPickup" parent="." unique_id=1570513945 instance=ExtResource("2_isfup")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.6, 0.95, -3.4)
@@ -68,8 +90,15 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.6, 0.95, -3.4)
 [node name="OilPickup_Study" parent="." unique_id=1570513999 instance=ExtResource("2_isfup")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.2, 4.56, -3.5)
 
+[node name="OilPickup_Alley" parent="." unique_id=1570514001 instance=ExtResource("2_isfup")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15.2, 0.35, -4.2)
+
 [node name="EchoNote" parent="." unique_id=408746381 instance=ExtResource("3_3ybw4")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.3, 4.42, 0.85)
+fallback_id = "echo_leo_05"
+fallback_author = "Caderno do Leo"
+fallback_date = "Noite do Sequestro"
+fallback_text = "Pai, eu escondi a fita na mochila. Se você conseguiu chegar ao meu quarto, olha pela janela norte... dá pra ver a Torre Central no horizonte. Os de máscara disseram que vão completar o Espelho da Alma Partida lá no topo."
 
 [node name="EchoNote_Porch" parent="." unique_id=408746382 instance=ExtResource("3_3ybw4")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.8, 0.52, 8.2)
@@ -85,25 +114,54 @@ fallback_author = "Bilhete Rasgado (Sem Nome)"
 fallback_date = "Há 2 semanas"
 fallback_text = "Levaram o filho do sargento para a torre central no centro da cidade. O culto prepara o Espelho da Alma Partida para quando o sol alinhar. Fique longe da luz direta da rua e use o guarda-roupa lá em cima se alguém invadir a casa."
 
+[node name="EchoNote_BusStop" parent="." unique_id=408746384 instance=ExtResource("3_3ybw4")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12.5, 0.52, 10.05)
+fallback_id = "echo_busstop_04"
+fallback_author = "Motorista da Linha 14"
+fallback_date = "Dia 4 após o Sorriso"
+fallback_text = "Os postes derreteram na primeira hora. Sem eletricidade, as sombras das marquises e becos começaram a respirar. O abrigo de concreto do ponto ainda segura a luz do sol — use-o para recuperar o fôlego."
+
 [node name="ShadowHazard" parent="." unique_id=1873891490 instance=ExtResource("4_corlq")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 0.05, -3.5)
+transform = Transform3D(0.7, 0, 0, 0, 1, 0, 0, 0, 0.7, -4.8, 0.05, -3.5)
+
+[node name="ShadowHazard_Alley" parent="." unique_id=1873891499 instance=ExtResource("4_corlq")]
+transform = Transform3D(0.85, 0, 0, 0, 1, 0, 0, 0, 1.1, -15.2, 0.05, -1.5)
 
 [node name="LunaticBase" parent="." unique_id=2079065413 instance=ExtResource("5_d8n8u")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7, 0.1, 8.9)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 0.1, 11.2)
 
 [node name="LunaticYard" parent="." unique_id=2079065499 instance=ExtResource("5_d8n8u")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11, 0.1, -8.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11, 0.1, -9.5)
 
-[node name="PatrolWaypoints" type="Node3D" parent="LunaticYard" unique_id=402001001]
+[node name="SunShaft_LivingWindow" type="Node3D" parent="." unique_id=404001001]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 2.2, 6.9)
+script = ExtResource("10_shaft")
+length = 3.2
+top_radius = 0.8
+bottom_radius = 1.2
+intensity = 0.18
 
-[node name="WP_WestYard" type="Marker3D" parent="LunaticYard/PatrolWaypoints" unique_id=402001002]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11, 0.1, 4)
+[node name="SunShaft_LeoWindow" type="Node3D" parent="." unique_id=404001002]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 5.8, 6.9)
+script = ExtResource("10_shaft")
+length = 3.2
+top_radius = 0.8
+bottom_radius = 1.2
+intensity = 0.18
 
-[node name="WP_NorthWest" type="Marker3D" parent="LunaticYard/PatrolWaypoints" unique_id=402001003]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11, 0.1, -9)
+[node name="DustMotes_Living" type="Node3D" parent="." unique_id=403001001]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 1.6, 3.5)
+script = ExtResource("8_dust")
 
-[node name="WP_NorthEast" type="Marker3D" parent="LunaticYard/PatrolWaypoints" unique_id=402001004]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11, 0.1, -9)
+[node name="DustMotes_Kitchen" type="Node3D" parent="." unique_id=403001002]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 1.6, -3.5)
+script = ExtResource("8_dust")
 
-[node name="WP_EastYard" type="Marker3D" parent="LunaticYard/PatrolWaypoints" unique_id=402001005]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11, 0.1, 4)
+[node name="DustMotes_UpstairsHall" type="Node3D" parent="." unique_id=403001003]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5.2, 0)
+script = ExtResource("8_dust")
+extents = Vector3(1.4, 1.2, 4)
+
+[node name="DustMotes_LeoRoom" type="Node3D" parent="." unique_id=403001004]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 5.2, 3.5)
+script = ExtResource("8_dust")

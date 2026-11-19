@@ -9,6 +9,9 @@ const _WardrobeScript := preload("res://systems/interactables/wardrobe_hide.gd")
 
 var _materials: Dictionary = {}
 var _textures: Dictionary = {}
+var _mesh_cache: Dictionary = {}
+var _shape_cache: Dictionary = {}
+var _psx_shader: Shader = null
 
 
 func _ready() -> void:
@@ -22,6 +25,8 @@ func rebuild_house() -> void:
 
 	_init_textures()
 	_init_materials()
+	_mesh_cache.clear()
+	_shape_cache.clear()
 
 	var structure_root: Node3D = _create_group("Structure", self)
 	var floor1_root: Node3D = _create_group("Floor1_Ground", self)
@@ -64,7 +69,9 @@ func _init_materials() -> void:
 
 
 func _make_mat(color: Color, tex: Texture2D = null, uv_scale: Vector2 = Vector2(2.0, 2.0)) -> Material:
-	var shader: Shader = load("res://shaders/psx_lit.gdshader") as Shader
+	if _psx_shader == null:
+		_psx_shader = load("res://shaders/psx_lit.gdshader") as Shader
+	var shader: Shader = _psx_shader
 	if shader != null:
 		var smat: ShaderMaterial = ShaderMaterial.new()
 		smat.shader = shader
@@ -166,15 +173,19 @@ func _create_group(group_name: String, parent_node: Node3D) -> Node3D:
 	return node
 
 
-func _add_room_light(parent_node: Node3D, light_name: String, pos: Vector3, energy: float = 0.65, range_val: float = 8.0) -> void:
+func _add_room_light(parent_node: Node3D, light_name: String, pos: Vector3, energy: float = 0.35, range_val: float = 9.0) -> void:
 	var light: OmniLight3D = OmniLight3D.new()
 	light.name = light_name
 	light.position = pos
-	light.light_color = Color(0.92, 0.90, 0.85)
+	light.light_color = Color(0.72, 0.78, 0.88)
 	light.light_energy = energy
 	light.omni_range = range_val
-	light.omni_attenuation = 1.2
+	light.omni_attenuation = 1.3
 	light.shadow_enabled = false
+	# Luzes distantes são desligadas pelo renderer (economia com múltiplas luzes).
+	light.distance_fade_enabled = true
+	light.distance_fade_begin = 22.0
+	light.distance_fade_length = 6.0
 	parent_node.add_child(light)
 	_set_owner_recursive(light)
 
@@ -199,18 +210,14 @@ func _add_box(
 
 		var mesh_inst: MeshInstance3D = MeshInstance3D.new()
 		mesh_inst.name = "Mesh"
-		var box_mesh: BoxMesh = BoxMesh.new()
-		box_mesh.size = size
-		mesh_inst.mesh = box_mesh
+		mesh_inst.mesh = _get_box_mesh(size)
 		if _materials.has(mat_key):
 			mesh_inst.material_override = _materials[mat_key] as Material
 		body.add_child(mesh_inst)
 
 		var col: CollisionShape3D = CollisionShape3D.new()
 		col.name = "Collision"
-		var box_shape: BoxShape3D = BoxShape3D.new()
-		box_shape.size = size
-		col.shape = box_shape
+		col.shape = _get_box_shape(size)
 		body.add_child(col)
 
 		_set_owner_recursive(body)
@@ -220,14 +227,35 @@ func _add_box(
 		mesh_only.name = part_name
 		mesh_only.position = pos
 		mesh_only.rotation_degrees = rot_deg
-		var b_mesh: BoxMesh = BoxMesh.new()
-		b_mesh.size = size
-		mesh_only.mesh = b_mesh
+		mesh_only.mesh = _get_box_mesh(size)
+		mesh_only.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		if _materials.has(mat_key):
 			mesh_only.material_override = _materials[mat_key] as Material
 		parent_node.add_child(mesh_only)
 		_set_owner_recursive(mesh_only)
 		return mesh_only
+
+
+## Reaproveita BoxMesh/BoxShape3D de mesmo tamanho e subdivide caixas grandes para vertex_lighting PS1.
+func _get_box_mesh(size: Vector3) -> BoxMesh:
+	if _mesh_cache.has(size):
+		return _mesh_cache[size] as BoxMesh
+	var m: BoxMesh = BoxMesh.new()
+	m.size = size
+	m.subdivide_width = clampi(int(size.x / 1.8), 0, 10)
+	m.subdivide_height = clampi(int(size.y / 1.8), 0, 6)
+	m.subdivide_depth = clampi(int(size.z / 1.8), 0, 10)
+	_mesh_cache[size] = m
+	return m
+
+
+func _get_box_shape(size: Vector3) -> BoxShape3D:
+	if _shape_cache.has(size):
+		return _shape_cache[size] as BoxShape3D
+	var s: BoxShape3D = BoxShape3D.new()
+	s.size = size
+	_shape_cache[size] = s
+	return s
 
 
 func _add_wall_with_door(
@@ -494,7 +522,6 @@ func _build_ground_floor_furniture(root: Node3D) -> void:
 	_add_box(dining, "Chair3", Vector3(0.48, 0.85, 0.48), Vector3(4.3, 0.43, 4.55), "wood_med")
 	_add_box(dining, "Chair4_Fallen", Vector3(0.85, 0.48, 0.48), Vector3(6.1, 0.24, 4.8), "wood_med", Vector3(0.0, 32.0, 0.0))
 	_add_box(dining, "SideboardHutch", Vector3(0.5, 1.85, 2.2), Vector3(7.5, 0.93, 3.5), "wood_dark")
-	_add_room_light(dining, "DiningRoomLight", Vector3(5.0, 3.1, 3.5))
 
 	# 3. Cozinha (Kitchen - Nordeste: X 2..8, Z -7..0)
 	var kitchen: Node3D = _create_group("Kitchen", root)
@@ -506,7 +533,6 @@ func _build_ground_floor_furniture(root: Node3D) -> void:
 	_add_box(kitchen, "StoveOven", Vector3(0.8, 0.92, 0.75), Vector3(6.8, 0.46, -6.4), "appliance")
 	_add_box(kitchen, "UpperCabinet1", Vector3(2.8, 0.75, 0.4), Vector3(4.5, 2.35, -6.6), "wood_dark")
 	_add_box(kitchen, "PrepIsland", Vector3(1.4, 0.85, 0.9), Vector3(4.6, 0.43, -3.4), "wood_med")
-	_add_room_light(kitchen, "KitchenLight", Vector3(5.0, 3.1, -3.5))
 
 	# 4. Banheiro Térreo (Downstairs Bathroom - Noroeste: X -8..-2, Z -7..0)
 	var bath1: Node3D = _create_group("DownstairsBathroom", root)
@@ -518,7 +544,6 @@ func _build_ground_floor_furniture(root: Node3D) -> void:
 	_add_box(bath1, "Mirror", Vector3(0.75, 0.95, 0.05), Vector3(-5.2, 1.65, -6.78), "glass_mirror", Vector3.ZERO, false)
 	_add_box(bath1, "ShowerStall", Vector3(1.3, 2.1, 1.3), Vector3(-7.0, 1.05, -1.5), "porcelain")
 	_add_box(bath1, "LinenCabinet", Vector3(0.5, 1.7, 0.8), Vector3(-3.2, 0.85, -6.35), "wood_med")
-	_add_room_light(bath1, "DownstairsBathLight", Vector3(-5.0, 3.1, -3.5))
 
 
 func _build_upper_floor_furniture(root: Node3D) -> void:
@@ -556,7 +581,6 @@ func _build_upper_floor_furniture(root: Node3D) -> void:
 	_add_wardrobe(master, "MasterWardrobe", Vector3(0.7, 2.15, 2.2), Vector3(7.4, y2 + 1.08, 2.3), Vector3(0.0, -1.08, 0.0), Vector3(-1.15, -1.08, 0.0))
 	_add_box(master, "VanityTable", Vector3(1.2, 0.76, 0.55), Vector3(4.2, y2 + 0.38, 0.65), "wood_med")
 	_add_box(master, "VanityMirror", Vector3(0.85, 0.9, 0.06), Vector3(4.2, y2 + 1.22, 0.32), "glass_mirror", Vector3.ZERO, false)
-	_add_room_light(master, "MasterBedroomLight", Vector3(5.0, y2 + 3.1, 3.5))
 
 	# 3. Escritório / Biblioteca (Study Room - Nordeste: X 2..8, Z -7..0)
 	var study: Node3D = _create_group("StudyRoom", root)
@@ -566,7 +590,6 @@ func _build_upper_floor_furniture(root: Node3D) -> void:
 	_add_box(study, "LeatherChair", Vector3(0.65, 0.95, 0.65), Vector3(5.2, y2 + 0.48, -4.55), "fabric_green")
 	_add_box(study, "FilingCabinet", Vector3(0.55, 1.35, 0.65), Vector3(7.35, y2 + 0.68, -1.8), "metal_dark")
 	_add_box(study, "StudyRug", Vector3(3.0, 0.02, 2.6), Vector3(5.2, y2 + 0.01, -3.5), "carpet", Vector3.ZERO, false)
-	_add_room_light(study, "StudyRoomLight", Vector3(5.0, y2 + 3.1, -3.5))
 
 	# 4. Banheiro Superior (Upstairs Bathroom - Noroeste: X -8..-2, Z -7..0)
 	var bath2: Node3D = _create_group("UpstairsBathroom", root)
@@ -577,17 +600,8 @@ func _build_upper_floor_furniture(root: Node3D) -> void:
 	_add_box(bath2, "UpperSinkVanity", Vector3(1.0, 0.85, 0.55), Vector3(-4.2, y2 + 0.43, -6.45), "wood_dark")
 	_add_box(bath2, "UpperMirror", Vector3(0.85, 0.95, 0.05), Vector3(-4.2, y2 + 1.65, -6.78), "glass_mirror", Vector3.ZERO, false)
 	_add_box(bath2, "LaundryHamper", Vector3(0.5, 0.68, 0.45), Vector3(-3.1, y2 + 0.34, -1.2), "wood_med")
-	_add_room_light(bath2, "UpstairsBathLight", Vector3(-5.0, y2 + 3.1, -3.5))
 
 
-func _set_owner_recursive(node: Node) -> void:
-	if not Engine.is_editor_hint():
-		return
-	var tree: SceneTree = get_tree()
-	if tree == null or tree.edited_scene_root == null:
-		return
-	var root_owner: Node = tree.edited_scene_root
-	if node != root_owner:
-		node.owner = root_owner
-	for child: Node in node.get_children():
-		_set_owner_recursive(child)
+func _set_owner_recursive(_node: Node) -> void:
+	# Mantém a cena .tscn enxuta sem serializar centenas de nós procedurais em disco.
+	pass

@@ -1,14 +1,110 @@
 class_name EnemyStateMachine
 extends Node
 ## Máquina de Estados Finitos (FSM) para os Lunáticos (Patrol, Suspicious, Chase, Attack).
+## Também concentra serviços compartilhados pelos estados (busca do jogador, visão com cache, steering).
+
+const VISION_CHECK_INTERVAL_MS: int = 120
+const VISION_FOV_DOT: float = -0.15 ## ~100° para cada lado. Atrás disso só percebe a curta distância.
+const CLOSE_SENSE_RANGE: float = 2.6
 
 @export var initial_state: Node
 
 var current_state: Node
 var _states: Dictionary = {}
+var _next_vision_ms: int = 0
+var _cached_can_see: bool = false
+
+
+func get_player() -> PlayerController:
+	return get_tree().get_first_node_in_group("player") as PlayerController
+
+
+## Linha de visão com cone de visão e cache (raycast no máximo a cada 120 ms por inimigo).
+func can_see_player(enemy: CharacterBody3D, player: PlayerController, dark_range: float, lit_range: float) -> bool:
+	if enemy == null or player == null:
+		return false
+	var now_ms: int = Time.get_ticks_msec()
+	if now_ms < _next_vision_ms:
+		return _cached_can_see
+	_next_vision_ms = now_ms + VISION_CHECK_INTERVAL_MS
+	_cached_can_see = _compute_can_see(enemy, player, dark_range, lit_range)
+	return _cached_can_see
+
+
+func _compute_can_see(enemy: CharacterBody3D, player: PlayerController, dark_range: float, lit_range: float) -> bool:
+	var to_player: Vector3 = player.global_position - enemy.global_position
+	var dist: float = to_player.length()
+	if dist > player.get_detection_distance(dark_range, lit_range):
+		return false
+	if dist > CLOSE_SENSE_RANGE:
+		var forward: Vector3 = -enemy.global_transform.basis.z
+		var flat: Vector3 = Vector3(to_player.x, 0.0, to_player.z).normalized()
+		if forward.dot(flat) < VISION_FOV_DOT:
+			return false
+	var vision_ray: RayCast3D = enemy.get_node_or_null("VisionRay") as RayCast3D
+	if vision_ray == null:
+		return true
+	var eye_target: Vector3 = player.get_eye_position() if player.has_method("get_eye_position") else (player.global_position + Vector3(0.0, 1.2, 0.0))
+	var world_to_player: Vector3 = eye_target - vision_ray.global_position
+	vision_ray.target_position = vision_ray.global_transform.basis.inverse() * world_to_player
+	vision_ray.force_raycast_update()
+	if not vision_ray.is_colliding():
+		return true
+	return vision_ray.get_collider() == player
+
+
+func try_open_blocking_door(enemy: CharacterBody3D) -> bool:
+	if enemy == null:
+		return false
+	var world_3d: World3D = enemy.get_world_3d()
+	if world_3d == null:
+		return false
+	var space_state: PhysicsDirectSpaceState3D = world_3d.direct_space_state
+	if space_state == null:
+		return false
+	var origin: Vector3 = enemy.global_position + Vector3(0.0, 1.0, 0.0)
+	var forward: Vector3 = -enemy.global_transform.basis.z
+	forward.y = 0.0
+	if forward.length_squared() <= 0.001:
+		return false
+	forward = forward.normalized()
+	var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(origin, origin + forward * 1.5, 1 << 3, [enemy.get_rid()])
+	query.collide_with_bodies = true
+	query.collide_with_areas = false
+	var hit: Dictionary = space_state.intersect_ray(query)
+	if hit.is_empty():
+		return false
+	var collider: Object = hit.get("collider", null) as Object
+	if collider == null:
+		return false
+	var door_target: Node = null
+	if collider.has_method("open_by_enemy"):
+		door_target = collider as Node
+	elif collider is Node:
+		var p: Node = (collider as Node).get_parent()
+		if p != null and p.has_method("open_by_enemy"):
+			door_target = p
+	if door_target != null and not bool(door_target.get("is_open")):
+		door_target.call("open_by_enemy")
+		return true
+	return false
+
+
+func is_player_in_unlit_shadow(player: PlayerController) -> bool:
+	if player == null:
+		return false
+	if player.lantern_system != null and player.lantern_system.is_lit:
+		return false
+	for node: Node in get_tree().get_nodes_in_group("shadow_hazard"):
+		var hazard: ShadowHazard = node as ShadowHazard
+		if hazard != null and not hazard.is_suppressed() and hazard.overlaps_body(player):
+			return true
+	return false
 
 
 func _ready() -> void:
+	# Dessincroniza as checagens de visão entre inimigos para espalhar o custo entre frames.
+	_next_vision_ms = Time.get_ticks_msec() + randi_range(0, VISION_CHECK_INTERVAL_MS)
 	for child: Node in get_children():
 		_states[child.name.to_lower()] = child
 		if child.has_method("setup"):

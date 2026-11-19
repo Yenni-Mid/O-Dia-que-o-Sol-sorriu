@@ -15,8 +15,14 @@ signal player_movement_state_changed(state: int, noise_radius: float, visibility
 signal player_hidden_changed(is_hidden: bool)
 
 signal health_changed(current: float, max_val: float)
+signal stamina_changed(current: float, max_val: float)
+signal player_damaged(amount: float)
 signal player_died()
+
+signal camera_shake_requested(trauma: float)
 
 signal echo_opened(data: EchoData)
 signal echo_closed()
+signal echo_collected(collected: int, total: int)
+signal objective_changed(text: String)
 signal interaction_prompt_changed(prompt_text: String)

@@ -27,9 +27,12 @@ GameEvents="*uid://djkk50b3sojo3"
 AudioManager="*uid://2gtoj71ccm74"
 SaveManager="*uid://xe3ux1ku5d3j"
 
-[dotnet]
+[display]
 
-project/assembly_name="O Dia que o Sol sorriu"
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
 
 [editor_plugins]
 
@@ -43,3 +46,12 @@ enabled=PackedStringArray("res://addons/godot_mcp_toolkit/plugin.cfg")
 3d_physics/layer_4="Interactables"
 3d_physics/layer_5="LanternLight"
 3d_physics/layer_6="CorruptedShadows"
+
+[rendering]
+
+textures/canvas_textures/default_texture_filter=0
+anti_aliasing/quality/msaa_3d=0
+lights_and_shadows/directional_shadow/size=2048
+lights_and_shadows/directional_shadow/soft_shadow_filter_quality=0
+lights_and_shadows/positional_shadow/soft_shadow_filter_quality=0
+environment/defaults/default_clear_color=Color(0.05, 0.045, 0.04, 1)

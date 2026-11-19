@@ -2,6 +2,9 @@ class_name PauseMenu
 extends Control
 ## Menu de Pausa (Esc), ajuste de sensibilidade e telas de Game Over / Reinício.
 
+const UiTheme := preload("res://ui/ui_theme.gd")
+const MAIN_MENU_SCENE: String = "res://ui/main_menu.tscn"
+
 var _is_game_over: bool = false
 
 @onready var title_label: Label = get_node_or_null("Panel/VBoxContainer/TitleLabel") as Label
@@ -15,6 +18,12 @@ var _is_game_over: bool = false
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	visible = false
+	theme = UiTheme.get_theme()
+	if title_label != null:
+		title_label.add_theme_font_size_override("font_size", 28)
+		title_label.add_theme_color_override("font_color", UiTheme.AMBER)
+	if subtitle_label != null:
+		subtitle_label.add_theme_font_size_override("font_size", 13)
 	GameEvents.player_died.connect(_on_player_died)
 	GameEvents.sanity_depleted.connect(_on_sanity_depleted)
 	if resume_button != null:
@@ -22,8 +31,10 @@ func _ready() -> void:
 	if restart_button != null:
 		restart_button.pressed.connect(_on_restart_pressed)
 	if quit_button != null:
+		quit_button.text = "Voltar ao Menu Principal"
 		quit_button.pressed.connect(_on_quit_pressed)
 	if sensitivity_slider != null:
+		sensitivity_slider.value = SaveManager.mouse_sensitivity
 		sensitivity_slider.value_changed.connect(_on_sensitivity_changed)
 
 
@@ -55,6 +66,9 @@ func _open_menu(title_text: String, subtitle_text: String, allow_resume: bool) -
 	visible = true
 	get_tree().paused = true
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	var first_button: Button = resume_button if allow_resume else restart_button
+	if first_button != null:
+		first_button.grab_focus()
 
 
 func _close_menu() -> void:
@@ -64,31 +78,32 @@ func _close_menu() -> void:
 
 
 func _on_resume_pressed() -> void:
+	AudioManager.play_ui_click()
 	if not _is_game_over:
 		_close_menu()
 
 
 func _on_restart_pressed() -> void:
+	AudioManager.play_ui_click()
 	get_tree().paused = false
 	_is_game_over = false
-	AudioManager.set_sun_drone_active(false)
-	AudioManager.set_heartbeat_intensity(0.0)
+	AudioManager.stop_all_tension()
 	get_tree().reload_current_scene()
 
 
 func _on_quit_pressed() -> void:
-	get_tree().quit()
+	AudioManager.play_ui_click()
+	get_tree().paused = false
+	AudioManager.stop_all_tension()
+	get_tree().change_scene_to_file(MAIN_MENU_SCENE)
 
 
 func _on_sensitivity_changed(new_value: float) -> void:
-	var scene_root: Node = get_tree().current_scene
-	if scene_root == null:
-		return
-	var players: Array[Node] = scene_root.find_children("*", "PlayerController", true, false)
-	for node: Node in players:
-		var player: PlayerController = node as PlayerController
-		if player != null:
-			player.mouse_sensitivity = new_value
+	SaveManager.mouse_sensitivity = new_value
+	SaveManager.save_settings()
+	var player: PlayerController = get_tree().get_first_node_in_group("player") as PlayerController
+	if player != null:
+		player.mouse_sensitivity = new_value
 
 
 func _on_player_died() -> void:

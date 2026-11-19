@@ -1,6 +1,6 @@
 class_name PlayerController
 extends CharacterBody3D
-## Controlador em 1ª pessoa com estados de furtividade (agachar, andar, correr), head bobbing e integração com Lampião/Sanidade.
+## Controlador em 1ª pessoa com furtividade (agachar, andar, correr), fôlego, head bobbing e guarda-roupa.
 
 enum MovementState {
 	CROUCHING = 0,
@@ -30,6 +30,17 @@ const SPRINT_VISIBILITY_MULTIPLIER: float = 1.5
 @export var crouch_transition_speed: float = 10.0
 @export var hand_sway_amount: float = 0.0018
 @export var hand_sway_smoothing: float = 12.0
+@export var base_fov: float = 75.0
+@export var sprint_fov_bonus: float = 7.0
+@export var strafe_roll_degrees: float = 1.6
+@export var max_shake_degrees: float = 2.6
+@export var noise_emit_interval: float = 0.2
+
+@export var max_stamina: float = 100.0
+@export var stamina_drain_rate: float = 28.0
+@export var stamina_recover_walk: float = 14.0
+@export var stamina_recover_idle: float = 26.0
+@export var exhausted_threshold: float = 25.0
 
 var current_state: MovementState = MovementState.WALKING
 var current_speed: float = WALK_SPEED
@@ -37,12 +48,23 @@ var noise_radius: float = WALK_NOISE_RADIUS
 var visibility_multiplier: float = WALK_VISIBILITY_MULTIPLIER
 var external_speed_multiplier: float = 1.0
 var is_hidden: bool = false
+var current_stamina: float = 100.0
 
 var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity") as float
 var _bob_time: float = 0.0
 var _step_triggered: bool = false
 var _hand_sway_target: Vector3 = Vector3.ZERO
 var _hand_default_pos: Vector3 = Vector3.ZERO
+var _noise_timer: float = 0.0
+var _trauma: float = 0.0
+var _shake_time: float = 0.0
+var _strafe_input: float = 0.0
+var _shake_noise: FastNoiseLite = FastNoiseLite.new()
+
+var _exhausted: bool = false
+var _last_emitted_stamina: float = -1.0
+var _hiding_exit_pos: Vector3 = Vector3.ZERO
+var _hiding_wardrobe: Node = null
 
 @onready var standing_collision: CollisionShape3D = get_node_or_null("StandingCollision") as CollisionShape3D
 @onready var crouching_collision: CollisionShape3D = get_node_or_null("CrouchingCollision") as CollisionShape3D
@@ -57,39 +79,72 @@ var _hand_default_pos: Vector3 = Vector3.ZERO
 
 
 func _ready() -> void:
+	add_to_group("player")
 	_ensure_input_actions()
+	mouse_sensitivity = SaveManager.mouse_sensitivity
+	current_stamina = max_stamina
+	_emit_stamina(true)
+	_shake_noise.seed = 7
+	_shake_noise.frequency = 0.9
 	if hand_pivot != null:
 		_hand_default_pos = hand_pivot.position
+	if camera != null:
+		camera.fov = base_fov
 	_apply_movement_state(MovementState.WALKING, true)
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	GameEvents.camera_shake_requested.connect(add_trauma)
+
+
+func add_trauma(amount: float) -> void:
+	_trauma = clampf(_trauma + amount, 0.0, 1.0)
+
+
+func get_eye_position() -> Vector3:
+	if head_pivot != null:
+		return head_pivot.global_position
+	var eye_y: float = crouching_head_height if current_state == MovementState.CROUCHING else standing_head_height
+	return global_position + Vector3(0.0, eye_y, 0.0)
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if is_hidden and event.is_action_pressed("interact"):
+		var wardrobe_ref: Node = _hiding_wardrobe
+		exit_hiding_spot(_hiding_exit_pos)
+		if wardrobe_ref != null and wardrobe_ref.has_method("clear_occupant"):
+			wardrobe_ref.call("clear_occupant")
+		AudioManager.play_door_creak()
+		get_viewport().set_input_as_handled()
+		return
+
 	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
-		var mouse_Event: InputEventMouseMotion = event as InputEventMouseMotion
-		rotate_y(-mouse_Event.relative.x * mouse_sensitivity)
+		var mouse_event: InputEventMouseMotion = event as InputEventMouseMotion
+		rotate_y(-mouse_event.relative.x * mouse_sensitivity)
 		if head_pivot != null:
-			head_pivot.rotate_x(-mouse_Event.relative.y * mouse_sensitivity)
+			head_pivot.rotate_x(-mouse_event.relative.y * mouse_sensitivity)
 			head_pivot.rotation.x = clampf(head_pivot.rotation.x, deg_to_rad(-85.0), deg_to_rad(85.0))
-		_hand_sway_target.x = clampf(-mouse_Event.relative.x * hand_sway_amount, -0.06, 0.06)
-		_hand_sway_target.y = clampf(mouse_Event.relative.y * hand_sway_amount, -0.06, 0.06)
-	elif event is InputEventMouseButton and event.pressed and Input.mouse_mode != Input.MOUSE_MODE_CAPTURED:
+		_hand_sway_target.x = clampf(-mouse_event.relative.x * hand_sway_amount, -0.06, 0.06)
+		_hand_sway_target.y = clampf(mouse_event.relative.y * hand_sway_amount, -0.06, 0.06)
+	elif event is InputEventMouseButton and event.pressed and Input.mouse_mode != Input.MOUSE_MODE_CAPTURED and not get_tree().paused:
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 
 func _physics_process(delta: float) -> void:
 	if is_hidden:
 		velocity = Vector3.ZERO
+		_recover_stamina(stamina_recover_idle * delta)
 		_update_hand_sway(delta)
+		_update_camera_feel(delta, 0.0)
 		return
 
 	if not is_on_floor():
 		velocity.y -= _gravity * delta
 
 	var input_dir: Vector2 = Input.get_vector("move_left", "move_right", "move_forward", "move_backward")
+	_strafe_input = input_dir.x
 	var move_direction: Vector3 = (global_transform.basis * Vector3(input_dir.x, 0.0, input_dir.y)).normalized()
 
 	_update_movement_state(move_direction != Vector3.ZERO)
+	_update_stamina(delta, move_direction != Vector3.ZERO)
 
 	var target_speed: float = current_speed * external_speed_multiplier
 	if move_direction != Vector3.ZERO:
@@ -102,10 +157,13 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 
 	var horizontal_speed: float = Vector2(velocity.x, velocity.z).length()
-	_update_crouch_And_head_bob(delta, horizontal_speed)
+	_update_crouch_and_head_bob(delta, horizontal_speed)
 	_update_hand_sway(delta)
+	_update_camera_feel(delta, horizontal_speed)
 
-	if horizontal_speed > 0.25 and is_on_floor():
+	_noise_timer -= delta
+	if horizontal_speed > 0.25 and is_on_floor() and _noise_timer <= 0.0:
+		_noise_timer = noise_emit_interval
 		GameEvents.player_noise_emitted.emit(global_position, noise_radius)
 
 
@@ -137,9 +195,11 @@ func get_detection_distance(base_dark_vision_range: float = 8.0, lit_vision_rang
 	return base_dark_vision_range * visibility_multiplier
 
 
-func enter_hiding_spot(hide_pos: Vector3) -> void:
+func enter_hiding_spot(hide_pos: Vector3, exit_pos: Vector3 = Vector3.ZERO, spot: Node = null) -> void:
 	is_hidden = true
 	velocity = Vector3.ZERO
+	_hiding_exit_pos = exit_pos if exit_pos != Vector3.ZERO else hide_pos + Vector3(0.0, 0.0, 1.2)
+	_hiding_wardrobe = spot
 	if lantern_system != null:
 		lantern_system.set_lantern_lit(false)
 	if standing_collision != null:
@@ -152,9 +212,40 @@ func enter_hiding_spot(hide_pos: Vector3) -> void:
 
 func exit_hiding_spot(exit_pos: Vector3) -> void:
 	is_hidden = false
-	global_position = exit_pos
+	_hiding_wardrobe = null
+	if exit_pos != Vector3.ZERO:
+		global_position = exit_pos
 	_apply_movement_state(MovementState.WALKING, true)
 	GameEvents.player_hidden_changed.emit(false)
+
+
+func _update_stamina(delta: float, is_moving: bool) -> void:
+	if current_state == MovementState.SPRINTING and is_moving:
+		current_stamina = maxf(0.0, current_stamina - stamina_drain_rate * delta)
+		if current_stamina <= 0.0 and not _exhausted:
+			_exhausted = true
+			AudioManager.play_breath()
+			_apply_movement_state(MovementState.WALKING, false)
+	else:
+		var rec_rate: float = stamina_recover_walk if is_moving else stamina_recover_idle
+		_recover_stamina(rec_rate * delta)
+		return
+	_emit_stamina(false)
+
+
+func _recover_stamina(gain: float) -> void:
+	if current_stamina < max_stamina:
+		current_stamina = minf(max_stamina, current_stamina + gain)
+		if _exhausted and current_stamina >= exhausted_threshold:
+			_exhausted = false
+		_emit_stamina(false)
+
+
+func _emit_stamina(force: bool) -> void:
+	var at_bound: bool = current_stamina <= 0.0 or current_stamina >= max_stamina
+	if force or absf(current_stamina - _last_emitted_stamina) >= 0.5 or (at_bound and not is_equal_approx(_last_emitted_stamina, current_stamina)):
+		_last_emitted_stamina = current_stamina
+		GameEvents.stamina_changed.emit(current_stamina, max_stamina)
 
 
 func _update_movement_state(is_moving: bool) -> void:
@@ -164,7 +255,7 @@ func _update_movement_state(is_moving: bool) -> void:
 	var next_state: MovementState = MovementState.WALKING
 	if wants_crouch or blocked_above:
 		next_state = MovementState.CROUCHING
-	elif is_moving and Input.is_action_pressed("sprint"):
+	elif is_moving and Input.is_action_pressed("sprint") and not _exhausted and current_stamina > 1.0:
 		next_state = MovementState.SPRINTING
 
 	_apply_movement_state(next_state, false)
@@ -205,10 +296,12 @@ func _is_ceiling_blocked() -> bool:
 	return ceiling_check.is_colliding()
 
 
-func _update_crouch_And_head_bob(delta: float, horizontal_speed: float) -> void:
+func _update_crouch_and_head_bob(delta: float, horizontal_speed: float) -> void:
 	if head_pivot != null:
 		var target_head_y: float = crouching_head_height if current_state == MovementState.CROUCHING else standing_head_height
 		head_pivot.position.y = lerpf(head_pivot.position.y, target_head_y, clampf(crouch_transition_speed * delta, 0.0, 1.0))
+		if sun_exposure_ray != null:
+			sun_exposure_ray.position.y = head_pivot.position.y
 
 	if camera != null:
 		if is_on_floor() and horizontal_speed > 0.15:
@@ -232,6 +325,24 @@ func _update_crouch_And_head_bob(delta: float, horizontal_speed: float) -> void:
 			_step_triggered = false
 			camera.position.y = lerpf(camera.position.y, 0.0, clampf(10.0 * delta, 0.0, 1.0))
 			camera.position.x = lerpf(camera.position.x, 0.0, clampf(10.0 * delta, 0.0, 1.0))
+
+
+func _update_camera_feel(delta: float, horizontal_speed: float) -> void:
+	if camera == null:
+		return
+	var sprinting: bool = current_state == MovementState.SPRINTING and horizontal_speed > WALK_SPEED * 0.9
+	var target_fov: float = base_fov + (sprint_fov_bonus if sprinting else 0.0)
+	camera.fov = lerpf(camera.fov, target_fov, clampf(6.0 * delta, 0.0, 1.0))
+
+	var target_roll: float = deg_to_rad(-_strafe_input * strafe_roll_degrees)
+	_trauma = maxf(0.0, _trauma - delta * 1.4)
+	_shake_time += delta * 30.0
+	var shake: float = _trauma * _trauma
+	var max_shake: float = deg_to_rad(max_shake_degrees)
+	var shake_x: float = _shake_noise.get_noise_2d(_shake_time, 0.0) * max_shake * shake
+	var shake_y: float = _shake_noise.get_noise_2d(0.0, _shake_time) * max_shake * shake
+	var roll: float = lerpf(camera.rotation.z, target_roll, clampf(8.0 * delta, 0.0, 1.0))
+	camera.rotation = Vector3(shake_x, shake_y, roll)
 
 
 func _update_hand_sway(delta: float) -> void:

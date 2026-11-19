@@ -15,17 +15,15 @@ func interact() -> void:
 		AudioManager.play_door_creak()
 		return
 
-	var scene_root: Node = get_tree().current_scene
-	if scene_root == null:
-		return
-	var players: Array[Node] = scene_root.find_children("*", "PlayerController", true, false)
-	if players.is_empty():
-		return
-	var player: PlayerController = players[0] as PlayerController
+	var player: PlayerController = get_tree().get_first_node_in_group("player") as PlayerController
 	if player != null:
 		_occupant = player
-		player.enter_hiding_spot(global_position + hide_offset)
+		player.enter_hiding_spot(global_position + hide_offset, global_position + exit_offset, self)
 		AudioManager.play_door_creak()
+
+
+func clear_occupant() -> void:
+	_occupant = null
 
 
 func get_interaction_prompt() -> String:

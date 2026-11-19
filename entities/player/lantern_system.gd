@@ -21,6 +21,7 @@ var _noise: FastNoiseLite = FastNoiseLite.new()
 var _noise_time: float = 0.0
 var _glass_mat: StandardMaterial3D
 var _flame_mesh: MeshInstance3D
+var _last_emitted_oil: float = -1.0
 
 @onready var lantern_mesh: MeshInstance3D = get_node_or_null("LanternMesh") as MeshInstance3D
 @onready var omni_light: OmniLight3D = get_node_or_null("OmniLight3D") as OmniLight3D
@@ -28,30 +29,48 @@ var _flame_mesh: MeshInstance3D
 
 
 func _ready() -> void:
+	add_to_group("lantern")
 	_ensure_input_actions()
 	_configure_noise()
 	_configure_nodes()
 	current_oil = clampf(current_oil, 0.0, max_oil)
 	_apply_lantern_state()
-	GameEvents.oil_changed.emit(current_oil, max_oil)
+	_emit_oil()
 
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("toggle_lantern"):
 		toggle_lantern()
+		get_viewport().set_input_as_handled()
 
 
 func _process(delta: float) -> void:
+	# Animação tátil de erguer/abaixar o lampião
+	var target_y: float = 0.0 if is_lit else -0.08
+	var target_tilt: float = 0.04 if is_lit else -0.14
+	position.y = lerpf(position.y, target_y, clampf(10.0 * delta, 0.0, 1.0))
+	rotation.x = lerpf(rotation.x, target_tilt, clampf(10.0 * delta, 0.0, 1.0))
+
 	if not is_lit:
 		return
 
 	current_oil = maxf(0.0, current_oil - burn_rate * delta)
-	GameEvents.oil_changed.emit(current_oil, max_oil)
+	# Emite a mudança de óleo só quando ela é perceptível (evita sinal + redraw da HUD a cada frame).
+	if absf(current_oil - _last_emitted_oil) >= 0.25 or current_oil <= 0.0:
+		_emit_oil()
 
 	_noise_time += delta
+	var noise_sample: float = clampf((_noise.get_noise_1d(_noise_time * flicker_speed) + 1.0) * 0.5, 0.0, 1.0)
 	if omni_light != null:
-		var noise_sample: float = (_noise.get_noise_1d(_noise_time * flicker_speed) + 1.0) * 0.5
-		omni_light.light_energy = lerpf(MIN_FLICKER_ENERGY, MAX_FLICKER_ENERGY, clampf(noise_sample, 0.0, 1.0))
+		# Abaixo de 20% de óleo a chama fica instável e mais fraca.
+		var oil_ratio: float = current_oil / maxf(max_oil, 0.001)
+		var starving: float = clampf((0.2 - oil_ratio) / 0.2, 0.0, 1.0)
+		var energy: float = lerpf(MIN_FLICKER_ENERGY, MAX_FLICKER_ENERGY, noise_sample)
+		energy *= lerpf(1.0, 0.55 + 0.45 * noise_sample, starving)
+		omni_light.light_energy = energy
+	if _flame_mesh != null:
+		var flame_scale: float = 0.8 + noise_sample * 0.45
+		_flame_mesh.scale = Vector3(1.0, flame_scale, 1.0)
 
 	if current_oil <= 0.0:
 		current_oil = 0.0
@@ -59,6 +78,11 @@ func _process(delta: float) -> void:
 		if extinguish_audio != null:
 			extinguish_audio.play()
 		GameEvents.lantern_depleted.emit()
+
+
+func _emit_oil() -> void:
+	_last_emitted_oil = current_oil
+	GameEvents.oil_changed.emit(current_oil, max_oil)
 
 
 func toggle_lantern() -> void:
@@ -86,7 +110,7 @@ func add_oil(amount: float) -> void:
 	if amount <= 0.0:
 		return
 	current_oil = clampf(current_oil + amount, 0.0, max_oil)
-	GameEvents.oil_changed.emit(current_oil, max_oil)
+	_emit_oil()
 
 
 func get_visibility_bonus() -> float:

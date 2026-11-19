@@ -23,6 +23,7 @@ var _sim_elapsed: float = 0.0
 
 func _ready() -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+	AudioManager.set_wind_active(false)
 	if time_card_label != null:
 		time_card_label.visible = false
 	if video_player != null and ResourceLoader.exists(INTRO_VIDEO_PATH):

@@ -1,12 +1,23 @@
 extends Node
-## Gerenciador global de áudio com síntese procedural de efeitos (passos, lampião, porta, alerta, drone solar e batimento cardíaco).
+## Gerenciador global de áudio com síntese procedural (sem assets externos).
+## Usa um pool de vozes para SFX (sons não se cortam), canais dedicados para passos/batimento
+## e loops ambientes (vento e drone solar) com fade suave.
 
 const MIX_RATE: int = 22050
+const SFX_POOL_SIZE: int = 8
+const SUN_DRONE_DB: float = -11.0
+const WIND_DB: float = -19.0
+const SILENT_DB: float = -48.0
 
-var _sfx_player: AudioStreamPlayer
+var _sfx_pool: Array[AudioStreamPlayer] = []
+var _next_voice: int = 0
 var _step_player: AudioStreamPlayer
+var _heart_player: AudioStreamPlayer
 var _ambience_player: AudioStreamPlayer
 var _sun_drone_player: AudioStreamPlayer
+var _wind_player: AudioStreamPlayer
+var _sun_tween: Tween
+var _wind_tween: Tween
 
 var _stream_footstep: AudioStreamWAV
 var _stream_ignite: AudioStreamWAV
@@ -15,53 +26,68 @@ var _stream_door: AudioStreamWAV
 var _stream_alert: AudioStreamWAV
 var _stream_heartbeat: AudioStreamWAV
 var _stream_sun_drone: AudioStreamWAV
+var _stream_wind: AudioStreamWAV
+var _stream_hurt: AudioStreamWAV
+var _stream_pickup: AudioStreamWAV
+var _stream_ui_click: AudioStreamWAV
+var _stream_paper: AudioStreamWAV
+var _stream_whisper: AudioStreamWAV
+var _stream_breath: AudioStreamWAV
+var _stream_shadow_hum: AudioStreamWAV
+var _stream_lunatic_step: AudioStreamWAV
 
 var _heartbeat_intensity: float = 0.0
 var _heartbeat_timer: float = 0.0
 
 
 func _ready() -> void:
-	_sfx_player = AudioStreamPlayer.new()
-	_sfx_player.name = "SFXPlayer"
-	add_child(_sfx_player)
+	process_mode = Node.PROCESS_MODE_ALWAYS
+	for i: int in range(SFX_POOL_SIZE):
+		var voice: AudioStreamPlayer = AudioStreamPlayer.new()
+		voice.name = "SFXVoice%d" % i
+		add_child(voice)
+		_sfx_pool.append(voice)
 
-	_step_player = AudioStreamPlayer.new()
-	_step_player.name = "StepPlayer"
-	add_child(_step_player)
-
-	_ambience_player = AudioStreamPlayer.new()
-	_ambience_player.name = "AmbiencePlayer"
-	add_child(_ambience_player)
-
-	_sun_drone_player = AudioStreamPlayer.new()
-	_sun_drone_player.name = "SunDronePlayer"
-	_sun_drone_player.volume_db = -11.0
-	add_child(_sun_drone_player)
+	_step_player = _make_channel("StepPlayer", 0.0)
+	_heart_player = _make_channel("HeartPlayer", -10.0)
+	_ambience_player = _make_channel("AmbiencePlayer", -6.0)
+	_sun_drone_player = _make_channel("SunDronePlayer", SILENT_DB)
+	_wind_player = _make_channel("WindPlayer", SILENT_DB)
 
 	_build_procedural_streams()
 
 
+func _make_channel(channel_name: String, volume: float) -> AudioStreamPlayer:
+	var p: AudioStreamPlayer = AudioStreamPlayer.new()
+	p.name = channel_name
+	p.volume_db = volume
+	add_child(p)
+	return p
+
+
 func _process(delta: float) -> void:
-	if _heartbeat_intensity <= 0.05:
+	if get_tree().paused or _heartbeat_intensity <= 0.05:
 		return
 	_heartbeat_timer -= delta
 	if _heartbeat_timer <= 0.0:
-		var interval: float = lerpf(1.1, 0.48, clampf(_heartbeat_intensity, 0.0, 1.0))
-		_heartbeat_timer = interval
-		if _step_player != null and _stream_heartbeat != null:
-			_step_player.stream = _stream_heartbeat
-			_step_player.pitch_scale = 1.0
-			_step_player.volume_db = lerpf(-14.0, -3.0, clampf(_heartbeat_intensity, 0.0, 1.0))
-			_step_player.play()
+		var level: float = clampf(_heartbeat_intensity, 0.0, 1.0)
+		_heartbeat_timer = lerpf(1.1, 0.48, level)
+		if _stream_heartbeat != null:
+			_heart_player.stream = _stream_heartbeat
+			_heart_player.volume_db = lerpf(-16.0, -3.0, level)
+			_heart_player.play()
 
 
-func play_sfx(stream: AudioStream, volume_db: float = 0.0) -> void:
-	if stream == null or _sfx_player == null:
+# --------------------------------------------------------------------------- API pública
+
+func play_sfx(stream: AudioStream, volume_db: float = 0.0, pitch: float = 1.0) -> void:
+	if stream == null or _sfx_pool.is_empty():
 		return
-	_sfx_player.stream = stream
-	_sfx_player.pitch_scale = 1.0
-	_sfx_player.volume_db = volume_db
-	_sfx_player.play()
+	var voice: AudioStreamPlayer = _get_free_voice()
+	voice.stream = stream
+	voice.volume_db = volume_db
+	voice.pitch_scale = pitch
+	voice.play()
 
 
 func play_footstep(volume_db: float = -10.0, pitch: float = 1.0) -> void:
@@ -69,7 +95,7 @@ func play_footstep(volume_db: float = -10.0, pitch: float = 1.0) -> void:
 		return
 	_step_player.stream = _stream_footstep
 	_step_player.volume_db = volume_db
-	_step_player.pitch_scale = pitch
+	_step_player.pitch_scale = pitch * randf_range(0.92, 1.08)
 	_step_player.play()
 
 
@@ -82,23 +108,70 @@ func play_lantern_extinguish() -> void:
 
 
 func play_door_creak() -> void:
-	play_sfx(_stream_door, -6.0)
+	play_sfx(_stream_door, -6.0, randf_range(0.9, 1.1))
 
 
 func play_enemy_alert() -> void:
 	play_sfx(_stream_alert, -5.0)
 
 
+func play_hurt() -> void:
+	play_sfx(_stream_hurt, -4.0, randf_range(0.9, 1.05))
+
+
+func play_pickup() -> void:
+	play_sfx(_stream_pickup, -7.0)
+
+
+func play_ui_click() -> void:
+	play_sfx(_stream_ui_click, -12.0, randf_range(0.95, 1.05))
+
+
+func play_paper() -> void:
+	play_sfx(_stream_paper, -8.0)
+
+
+func play_whisper() -> void:
+	play_sfx(_stream_whisper, -13.0, randf_range(0.8, 1.15))
+
+
+func play_breath() -> void:
+	play_sfx(_stream_breath, -8.0, randf_range(0.92, 1.08))
+
+
+func get_door_stream() -> AudioStreamWAV:
+	return _stream_door
+
+
+func get_alert_stream() -> AudioStreamWAV:
+	return _stream_alert
+
+
+func get_whisper_stream() -> AudioStreamWAV:
+	return _stream_whisper
+
+
+func get_shadow_hum_stream() -> AudioStreamWAV:
+	return _stream_shadow_hum
+
+
+func get_lunatic_step_stream() -> AudioStreamWAV:
+	return _stream_lunatic_step
+
+
+func set_master_volume(linear: float) -> void:
+	var clamped: float = clampf(linear, 0.0, 1.0)
+	AudioServer.set_bus_mute(0, clamped <= 0.005)
+	if clamped > 0.005:
+		AudioServer.set_bus_volume_db(0, linear_to_db(clamped))
+
+
 func set_sun_drone_active(active: bool) -> void:
-	if _sun_drone_player == null or _stream_sun_drone == null:
-		return
-	if active:
-		if not _sun_drone_player.playing:
-			_sun_drone_player.stream = _stream_sun_drone
-			_sun_drone_player.play()
-	else:
-		if _sun_drone_player.playing:
-			_sun_drone_player.stop()
+	_sun_tween = _fade_loop(_sun_drone_player, _stream_sun_drone, active, SUN_DRONE_DB, _sun_tween)
+
+
+func set_wind_active(active: bool) -> void:
+	_wind_tween = _fade_loop(_wind_player, _stream_wind, active, WIND_DB, _wind_tween)
 
 
 func set_heartbeat_intensity(intensity: float) -> void:
@@ -120,6 +193,43 @@ func stop_ambience() -> void:
 		_ambience_player.stop()
 
 
+func stop_all_tension() -> void:
+	set_sun_drone_active(false)
+	set_heartbeat_intensity(0.0)
+
+
+# --------------------------------------------------------------------------- Internos
+
+func _get_free_voice() -> AudioStreamPlayer:
+	for voice: AudioStreamPlayer in _sfx_pool:
+		if not voice.playing:
+			return voice
+	var stolen: AudioStreamPlayer = _sfx_pool[_next_voice]
+	_next_voice = (_next_voice + 1) % _sfx_pool.size()
+	return stolen
+
+
+func _fade_loop(player: AudioStreamPlayer, stream: AudioStream, active: bool, target_db: float, previous: Tween) -> Tween:
+	if player == null or stream == null:
+		return previous
+	if previous != null and previous.is_valid():
+		previous.kill()
+	var tw: Tween = create_tween()
+	if active:
+		if not player.playing:
+			player.stream = stream
+			player.volume_db = SILENT_DB
+			player.play()
+		tw.tween_property(player, "volume_db", target_db, 0.7)
+	else:
+		if not player.playing:
+			tw.kill()
+			return null
+		tw.tween_property(player, "volume_db", SILENT_DB, 0.9)
+		tw.tween_callback(player.stop)
+	return tw
+
+
 func _build_procedural_streams() -> void:
 	_stream_footstep = _synth_wave(0.09, 95.0, 45.0, 0.55, false)
 	_stream_ignite = _synth_wave(0.18, 520.0, 180.0, 0.85, false)
@@ -128,28 +238,89 @@ func _build_procedural_streams() -> void:
 	_stream_alert = _synth_wave(0.28, 370.0, 185.0, 0.25, false)
 	_stream_heartbeat = _synth_wave(0.16, 58.0, 38.0, 0.1, false)
 	_stream_sun_drone = _synth_wave(1.5, 112.0, 116.0, 0.35, true)
+	_stream_hurt = _synth_wave(0.22, 140.0, 55.0, 0.6, false)
+	_stream_pickup = _synth_wave(0.20, 420.0, 880.0, 0.05, false)
+	_stream_ui_click = _synth_wave(0.04, 900.0, 600.0, 0.3, false)
+	_stream_paper = _synth_noise_burst(0.28, 0.55, 11)
+	_stream_whisper = _synth_noise_burst(1.3, 0.35, 23)
+	_stream_wind = _synth_noise_loop(4.0, 0.025, 31)
+	_stream_breath = _synth_noise_burst(0.45, 0.25, 41)
+	_stream_shadow_hum = _synth_wave(2.0, 56.0, 62.0, 0.45, true)
+	_stream_lunatic_step = _synth_wave(0.11, 72.0, 32.0, 0.6, false)
 
 
 func _synth_wave(duration: float, freq_start: float, freq_end: float, noise_mix: float, loop_enabled: bool) -> AudioStreamWAV:
 	var sample_count: int = int(duration * float(MIX_RATE))
-	var bytes: PackedByteArray = PackedByteArray()
-	bytes.resize(sample_count * 2)
+	var samples: PackedFloat32Array = PackedFloat32Array()
+	samples.resize(sample_count)
 	var phase: float = 0.0
 	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
 	rng.seed = int(freq_start * 100.0 + duration * 1000.0)
 
 	for i: int in range(sample_count):
-		var t: float = float(i) / float(max(1, sample_count - 1))
+		var t: float = float(i) / float(maxi(1, sample_count - 1))
 		var env: float = 1.0 if loop_enabled else pow(1.0 - t, 1.8)
 		var freq: float = lerpf(freq_start, freq_end, t)
 		phase += TAU * freq / float(MIX_RATE)
 		var tone: float = sin(phase) * 0.65 + sin(phase * 1.5) * 0.35
 		var noise: float = rng.randf_range(-1.0, 1.0)
-		var sample_val: float = lerpf(tone, noise, noise_mix) * env * 0.45
-		var pcm: int = clampi(int(sample_val * 32767.0), -32768, 32767)
+		samples[i] = lerpf(tone, noise, noise_mix) * env * 0.45
+	return _to_wav(samples, loop_enabled)
+
+
+## Ruído filtrado curto com modulação de amplitude (papel / sussurros).
+func _synth_noise_burst(duration: float, smoothing: float, seed_val: int) -> AudioStreamWAV:
+	var count: int = int(duration * float(MIX_RATE))
+	var samples: PackedFloat32Array = PackedFloat32Array()
+	samples.resize(count)
+	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
+	rng.seed = seed_val
+	var state: float = 0.0
+	for i: int in range(count):
+		var t: float = float(i) / float(maxi(1, count - 1))
+		state = lerpf(state, rng.randf_range(-1.0, 1.0), smoothing)
+		var syllables: float = 0.55 + 0.45 * sin(t * TAU * duration * 5.0 + sin(t * 17.0) * 2.0)
+		var env: float = sin(t * PI)
+		samples[i] = state * syllables * env * 0.6
+	return _to_wav(samples, false)
+
+
+## Ruído marrom em loop sem emenda audível (vento com rajadas).
+func _synth_noise_loop(duration: float, smoothing: float, seed_val: int) -> AudioStreamWAV:
+	var count: int = int(duration * float(MIX_RATE))
+	var raw: PackedFloat32Array = PackedFloat32Array()
+	raw.resize(count)
+	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
+	rng.seed = seed_val
+	var state: float = 0.0
+	var peak: float = 0.0001
+	for i: int in range(count):
+		state = lerpf(state, rng.randf_range(-1.0, 1.0), smoothing)
+		raw[i] = state
+		peak = maxf(peak, absf(state))
+
+	var fade: int = mini(count / 4, 6000)
+	var out_count: int = count - fade
+	var samples: PackedFloat32Array = PackedFloat32Array()
+	samples.resize(out_count)
+	for i: int in range(out_count):
+		var v: float = raw[i]
+		if i < fade:
+			var w: float = float(i) / float(fade)
+			v = lerpf(raw[out_count + i], raw[i], w)
+		var gust: float = 0.65 + 0.35 * sin(TAU * 2.0 * float(i) / float(out_count))
+		samples[i] = (v / peak) * gust * 0.5
+	return _to_wav(samples, true)
+
+
+func _to_wav(samples: PackedFloat32Array, loop_enabled: bool) -> AudioStreamWAV:
+	var count: int = samples.size()
+	var bytes: PackedByteArray = PackedByteArray()
+	bytes.resize(count * 2)
+	for i: int in range(count):
+		var pcm: int = clampi(int(samples[i] * 32767.0), -32768, 32767)
 		bytes[i * 2] = pcm & 0xFF
 		bytes[i * 2 + 1] = (pcm >> 8) & 0xFF
-
 	var wav: AudioStreamWAV = AudioStreamWAV.new()
 	wav.format = AudioStreamWAV.FORMAT_16_BITS
 	wav.mix_rate = MIX_RATE
@@ -158,5 +329,5 @@ func _synth_wave(duration: float, freq_start: float, freq_end: float, noise_mix:
 	if loop_enabled:
 		wav.loop_mode = AudioStreamWAV.LOOP_FORWARD
 		wav.loop_begin = 0
-		wav.loop_end = sample_count
+		wav.loop_end = count
 	return wav

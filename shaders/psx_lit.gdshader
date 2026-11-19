@@ -9,7 +9,7 @@ uniform vec2 uv_offset = vec2(0.0, 0.0);
 
 // Configurações do Efeito PS1
 uniform float jitter_intensity : hint_range(0.0, 1.0) = 0.5;
-uniform vec2 snap_resolution = vec2(320.0, 240.0);
+uniform vec2 snap_resolution = vec2(320.0, 180.0);
 uniform float affine_amount : hint_range(0.0, 1.0) = 1.0;
 
 // Variáveis passadas do Vertex para o Fragment

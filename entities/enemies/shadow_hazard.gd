@@ -12,11 +12,13 @@ const MASK_PLAYER_AND_LANTERN: int = (1 << 1) | (1 << 4) # Layers 2 e 5
 var _tracked_player: PlayerController
 var _player_health: HealthComponent
 var _active_safe_zones: int = 0
+var _hum_3d: AudioStreamPlayer3D
 
 @onready var visual_mesh: Node3D = get_node_or_null("ShadowMesh") as Node3D
 
 
 func _ready() -> void:
+	add_to_group("shadow_hazard")
 	collision_layer = LAYER_CORRUPTED_SHADOWS
 	collision_mask = MASK_PLAYER_AND_LANTERN
 	monitoring = true
@@ -25,13 +27,31 @@ func _ready() -> void:
 	body_exited.connect(_on_body_exited)
 	area_entered.connect(_on_area_entered)
 	area_exited.connect(_on_area_exited)
+	GameEvents.lantern_toggled.connect(_on_lantern_toggled)
+
+	_hum_3d = AudioStreamPlayer3D.new()
+	_hum_3d.name = "ShadowHum3D"
+	_hum_3d.stream = AudioManager.get_shadow_hum_stream()
+	_hum_3d.max_distance = 9.0
+	_hum_3d.volume_db = -12.0
+	add_child(_hum_3d)
+	if _hum_3d.stream != null:
+		_hum_3d.play()
 
 
 func _physics_process(delta: float) -> void:
-	var suppressed_by_light: bool = _is_suppressed_by_lantern()
+	var suppressed_by_light: bool = _active_safe_zones > 0
 	if visual_mesh != null:
 		var target_scale_y: float = 0.15 if suppressed_by_light else 1.0
 		visual_mesh.scale.y = lerpf(visual_mesh.scale.y, target_scale_y, clampf(8.0 * delta, 0.0, 1.0))
+		var target_xz: float = 0.82 if suppressed_by_light else 1.0
+		var xz: float = lerpf(visual_mesh.scale.x, target_xz, clampf(5.0 * delta, 0.0, 1.0))
+		visual_mesh.scale.x = xz
+		visual_mesh.scale.z = xz
+
+	if _hum_3d != null:
+		var target_db: float = -30.0 if suppressed_by_light else -12.0
+		_hum_3d.volume_db = lerpf(_hum_3d.volume_db, target_db, clampf(6.0 * delta, 0.0, 1.0))
 
 	if _tracked_player == null:
 		return
@@ -45,17 +65,12 @@ func _physics_process(delta: float) -> void:
 
 
 func is_suppressed() -> bool:
-	return _is_suppressed_by_lantern()
+	return _active_safe_zones > 0
 
 
-func _is_suppressed_by_lantern() -> bool:
-	if _active_safe_zones > 0:
-		return true
-	var overlapping: Array[Area3D] = get_overlapping_areas()
-	for area: Area3D in overlapping:
-		if (area.collision_layer & (1 << 4)) != 0 and area.monitoring:
-			return true
-	return false
+func _on_lantern_toggled(is_lit: bool) -> void:
+	if not is_lit:
+		_active_safe_zones = 0
 
 
 func _on_body_entered(body: Node3D) -> void:
@@ -72,7 +87,7 @@ func _on_body_exited(body: Node3D) -> void:
 
 
 func _on_area_entered(area: Area3D) -> void:
-	if (area.collision_layer & (1 << 4)) != 0:
+	if (area.collision_layer & (1 << 4)) != 0 and area.monitoring:
 		_active_safe_zones += 1
 
 

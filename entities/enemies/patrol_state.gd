@@ -118,7 +118,11 @@ func _resolve_waypoints() -> void:
 				return
 
 	var parent_node: Node = _enemy.get_parent()
-	var wp_container: Node = _enemy.get_node_or_null("PatrolWaypoints")
+	var wp_container: Node = null
+	if parent_node != null:
+		wp_container = parent_node.get_node_or_null(_enemy.name + "_Waypoints")
+	if wp_container == null:
+		wp_container = _enemy.get_node_or_null("PatrolWaypoints")
 	if wp_container == null and parent_node != null:
 		wp_container = parent_node.get_node_or_null("PatrolWaypoints")
 	if wp_container != null:
@@ -136,29 +140,11 @@ func _resolve_waypoints() -> void:
 
 
 func _can_see_player(player: PlayerController) -> bool:
-	var dist: float = _enemy.global_position.distance_to(player.global_position)
-	var max_range: float = player.get_detection_distance(base_dark_vision_range, lit_vision_range)
-	if dist > max_range:
-		return false
-	var vision_ray: RayCast3D = _enemy.get_node_or_null("VisionRay") as RayCast3D
-	if vision_ray == null:
-		return true
-	var world_to_player: Vector3 = (player.global_position + Vector3(0.0, 1.2, 0.0)) - vision_ray.global_position
-	vision_ray.target_position = vision_ray.global_transform.basis.inverse() * world_to_player
-	vision_ray.force_raycast_update()
-	if not vision_ray.is_colliding():
-		return true
-	return vision_ray.get_collider() == player
+	return _fsm.can_see_player(_enemy, player, base_dark_vision_range, lit_vision_range)
 
 
 func _find_player() -> PlayerController:
-	var scene_root: Node = get_tree().current_scene
-	if scene_root == null:
-		return null
-	var players: Array[Node] = scene_root.find_children("*", "PlayerController", true, false)
-	if players.is_empty():
-		return null
-	return players[0] as PlayerController
+	return _fsm.get_player() if _fsm != null else null
 
 
 func _on_player_noise_emitted(origin: Vector3, radius: float) -> void:
