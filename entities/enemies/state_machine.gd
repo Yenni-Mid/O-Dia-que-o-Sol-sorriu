@@ -8,11 +8,14 @@ const VISION_FOV_DOT: float = -0.15 ## ~100° para cada lado. Atrás disso só p
 const CLOSE_SENSE_RANGE: float = 2.6
 
 @export var initial_state: Node
+@export var active_only_at_night: bool = true
 
 var current_state: Node
+var is_night_active: bool = true
 var _states: Dictionary = {}
 var _next_vision_ms: int = 0
 var _cached_can_see: bool = false
+var _spawn_position: Vector3 = Vector3.ZERO
 
 
 func get_player() -> PlayerController:
@@ -32,9 +35,12 @@ func can_see_player(enemy: CharacterBody3D, player: PlayerController, dark_range
 
 
 func _compute_can_see(enemy: CharacterBody3D, player: PlayerController, dark_range: float, lit_range: float) -> bool:
+	var effective_lit: float = lit_range
+	if is_night_active and player.lantern_system != null and player.lantern_system.is_lit:
+		effective_lit = maxf(lit_range, 28.0)
 	var to_player: Vector3 = player.global_position - enemy.global_position
 	var dist: float = to_player.length()
-	if dist > player.get_detection_distance(dark_range, lit_range):
+	if dist > player.get_detection_distance(dark_range, effective_lit):
 		return false
 	if dist > CLOSE_SENSE_RANGE:
 		var forward: Vector3 = -enemy.global_transform.basis.z
@@ -105,6 +111,9 @@ func is_player_in_unlit_shadow(player: PlayerController) -> bool:
 func _ready() -> void:
 	# Dessincroniza as checagens de visão entre inimigos para espalhar o custo entre frames.
 	_next_vision_ms = Time.get_ticks_msec() + randi_range(0, VISION_CHECK_INTERVAL_MS)
+	var enemy_parent: Node3D = get_parent() as Node3D
+	if enemy_parent != null:
+		_spawn_position = enemy_parent.global_position
 	for child: Node in get_children():
 		_states[child.name.to_lower()] = child
 		if child.has_method("setup"):
@@ -113,6 +122,47 @@ func _ready() -> void:
 		initial_state = get_child(0)
 	if initial_state != null:
 		transition_to(initial_state.name)
+	GameEvents.night_started.connect(_on_night_started)
+	GameEvents.day_started.connect(_on_day_started)
+	call_deferred("_sync_day_night_state")
+
+
+func _sync_day_night_state() -> void:
+	if not active_only_at_night:
+		set_enemy_active(true)
+		return
+	var day_night: Node = get_tree().get_first_node_in_group("day_night")
+	if day_night != null and day_night.has_method("is_nighttime"):
+		set_enemy_active(bool(day_night.call("is_nighttime")))
+	else:
+		set_enemy_active(true)
+
+
+func _on_night_started() -> void:
+	if active_only_at_night:
+		set_enemy_active(true)
+
+
+func _on_day_started() -> void:
+	if active_only_at_night:
+		set_enemy_active(false)
+
+
+func set_enemy_active(active: bool) -> void:
+	is_night_active = active
+	set_physics_process(active)
+	var enemy: CharacterBody3D = get_parent() as CharacterBody3D
+	if enemy != null:
+		enemy.visible = active
+		enemy.collision_layer = 4 if active else 0
+		enemy.set_physics_process(active)
+		enemy.set_process(active)
+		if active:
+			enemy.global_position = _spawn_position
+			enemy.velocity = Vector3.ZERO
+			transition_to("PatrolState")
+		else:
+			enemy.velocity = Vector3.ZERO
 
 
 func _physics_process(delta: float) -> void:

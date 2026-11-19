@@ -1,13 +1,16 @@
 class_name DoorInteractable
 extends Node3D
-## Porta tática que abre/fecha 90 graus (Layer 1 [Environment] + Layer 4 [Interactables]).
-## Otimizada: desliga _physics_process em repouso e usa áudio 3D espacial.
+## Porta tática (Layer 1 [Environment] + Layer 4 [Interactables]) com suporte a tranca por chave.
 
-const LAYER_ENV_AND_INTERACT: int = (1 << 0) | (1 << 3) # Layers 1 e 4
+const LAYER_ENV_AND_INTERACT: int = (1 << 0) | (1 << 3)
 
 @export var open_angle_deg: float = 92.0
 @export var swing_speed: float = 6.0
 @export var is_open: bool = false
+@export var is_locked: bool = false
+@export var required_key_id: String = ""
+@export var key_display_name: String = ""
+@export var should_stay_closed: bool = true
 
 var _closed_yaw: float = 0.0
 var _target_yaw: float = 0.0
@@ -15,6 +18,7 @@ var _audio_3d: AudioStreamPlayer3D
 
 
 func _ready() -> void:
+	add_to_group("door_interactable")
 	_closed_yaw = rotation_degrees.y
 	_target_yaw = _closed_yaw + (open_angle_deg if is_open else 0.0)
 	if is_open:
@@ -45,9 +49,38 @@ func _physics_process(delta: float) -> void:
 
 
 func interact() -> void:
+	if is_locked:
+		var inv: Node = get_tree().get_first_node_in_group("inventory")
+		var key_label: String = key_display_name if not key_display_name.is_empty() else required_key_id
+		if inv != null and inv.has_method("has_key") and bool(inv.call("has_key", required_key_id)):
+			is_locked = false
+			AudioManager.play_unlock()
+			GameEvents.status_message_requested.emit("Destrancado com %s" % key_label)
+		else:
+			AudioManager.play_locked()
+			GameEvents.status_message_requested.emit("Trancada — Requer: %s" % key_label)
+			return
+
 	is_open = not is_open
 	_target_yaw = _closed_yaw + (open_angle_deg if is_open else 0.0)
 	set_physics_process(true)
+	_play_door_sound()
+
+
+func open_by_enemy() -> void:
+	if not is_locked and not is_open:
+		interact()
+
+
+func close_by_haunt() -> void:
+	if is_open:
+		is_open = false
+		_target_yaw = _closed_yaw
+		set_physics_process(true)
+		_play_door_sound()
+
+
+func _play_door_sound() -> void:
 	if _audio_3d != null and _audio_3d.stream != null:
 		_audio_3d.pitch_scale = randf_range(0.88, 1.12)
 		_audio_3d.play()
@@ -55,10 +88,11 @@ func interact() -> void:
 		AudioManager.play_door_creak()
 
 
-func open_by_enemy() -> void:
-	if not is_open:
-		interact()
-
-
 func get_interaction_prompt() -> String:
+	if is_locked:
+		var key_label: String = key_display_name if not key_display_name.is_empty() else required_key_id
+		var inv: Node = get_tree().get_first_node_in_group("inventory")
+		if inv != null and inv.has_method("has_key") and bool(inv.call("has_key", required_key_id)):
+			return "[E] Destrancar (%s)" % key_label
+		return "[Trancada: %s]" % key_label
 	return "[E] Fechar Porta" if is_open else "[E] Abrir Porta"

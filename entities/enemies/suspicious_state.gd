@@ -22,6 +22,8 @@ func setup(enemy_node: Node, fsm_node: EnemyStateMachine) -> void:
 	_fsm = fsm_node
 	if not GameEvents.player_noise_emitted.is_connected(_on_player_noise_emitted):
 		GameEvents.player_noise_emitted.connect(_on_player_noise_emitted)
+	if not GameEvents.alarm_triggered.is_connected(_on_alarm_triggered):
+		GameEvents.alarm_triggered.connect(_on_alarm_triggered)
 
 
 func set_investigation_target(pos: Vector3) -> void:
@@ -80,11 +82,18 @@ func physics_update(delta: float) -> void:
 
 
 func _on_player_noise_emitted(origin: Vector3, radius: float) -> void:
-	if _enemy == null or _fsm == null or _fsm.current_state != self:
+	if _enemy == null or _fsm == null or not _fsm.is_night_active or _fsm.current_state != self:
 		return
 	if _enemy.global_position.distance_to(origin) <= radius:
 		target_position = origin
 		_wait_timer = look_around_duration
+
+
+func _on_alarm_triggered(origin: Vector3) -> void:
+	if _enemy == null or _fsm == null or not _fsm.is_night_active or _fsm.current_state != self:
+		return
+	target_position = origin
+	_wait_timer = look_around_duration
 
 
 func _can_see_player(player: PlayerController) -> bool:

@@ -10,11 +10,16 @@
 [ext_resource type="Script" path="res://levels/dust_motes.gd" id="8_dust"]
 [ext_resource type="Script" path="res://levels/neighborhood_block.gd" id="9_block"]
 [ext_resource type="Script" path="res://levels/sun_shaft.gd" id="10_shaft"]
+[ext_resource type="Script" path="res://entities/enemies/preacher_enemy.gd" id="11_preacher"]
+[ext_resource type="Script" path="res://systems/interactables/bottle_pickup.gd" id="12_bottle"]
+[ext_resource type="Script" path="res://systems/interactables/bandage_pickup.gd" id="13_bandage"]
+[ext_resource type="Script" path="res://systems/interactables/key_pickup.gd" id="14_key"]
+[ext_resource type="Script" path="res://systems/interactables/vhs_recorder.gd" id="15_vhs"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_775fo"]
 render_priority = 0
 shader = ExtResource("1_dk7hp")
-shader_parameter/modulate_color = Color(0.18, 0.16, 0.15, 1)
+shader_parameter/modulate_color = Color(0.14, 0.12, 0.12, 1)
 shader_parameter/uv_scale = Vector2(1, 1)
 shader_parameter/uv_offset = Vector2(0, 0)
 shader_parameter/jitter_intensity = 0.5
@@ -22,12 +27,12 @@ shader_parameter/snap_resolution = Vector2(320, 180)
 shader_parameter/affine_amount = 1.0
 
 [sub_resource type="BoxMesh" id="BoxMesh_1p83w"]
-size = Vector3(80, 0.5, 80)
+size = Vector3(100, 0.5, 90)
 subdivide_width = 24
 subdivide_depth = 24
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_2ajc6"]
-size = Vector3(80, 0.5, 80)
+size = Vector3(100, 0.5, 90)
 
 [node name="Level01Streets" type="Node3D" unique_id=229286503]
 
@@ -35,7 +40,7 @@ size = Vector3(80, 0.5, 80)
 script = ExtResource("7_navbk")
 
 [node name="StreetGround" type="StaticBody3D" parent="NavigationRegion3D" unique_id=949637029]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.35, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, -4.5, 0)
 collision_mask = 0
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="NavigationRegion3D/StreetGround" unique_id=1757635145]
@@ -65,7 +70,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 11.2)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9.5, 0.1, 12.2)
 
 [node name="WP_BusStopRoad" type="Marker3D" parent="PatrolWaypoints" unique_id=401001006]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14.5, 0.1, 12.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 0.1, 12.5)
 
 [node name="WP_ReturnFront" type="Marker3D" parent="PatrolWaypoints" unique_id=401001007]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 11.2)
@@ -73,25 +78,102 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 11.2)
 [node name="LunaticYard_Waypoints" type="Node3D" parent="." unique_id=402001001]
 
 [node name="WP_WestYard" type="Marker3D" parent="LunaticYard_Waypoints" unique_id=402001002]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11, 0.1, 5.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11.5, 0.1, 5.5)
 
 [node name="WP_NorthWest" type="Marker3D" parent="LunaticYard_Waypoints" unique_id=402001003]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11, 0.1, -11)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11.5, 0.1, -14.8)
 
 [node name="WP_NorthEast" type="Marker3D" parent="LunaticYard_Waypoints" unique_id=402001004]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11, 0.1, -11)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11.5, 0.1, -14.8)
 
 [node name="WP_EastYard" type="Marker3D" parent="LunaticYard_Waypoints" unique_id=402001005]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11, 0.1, 5.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11.5, 0.1, 5.5)
+
+[node name="PreacherEnemy_Waypoints" type="Node3D" parent="." unique_id=402002001]
+
+[node name="WP_PlazaSouth" type="Marker3D" parent="PreacherEnemy_Waypoints" unique_id=402002002]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 30.5, 0.1, 6.0)
+
+[node name="WP_PlazaNorthEast" type="Marker3D" parent="PreacherEnemy_Waypoints" unique_id=402002003]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 32.5, 0.1, -6.0)
+
+[node name="WP_PlazaNorthWest" type="Marker3D" parent="PreacherEnemy_Waypoints" unique_id=402002004]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 27.0, 0.1, -6.0)
+
+[node name="WP_PlazaRoad" type="Marker3D" parent="PreacherEnemy_Waypoints" unique_id=402002005]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 27.5, 0.1, 11.8)
 
 [node name="OilPickup" parent="." unique_id=1570513945 instance=ExtResource("2_isfup")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.6, 0.95, -3.4)
 
 [node name="OilPickup_Study" parent="." unique_id=1570513999 instance=ExtResource("2_isfup")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.2, 4.56, -3.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.0, 4.56, -3.5)
 
 [node name="OilPickup_Alley" parent="." unique_id=1570514001 instance=ExtResource("2_isfup")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15.2, 0.35, -4.2)
+
+[node name="OilPickup_Market" parent="." unique_id=1570514002 instance=ExtResource("2_isfup")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -19.5, 0.35, -6.4)
+
+[node name="OilPickup_Basement" parent="." unique_id=1570514003 instance=ExtResource("2_isfup")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.0, -2.95, -5.0)
+
+[node name="KeyPickup_Basement" type="Area3D" parent="." unique_id=406001001]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -18.8, 0.92, 2.8)
+script = ExtResource("14_key")
+key_id = "basement_key"
+key_name = "Chave do Porão"
+
+[node name="KeyPickup_MarketBack" type="Area3D" parent="." unique_id=406001002]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.6, 4.40, -3.3)
+script = ExtResource("14_key")
+key_id = "market_back_key"
+key_name = "Chave dos Fundos do Mercado"
+
+[node name="BottlePickup_Porch" type="Area3D" parent="." unique_id=406002001]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.2, 0.02, 7.6)
+script = ExtResource("12_bottle")
+
+[node name="BottlePickup_Kitchen" type="Area3D" parent="." unique_id=406002002]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.2, 0.90, -6.3)
+script = ExtResource("12_bottle")
+
+[node name="BottlePickup_Plaza" type="Area3D" parent="." unique_id=406002003]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 33.2, 0.50, 4.8)
+script = ExtResource("12_bottle")
+
+[node name="BandagePickup_Bath" type="Area3D" parent="." unique_id=406003001]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.2, 4.46, -6.45)
+script = ExtResource("13_bandage")
+
+[node name="BandagePickup_Market" type="Area3D" parent="." unique_id=406003002]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -20.2, 0.66, -0.4)
+script = ExtResource("13_bandage")
+
+[node name="BandagePickup_Basement" type="Area3D" parent="." unique_id=406003003]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.8, -1.40, -0.5)
+script = ExtResource("13_bandage")
+
+[node name="VHSRecorder_HouseTV" type="Area3D" parent="." unique_id=406004001]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.6, 0.56, 6.2)
+script = ExtResource("15_vhs")
+tape_id = "tape_tv"
+tape_title = "Fita #01 — Último Boletim"
+tape_lines = PackedStringArray("[Transmissão cortada]: ...as subestações de todo o país derreteram às 14:12...", "[Repórter]: Não olhem diretamente para o disco solar! Mantenham as janelas fechadas!", "[Sobreposição de Leo]: Pai, eu achei uma passagem pelo mercado até o nosso porão.")
+
+[node name="VHSRecorder_Market" type="Area3D" parent="." unique_id=406004002]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -20.1, 0.90, 2.8)
+script = ExtResource("15_vhs")
+tape_id = "tape_market"
+tape_title = "Fita #02 — Câmera do Mini-Mercado"
+tape_lines = PackedStringArray("[Dono do Mercado]: Os de máscara cercaram o quarteirão assim que anoiteceu...", "[Estática pesada]: Atraímos dois deles para longe atirando garrafas na rua.", "[Dono do Mercado]: Tranquei o porão lá fora e escondi a chave atrás do balcão.")
+
+[node name="VHSRecorder_Plaza" type="Area3D" parent="." unique_id=406004003]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 30.5, 0.90, 0.25)
+script = ExtResource("15_vhs")
+tape_id = "tape_plaza"
+tape_title = "Fita #03 — Sermão do Espelho"
+tape_lines = PackedStringArray("[Pregador]: Quando a noite cair, ergam suas tochas que os cegos se revelarão!", "[Cântico ao fundo]: O menino Leo subirá até a Torre Central para abrir o Espelho...", "[Ruído agudo]: Que nenhum fogo humano escape da vigília da praça.")
 
 [node name="EchoNote" parent="." unique_id=408746381 instance=ExtResource("3_3ybw4")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.3, 4.42, 0.85)
@@ -105,21 +187,35 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.8, 0.52, 8.2)
 fallback_id = "echo_porch_02"
 fallback_author = "Vizinha Clara"
 fallback_date = "Mês 3 após o Sorriso"
-fallback_text = "Os lunáticos usam máscaras de papelão porque não conseguem parar de sorrir depois que a Epidemia da Verdade queima suas mentes. Se eles vigiam a varanda, entre agachado ou apague o lampião antes de passar pelas janelas."
+fallback_text = "Os lunáticos só saem à noite e são atraídos pelo brilho do lampião a óleo. De dia é o Sol Sorridente quem queima a mente na rua. Feche as portas atrás de você ou eles vão notar que há alguém vivo aqui dentro."
 
 [node name="EchoNote_Kitchen" parent="." unique_id=408746383 instance=ExtResource("3_3ybw4")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.6, 0.93, -6.35)
 fallback_id = "echo_kitchen_03"
 fallback_author = "Bilhete Rasgado (Sem Nome)"
 fallback_date = "Há 2 semanas"
-fallback_text = "Levaram o filho do sargento para a torre central no centro da cidade. O culto prepara o Espelho da Alma Partida para quando o sol alinhar. Fique longe da luz direta da rua e use o guarda-roupa lá em cima se alguém invadir a casa."
+fallback_text = "Levaram o filho do sargento para a torre central no centro da cidade. Deixei a chave dos fundos do Mini-Mercado lá em cima no escritório antes de fugir."
 
 [node name="EchoNote_BusStop" parent="." unique_id=408746384 instance=ExtResource("3_3ybw4")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12.5, 0.52, 10.05)
 fallback_id = "echo_busstop_04"
 fallback_author = "Motorista da Linha 14"
 fallback_date = "Dia 4 após o Sorriso"
-fallback_text = "Os postes derreteram na primeira hora. Sem eletricidade, as sombras das marquises e becos começaram a respirar. O abrigo de concreto do ponto ainda segura a luz do sol — use-o para recuperar o fôlego."
+fallback_text = "Os postes derreteram na primeira hora. De dia este abrigo de concreto segura a luz do sol; de noite é melhor apagar o lampião ou jogar uma garrafa longe para despistar quem ronda a pracinha."
+
+[node name="EchoNote_Basement" parent="." unique_id=408746385 instance=ExtResource("3_3ybw4")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.5, -3.15, -1.5)
+fallback_id = "echo_basement_06"
+fallback_author = "Técnico da Caldeira"
+fallback_date = "Mês 6 após o Sorriso"
+fallback_text = "Aqui embaixo o Sol não alcança e os cultistas têm medo de descer, mas as Sombras Vivas tomaram o túnel até o Mini-Mercado. Não apague seu lampião nem por um segundo."
+
+[node name="EchoNote_Plaza" parent="." unique_id=408746386 instance=ExtResource("3_3ybw4")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 28.2, 0.52, -4.5)
+fallback_id = "echo_plaza_07"
+fallback_author = "Diário de Vigília"
+fallback_date = "Ontem à noite"
+fallback_text = "O Pregador com a máscara dourada não sai da pracinha após o anoitecer. Se ele enxergar seu lampião, o sino vai chamar todo o culto do quarteirão em cima de você."
 
 [node name="ShadowHazard" parent="." unique_id=1873891490 instance=ExtResource("4_corlq")]
 transform = Transform3D(0.7, 0, 0, 0, 1, 0, 0, 0, 0.7, -4.8, 0.05, -3.5)
@@ -127,11 +223,24 @@ transform = Transform3D(0.7, 0, 0, 0, 1, 0, 0, 0, 0.7, -4.8, 0.05, -3.5)
 [node name="ShadowHazard_Alley" parent="." unique_id=1873891499 instance=ExtResource("4_corlq")]
 transform = Transform3D(0.85, 0, 0, 0, 1, 0, 0, 0, 1.1, -15.2, 0.05, -1.5)
 
+[node name="ShadowHazard_Market" parent="." unique_id=1873891501 instance=ExtResource("4_corlq")]
+transform = Transform3D(0.85, 0, 0, 0, 1, 0, 0, 0, 0.9, -19.6, 0.05, -5.0)
+
+[node name="ShadowHazard_Basement" parent="." unique_id=1873891502 instance=ExtResource("4_corlq")]
+transform = Transform3D(1.1, 0, 0, 0, 1, 0, 0, 0, 1.1, -2.5, -3.15, -3.0)
+
+[node name="ShadowHazard_Tunnel" parent="." unique_id=1873891503 instance=ExtResource("4_corlq")]
+transform = Transform3D(1.4, 0, 0, 0, 1, 0, 0, 0, 0.72, -14.5, -3.15, -5.3)
+
 [node name="LunaticBase" parent="." unique_id=2079065413 instance=ExtResource("5_d8n8u")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 0.1, 11.2)
 
 [node name="LunaticYard" parent="." unique_id=2079065499 instance=ExtResource("5_d8n8u")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11, 0.1, -9.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11.5, 0.1, -12)
+
+[node name="PreacherEnemy" type="CharacterBody3D" parent="." unique_id=2079065550]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 30.5, 0.1, 4.0)
+script = ExtResource("11_preacher")
 
 [node name="SunShaft_LivingWindow" type="Node3D" parent="." unique_id=404001001]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 2.2, 6.9)

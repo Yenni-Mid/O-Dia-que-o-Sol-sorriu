@@ -35,6 +35,12 @@ var _stream_whisper: AudioStreamWAV
 var _stream_breath: AudioStreamWAV
 var _stream_shadow_hum: AudioStreamWAV
 var _stream_lunatic_step: AudioStreamWAV
+var _stream_glass_break: AudioStreamWAV
+var _stream_unlock: AudioStreamWAV
+var _stream_locked: AudioStreamWAV
+var _stream_bell_alarm: AudioStreamWAV
+var _stream_vhs_static: AudioStreamWAV
+var _stream_phase_chime: AudioStreamWAV
 
 var _heartbeat_intensity: float = 0.0
 var _heartbeat_timer: float = 0.0
@@ -159,6 +165,38 @@ func get_lunatic_step_stream() -> AudioStreamWAV:
 	return _stream_lunatic_step
 
 
+func play_glass_break() -> void:
+	play_sfx(_stream_glass_break, -3.0, randf_range(0.92, 1.08))
+
+
+func get_glass_break_stream() -> AudioStreamWAV:
+	return _stream_glass_break
+
+
+func play_unlock() -> void:
+	play_sfx(_stream_unlock, -5.0)
+
+
+func play_locked() -> void:
+	play_sfx(_stream_locked, -6.0)
+
+
+func play_bell_alarm() -> void:
+	play_sfx(_stream_bell_alarm, -4.0)
+
+
+func get_bell_alarm_stream() -> AudioStreamWAV:
+	return _stream_bell_alarm
+
+
+func get_vhs_static_stream() -> AudioStreamWAV:
+	return _stream_vhs_static
+
+
+func play_phase_chime() -> void:
+	play_sfx(_stream_phase_chime, -4.0)
+
+
 func set_master_volume(linear: float) -> void:
 	var clamped: float = clampf(linear, 0.0, 1.0)
 	AudioServer.set_bus_mute(0, clamped <= 0.005)
@@ -247,6 +285,12 @@ func _build_procedural_streams() -> void:
 	_stream_breath = _synth_noise_burst(0.45, 0.25, 41)
 	_stream_shadow_hum = _synth_wave(2.0, 56.0, 62.0, 0.45, true)
 	_stream_lunatic_step = _synth_wave(0.11, 72.0, 32.0, 0.6, false)
+	_stream_glass_break = _synth_noise_burst(0.32, 0.85, 53)
+	_stream_unlock = _synth_wave(0.16, 620.0, 940.0, 0.15, false)
+	_stream_locked = _synth_wave(0.12, 130.0, 90.0, 0.4, false)
+	_stream_bell_alarm = _synth_wave(1.1, 440.0, 415.0, 0.08, false)
+	_stream_vhs_static = _synth_noise_loop(2.5, 0.65, 67)
+	_stream_phase_chime = _synth_wave(1.4, 98.0, 65.0, 0.2, false)
 
 
 func _synth_wave(duration: float, freq_start: float, freq_end: float, noise_mix: float, loop_enabled: bool) -> AudioStreamWAV:

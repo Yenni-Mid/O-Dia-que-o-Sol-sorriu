@@ -19,6 +19,7 @@ const SPRINT_NOISE_RADIUS: float = 12.0
 const CROUCH_VISIBILITY_MULTIPLIER: float = 0.5
 const WALK_VISIBILITY_MULTIPLIER: float = 1.0
 const SPRINT_VISIBILITY_MULTIPLIER: float = 1.5
+const THROWABLE_BOTTLE_SCRIPT := preload("res://systems/interactables/throwable_bottle.gd")
 
 @export var mouse_sensitivity: float = 0.0022
 @export var acceleration: float = 14.0
@@ -41,6 +42,8 @@ const SPRINT_VISIBILITY_MULTIPLIER: float = 1.5
 @export var stamina_recover_walk: float = 14.0
 @export var stamina_recover_idle: float = 26.0
 @export var exhausted_threshold: float = 25.0
+@export var lean_distance: float = 0.42
+@export var lean_roll_degrees: float = 10.0
 
 var current_state: MovementState = MovementState.WALKING
 var current_speed: float = WALK_SPEED
@@ -65,6 +68,8 @@ var _exhausted: bool = false
 var _last_emitted_stamina: float = -1.0
 var _hiding_exit_pos: Vector3 = Vector3.ZERO
 var _hiding_wardrobe: Node = null
+var _lean_factor: float = 0.0
+var _lean_roll: float = 0.0
 
 @onready var standing_collision: CollisionShape3D = get_node_or_null("StandingCollision") as CollisionShape3D
 @onready var crouching_collision: CollisionShape3D = get_node_or_null("CrouchingCollision") as CollisionShape3D
@@ -126,6 +131,13 @@ func _unhandled_input(event: InputEvent) -> void:
 		_hand_sway_target.y = clampf(mouse_event.relative.y * hand_sway_amount, -0.06, 0.06)
 	elif event is InputEventMouseButton and event.pressed and Input.mouse_mode != Input.MOUSE_MODE_CAPTURED and not get_tree().paused:
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	elif not is_hidden and not get_tree().paused:
+		if event.is_action_pressed("throw_bottle"):
+			_try_throw_bottle()
+			get_viewport().set_input_as_handled()
+		elif event.is_action_pressed("use_bandage"):
+			_try_use_bandage()
+			get_viewport().set_input_as_handled()
 
 
 func _physics_process(delta: float) -> void:
@@ -198,6 +210,10 @@ func get_detection_distance(base_dark_vision_range: float = 8.0, lit_vision_rang
 func enter_hiding_spot(hide_pos: Vector3, exit_pos: Vector3 = Vector3.ZERO, spot: Node = null) -> void:
 	is_hidden = true
 	velocity = Vector3.ZERO
+	_lean_factor = 0.0
+	_lean_roll = 0.0
+	if head_pivot != null:
+		head_pivot.position.x = 0.0
 	_hiding_exit_pos = exit_pos if exit_pos != Vector3.ZERO else hide_pos + Vector3(0.0, 0.0, 1.2)
 	_hiding_wardrobe = spot
 	if lantern_system != null:
@@ -300,8 +316,16 @@ func _update_crouch_and_head_bob(delta: float, horizontal_speed: float) -> void:
 	if head_pivot != null:
 		var target_head_y: float = crouching_head_height if current_state == MovementState.CROUCHING else standing_head_height
 		head_pivot.position.y = lerpf(head_pivot.position.y, target_head_y, clampf(crouch_transition_speed * delta, 0.0, 1.0))
+
+		var want_lean: float = (-1.0 if Input.is_action_pressed("lean_left") else 0.0) + (1.0 if Input.is_action_pressed("lean_right") else 0.0)
+		var target_lean_x: float = _compute_safe_lean_offset(want_lean)
+		head_pivot.position.x = lerpf(head_pivot.position.x, target_lean_x, clampf(10.0 * delta, 0.0, 1.0))
+		_lean_factor = head_pivot.position.x / maxf(lean_distance, 0.01)
+		_lean_roll = deg_to_rad(-_lean_factor * lean_roll_degrees)
+
 		if sun_exposure_ray != null:
 			sun_exposure_ray.position.y = head_pivot.position.y
+			sun_exposure_ray.position.x = head_pivot.position.x
 
 	if camera != null:
 		if is_on_floor() and horizontal_speed > 0.15:
@@ -334,7 +358,7 @@ func _update_camera_feel(delta: float, horizontal_speed: float) -> void:
 	var target_fov: float = base_fov + (sprint_fov_bonus if sprinting else 0.0)
 	camera.fov = lerpf(camera.fov, target_fov, clampf(6.0 * delta, 0.0, 1.0))
 
-	var target_roll: float = deg_to_rad(-_strafe_input * strafe_roll_degrees)
+	var target_roll: float = deg_to_rad(-_strafe_input * strafe_roll_degrees) + _lean_roll
 	_trauma = maxf(0.0, _trauma - delta * 1.4)
 	_shake_time += delta * 30.0
 	var shake: float = _trauma * _trauma
@@ -353,6 +377,73 @@ func _update_hand_sway(delta: float) -> void:
 	_hand_sway_target = _hand_sway_target.lerp(Vector3.ZERO, clampf(hand_sway_smoothing * delta, 0.0, 1.0))
 
 
+func _compute_safe_lean_offset(want_lean: float) -> float:
+	if is_zero_approx(want_lean):
+		return 0.0
+	var desired: float = want_lean * lean_distance
+	var world_3d: World3D = get_world_3d()
+	if world_3d == null or head_pivot == null:
+		return desired
+	var space_state: PhysicsDirectSpaceState3D = world_3d.direct_space_state
+	if space_state == null:
+		return desired
+	var origin: Vector3 = global_position + Vector3(0.0, head_pivot.position.y, 0.0)
+	var side_dir: Vector3 = global_transform.basis.x.normalized() * signf(want_lean)
+	var margin: float = 0.16
+	var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(
+		origin,
+		origin + side_dir * (lean_distance + margin),
+		1,
+		[get_rid()]
+	)
+	var hit: Dictionary = space_state.intersect_ray(query)
+	if hit.is_empty():
+		return desired
+	var hit_pos: Vector3 = hit.get("position", origin) as Vector3
+	var allowed: float = maxf(0.0, hit_pos.distance_to(origin) - margin)
+	return signf(want_lean) * minf(lean_distance, allowed)
+
+
+func _try_throw_bottle() -> void:
+	var inv: Node = get_tree().get_first_node_in_group("inventory")
+	if inv == null or not inv.has_method("consume_bottle"):
+		return
+	if not bool(inv.call("consume_bottle")):
+		AudioManager.play_locked()
+		GameEvents.status_message_requested.emit("Sem garrafas para arremessar!")
+		return
+	var bottle: RigidBody3D = RigidBody3D.new()
+	bottle.set_script(THROWABLE_BOTTLE_SCRIPT)
+	var world_parent: Node = get_parent() if get_parent() != null else get_tree().current_scene
+	world_parent.add_child(bottle)
+	var throw_origin: Vector3 = get_eye_position()
+	var throw_dir: Vector3 = -global_transform.basis.z
+	if camera != null:
+		throw_origin = camera.global_position
+		throw_dir = -camera.global_transform.basis.z
+	bottle.global_position = throw_origin + throw_dir * 0.85
+	bottle.linear_velocity = throw_dir.normalized() * 13.5 + Vector3(0.0, 2.5, 0.0)
+	AudioManager.play_footstep(-14.0, 1.35)
+
+
+func _try_use_bandage() -> void:
+	var health: HealthComponent = get_node_or_null("HealthComponent") as HealthComponent
+	if health != null and health.current_health >= health.max_health:
+		GameEvents.status_message_requested.emit("Sua vida já está cheia.")
+		return
+	var inv: Node = get_tree().get_first_node_in_group("inventory")
+	if inv == null or not inv.has_method("consume_bandage"):
+		return
+	if not bool(inv.call("consume_bandage")):
+		AudioManager.play_locked()
+		GameEvents.status_message_requested.emit("Sem bandagens no inventário!")
+		return
+	if health != null:
+		health.heal(40.0)
+	AudioManager.play_paper()
+	GameEvents.status_message_requested.emit("Bandagem aplicada (+40 Vida)")
+
+
 func _ensure_input_actions() -> void:
 	var bindings: Dictionary = {
 		"move_forward": KEY_W,
@@ -361,6 +452,11 @@ func _ensure_input_actions() -> void:
 		"move_right": KEY_D,
 		"sprint": KEY_SHIFT,
 		"crouch": KEY_CTRL,
+		"throw_bottle": KEY_G,
+		"use_bandage": KEY_H,
+		"lean_left": KEY_Q,
+		"lean_right": KEY_C,
+		"toggle_journal": KEY_TAB,
 	}
 	for action_name: String in bindings:
 		if InputMap.has_action(action_name):

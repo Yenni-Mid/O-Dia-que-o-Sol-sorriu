@@ -5,6 +5,7 @@
 [ext_resource type="Script" uid="uid://d01r685mxtrot" path="res://entities/player/lantern_system.gd" id="3_fmb3c"]
 [ext_resource type="Script" uid="uid://b6iw65xjapt4e" path="res://entities/player/sanity_component.gd" id="4_rl6fg"]
 [ext_resource type="Script" uid="uid://214it837h32w" path="res://entities/player/health_component.gd" id="5_q57vx"]
+[ext_resource type="Script" path="res://entities/player/inventory_component.gd" id="6_inv"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_ak4un"]
 radius = 0.35
@@ -90,3 +91,6 @@ script = ExtResource("4_rl6fg")
 
 [node name="HealthComponent" type="Node" parent="." unique_id=1857816815]
 script = ExtResource("5_q57vx")
+
+[node name="InventoryComponent" type="Node" parent="." unique_id=1857816900]
+script = ExtResource("6_inv")

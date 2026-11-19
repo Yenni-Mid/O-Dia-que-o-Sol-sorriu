@@ -105,6 +105,9 @@ func _update_confessions_and_heartbeat(delta: float) -> void:
 
 
 func _check_sun_exposure() -> bool:
+	var day_night: Node = get_tree().get_first_node_in_group("day_night")
+	if day_night != null and day_night.has_method("is_nighttime") and bool(day_night.call("is_nighttime")):
+		return false
 	if directional_light == null:
 		# Busca na árvore no máximo 1x por segundo (antes rodava find_children a cada frame se não achasse).
 		_light_search_cooldown -= get_physics_process_delta_time()

@@ -1,11 +1,16 @@
 @tool
 extends Node3D
-## Quarteirão da Demo ao redor da Casa de Dois Andares:
-## rua asfaltada, calçadas, comércio fechado, casa vizinha, carro abandonado, ponto de ônibus com sombra,
-## postes tortos, árvores secas, muros perimetrais e a Torre Central ("Espelho da Alma Partida") no horizonte.
+## Quarteirão Completo da Demo:
+## - Rua principal, calçadas, muros perimetrais, carro abandonado e ponto de ônibus com cobertura;
+## - Mini-Mercado "Sol Nascente" 100% explorável (balcão, depósito trancado e armário);
+## - Porão da Casa conectado por túnel subterrâneo ao Mini-Mercado (tomado por Sombras Vivas);
+## - Pracinha do Culto a Leste com altar improvisado e bancos;
+## - Torre Central ("Espelho da Alma Partida") no horizonte norte.
 
 const LAYER_ENVIRONMENT: int = 1
 const PSX_LIT_SHADER: Shader = preload("res://shaders/psx_lit.gdshader")
+const _DoorScript := preload("res://systems/interactables/door_interactable.gd")
+const _WardrobeScript := preload("res://systems/interactables/wardrobe_hide.gd")
 
 var _materials: Dictionary = {}
 var _textures: Dictionary = {}
@@ -29,7 +34,10 @@ func rebuild_block() -> void:
 
 	_build_ground_and_street()
 	_build_perimeter_walls()
+	_build_explorable_market()
+	_build_basement_and_tunnel()
 	_build_neighbor_buildings()
+	_build_cult_plaza()
 	_build_street_props_and_covers()
 	_build_distant_horizon_tower()
 
@@ -50,13 +58,16 @@ func _init_textures() -> void:
 
 func _init_materials() -> void:
 	_materials.clear()
-	_materials["asphalt"] = _make_mat(Color(0.24, 0.23, 0.25), _textures["asphalt"] as Texture2D, Vector2(12.0, 2.0))
+	_materials["asphalt"] = _make_mat(Color(0.24, 0.23, 0.25), _textures["asphalt"] as Texture2D, Vector2(14.0, 2.0))
 	_materials["road_stripe"] = _make_mat(Color(0.76, 0.62, 0.22), _textures["concrete"] as Texture2D, Vector2(1.0, 1.0))
-	_materials["sidewalk"] = _make_mat(Color(0.56, 0.54, 0.50), _textures["sidewalk"] as Texture2D, Vector2(8.0, 1.0))
-	_materials["dirt_grass"] = _make_mat(Color(0.38, 0.34, 0.25), _textures["dirt_grass"] as Texture2D, Vector2(6.0, 4.0))
+	_materials["sidewalk"] = _make_mat(Color(0.56, 0.54, 0.50), _textures["sidewalk"] as Texture2D, Vector2(10.0, 1.0))
+	_materials["plaza_stone"] = _make_mat(Color(0.48, 0.45, 0.42), _textures["sidewalk"] as Texture2D, Vector2(6.0, 10.0))
+	_materials["dirt_grass"] = _make_mat(Color(0.38, 0.34, 0.25), _textures["dirt_grass"] as Texture2D, Vector2(5.0, 4.0))
 	_materials["concrete"] = _make_mat(Color(0.52, 0.50, 0.46), _textures["concrete"] as Texture2D, Vector2(4.0, 2.0))
 	_materials["concrete_dark"] = _make_mat(Color(0.32, 0.31, 0.30), _textures["concrete"] as Texture2D, Vector2(3.0, 2.0))
+	_materials["basement_wall"] = _make_mat(Color(0.28, 0.29, 0.31), _textures["concrete"] as Texture2D, Vector2(4.0, 2.0))
 	_materials["wall_brick"] = _make_mat(Color(0.58, 0.46, 0.39), _textures["facade_brick"] as Texture2D, Vector2(5.0, 2.5))
+	_materials["market_tile"] = _make_mat(Color(0.68, 0.67, 0.63), _textures["sidewalk"] as Texture2D, Vector2(5.0, 5.0))
 	_materials["neighbor_stucco"] = _make_mat(Color(0.62, 0.58, 0.50), _textures["concrete"] as Texture2D, Vector2(4.0, 3.0))
 	_materials["roof_dark"] = _make_mat(Color(0.18, 0.16, 0.15), _textures["facade_brick"] as Texture2D, Vector2(4.0, 4.0))
 	_materials["awning"] = _make_mat(Color(0.56, 0.22, 0.18), _textures["wood_plank"] as Texture2D, Vector2(3.0, 1.0))
@@ -200,7 +211,7 @@ func _make_cult_smile_texture() -> ImageTexture:
 	return ImageTexture.create_from_image(img)
 
 
-# --------------------------------------------------------------------------- Construtores de Geometria
+# --------------------------------------------------------------------------- Construtores
 
 func _create_group(group_name: String) -> Node3D:
 	var n: Node3D = Node3D.new()
@@ -257,9 +268,9 @@ func _get_box_mesh(size: Vector3) -> BoxMesh:
 		return _mesh_cache[size] as BoxMesh
 	var m: BoxMesh = BoxMesh.new()
 	m.size = size
-	m.subdivide_width = clampi(int(size.x / 2.2), 0, 10)
-	m.subdivide_height = clampi(int(size.y / 2.2), 0, 6)
-	m.subdivide_depth = clampi(int(size.z / 2.2), 0, 10)
+	m.subdivide_width = clampi(int(size.x / 2.0), 0, 10)
+	m.subdivide_height = clampi(int(size.y / 2.0), 0, 6)
+	m.subdivide_depth = clampi(int(size.z / 2.0), 0, 10)
 	_mesh_cache[size] = m
 	return m
 
@@ -273,61 +284,241 @@ func _get_box_shape(size: Vector3) -> BoxShape3D:
 	return s
 
 
-# --------------------------------------------------------------------------- Seções do Quarteirão
+func _add_door_node(
+	parent_node: Node3D,
+	door_name: String,
+	pivot_pos: Vector3,
+	door_width: float,
+	door_height: float,
+	along_x: bool,
+	is_locked: bool = false,
+	req_key: String = "",
+	key_label: String = ""
+) -> void:
+	var door_pivot: Node3D = Node3D.new()
+	door_pivot.name = door_name
+	door_pivot.set_script(_DoorScript)
+	door_pivot.position = pivot_pos
+	door_pivot.set("is_locked", is_locked)
+	door_pivot.set("required_key_id", req_key)
+	door_pivot.set("key_display_name", key_label)
+	parent_node.add_child(door_pivot)
+
+	var leaf: StaticBody3D = StaticBody3D.new()
+	leaf.name = "DoorLeaf"
+	leaf.collision_layer = (1 << 0) | (1 << 3)
+	leaf.collision_mask = 0
+	var leaf_size: Vector3 = Vector3(door_width - 0.06, door_height - 0.04, 0.08) if along_x else Vector3(0.08, door_height - 0.04, door_width - 0.06)
+	leaf.position = Vector3(door_width * 0.5, door_height * 0.5, 0.0) if along_x else Vector3(0.0, door_height * 0.5, door_width * 0.5)
+	door_pivot.add_child(leaf)
+
+	var mesh_inst: MeshInstance3D = MeshInstance3D.new()
+	mesh_inst.mesh = _get_box_mesh(leaf_size)
+	mesh_inst.material_override = _materials["wood_old"] as Material
+	leaf.add_child(mesh_inst)
+
+	var col: CollisionShape3D = CollisionShape3D.new()
+	col.shape = _get_box_shape(leaf_size)
+	leaf.add_child(col)
+
+
+func _add_wardrobe_node(parent_node: Node3D, w_name: String, size: Vector3, pos: Vector3, hide_off: Vector3, exit_off: Vector3) -> void:
+	var wardrobe: StaticBody3D = StaticBody3D.new()
+	wardrobe.name = w_name
+	wardrobe.set_script(_WardrobeScript)
+	wardrobe.position = pos
+	wardrobe.set("hide_offset", hide_off)
+	wardrobe.set("exit_offset", exit_off)
+	wardrobe.collision_layer = (1 << 0) | (1 << 3)
+	wardrobe.collision_mask = 0
+	parent_node.add_child(wardrobe)
+
+	var mesh_inst: MeshInstance3D = MeshInstance3D.new()
+	mesh_inst.mesh = _get_box_mesh(size)
+	mesh_inst.material_override = _materials["metal_dark"] as Material
+	wardrobe.add_child(mesh_inst)
+
+	var col: CollisionShape3D = CollisionShape3D.new()
+	col.shape = _get_box_shape(size)
+	wardrobe.add_child(col)
+
+
+# --------------------------------------------------------------------------- Chão & Muros
 
 func _build_ground_and_street() -> void:
 	var g: Node3D = _create_group("StreetAndLots")
-	# Rua asfaltada (X: -26..+26, Z: 10.6..15.2, topo exatamente em y = 0.0)
-	_add_box(g, "MainRoadAsphalt", Vector3(52.0, 0.1, 4.6), Vector3(0.0, -0.05, 12.9), "asphalt")
-	for i: int in range(-4, 5):
+	# Rua principal estendida até a Pracinha Leste (X: -26..+36, Z: 10.6..15.2)
+	_add_box(g, "MainRoadAsphalt", Vector3(62.0, 0.1, 4.6), Vector3(5.0, -0.05, 12.9), "asphalt")
+	for i: int in range(-4, 7):
 		_add_box(g, "RoadStripe_%d" % (i + 4), Vector3(2.8, 0.02, 0.16), Vector3(float(i) * 5.4, 0.005, 12.9), "road_stripe", Vector3.ZERO, false)
 
-	# Calçada Norte em frente à casa (Z: 9.6..10.6)
-	_add_box(g, "SidewalkNorth", Vector3(52.0, 0.12, 1.0), Vector3(0.0, -0.04, 10.1), "sidewalk")
-	# Calçada Sul ladeando a saída do beco inicial (Z: 15.2..16.2)
+	# Calçadas Norte e Sul
+	_add_box(g, "SidewalkNorth", Vector3(62.0, 0.12, 1.0), Vector3(5.0, -0.04, 10.1), "sidewalk")
 	_add_box(g, "SidewalkSouthWest", Vector3(23.0, 0.12, 1.0), Vector3(-14.5, -0.04, 15.7), "sidewalk")
-	_add_box(g, "SidewalkSouthEast", Vector3(23.0, 0.12, 1.0), Vector3(14.5, -0.04, 15.7), "sidewalk")
+	_add_box(g, "SidewalkSouthEast", Vector3(33.0, 0.12, 1.0), Vector3(19.5, -0.04, 15.7), "sidewalk")
 
-	# Terrenos / quintais ao redor da casa (contornam X: -8..+8, Z: -7..+7 e varanda X: -3..+3, Z: 7..10)
-	_add_box(g, "YardWest", Vector3(18.0, 0.1, 29.6), Vector3(-17.0, -0.05, -5.2), "dirt_grass")
-	_add_box(g, "YardEast", Vector3(18.0, 0.1, 29.6), Vector3(17.0, -0.05, -5.2), "dirt_grass")
-	_add_box(g, "YardBackNorth", Vector3(16.0, 0.1, 13.0), Vector3(0.0, -0.05, -13.5), "dirt_grass")
+	# Terrenos Oeste (contorna o Mini-Mercado X:-25.5..-17.5, Z:-7.5..+7.0 para preservar o poço da rampa!)
+	_add_box(g, "YardWest_NorthStrip", Vector3(18.0, 0.1, 12.5), Vector3(-17.0, -0.05, -13.75), "dirt_grass")
+	_add_box(g, "YardWest_Alley", Vector3(9.5, 0.1, 17.1), Vector3(-12.75, -0.05, 1.05), "dirt_grass")
+	_add_box(g, "YardWest_MarketFront", Vector3(8.5, 0.1, 2.6), Vector3(-21.75, -0.05, 8.3), "dirt_grass")
+	_add_box(g, "YardWest_Edge", Vector3(0.5, 0.1, 14.5), Vector3(-25.75, -0.05, -0.25), "dirt_grass")
+
+	# Terreno Leste entre Casa e Pracinha (X: +8..+25.5, Z: -20..+9.6)
+	_add_box(g, "YardEast", Vector3(17.5, 0.1, 29.6), Vector3(16.75, -0.05, -5.2), "dirt_grass")
+
+	# Fundo Norte da Casa recortado ao redor do poço da rampa do Porão (vão em X:-1.3..+1.3, Z:-13.0..-7.0)
+	_add_box(g, "YardBack_West", Vector3(6.7, 0.1, 13.0), Vector3(-4.65, -0.05, -13.5), "dirt_grass")
+	_add_box(g, "YardBack_East", Vector3(6.7, 0.1, 13.0), Vector3(4.65, -0.05, -13.5), "dirt_grass")
+	_add_box(g, "YardBack_FarNorth", Vector3(2.6, 0.1, 7.0), Vector3(0.0, -0.05, -16.5), "dirt_grass")
+
+	# Gramado frontal ladeando a varanda
 	_add_box(g, "FrontLawnLeft", Vector3(5.0, 0.1, 2.6), Vector3(-5.5, -0.05, 8.3), "dirt_grass")
 	_add_box(g, "FrontLawnRight", Vector3(5.0, 0.1, 2.6), Vector3(5.5, -0.05, 8.3), "dirt_grass")
 
 
 func _build_perimeter_walls() -> void:
 	var walls: Node3D = _create_group("PerimeterWalls")
-	# Muro Norte de fundo (permite enxergar a Torre Central no horizonte)
-	_add_box(walls, "WallNorth", Vector3(52.4, 2.8, 0.4), Vector3(0.0, 1.4, -20.0), "concrete")
-	# Muros Oeste e Leste fechando o quarteirão
+	_add_box(walls, "WallNorth", Vector3(62.4, 2.8, 0.4), Vector3(5.0, 1.4, -20.0), "concrete")
 	_add_box(walls, "WallWest", Vector3(0.4, 3.2, 45.2), Vector3(-26.0, 1.6, 2.4), "concrete")
-	_add_box(walls, "WallEast", Vector3(0.4, 3.2, 45.2), Vector3(26.0, 1.6, 2.4), "concrete")
-	# Muros Sul fechando os dois lados da rua além da saída do abrigo inicial
+	_add_box(walls, "WallEast", Vector3(0.4, 3.2, 45.2), Vector3(36.0, 1.6, 2.4), "concrete")
 	_add_box(walls, "WallSouthWest", Vector3(23.0, 3.0, 0.4), Vector3(-14.5, 1.5, 16.4), "concrete_dark")
-	_add_box(walls, "WallSouthEast", Vector3(23.0, 3.0, 0.4), Vector3(14.5, 1.5, 16.4), "concrete_dark")
+	_add_box(walls, "WallSouthEast", Vector3(33.0, 3.0, 0.4), Vector3(19.5, 1.5, 16.4), "concrete_dark")
 
+
+# --------------------------------------------------------------------------- Mini-Mercado Explorável
+
+func _build_explorable_market() -> void:
+	var mkt: Node3D = _create_group("MiniMarketExploravel")
+
+	# Piso interno recortado deixando o poço da rampa em X:-24.8..-21.8, Z:-5.5..+0.5
+	_add_box(mkt, "MarketFloorFront", Vector3(8.0, 0.1, 6.5), Vector3(-21.5, -0.05, 3.75), "market_tile")
+	_add_box(mkt, "MarketFloorBackRight", Vector3(4.3, 0.1, 8.0), Vector3(-19.65, -0.05, -3.5), "market_tile")
+	_add_box(mkt, "MarketFloorBackTop", Vector3(3.7, 0.1, 2.0), Vector3(-23.65, -0.05, -6.5), "market_tile")
+	_add_box(mkt, "MarketFloorStairEdge", Vector3(0.7, 0.1, 6.0), Vector3(-25.15, -0.05, -2.5), "market_tile")
+
+	# Teto, platibanda, letreiro e toldo frontal
+	_add_box(mkt, "MarketRoof", Vector3(8.3, 0.25, 14.8), Vector3(-21.5, 4.6, -0.25), "roof_dark")
+	_add_box(mkt, "MarketParapet", Vector3(8.2, 0.85, 0.35), Vector3(-21.5, 5.1, 7.0), "concrete")
+	_add_box(mkt, "MarketSignBoard", Vector3(5.6, 0.85, 0.16), Vector3(-21.5, 3.9, 7.18), "wood_old")
+	_add_box(mkt, "MarketAwning", Vector3(7.4, 0.16, 2.8), Vector3(-21.2, 2.9, 8.4), "awning", Vector3(8.0, 0.0, 0.0))
+	_add_box(mkt, "AwningPostL", Vector3(0.14, 2.8, 0.14), Vector3(-24.6, 1.4, 9.5), "metal_dark")
+	_add_box(mkt, "AwningPostR", Vector3(0.14, 2.8, 0.14), Vector3(-17.8, 1.4, 9.5), "metal_dark")
+
+	# Paredes Oeste e Norte
+	_add_box(mkt, "MarketWallWest", Vector3(0.25, 4.6, 14.5), Vector3(-25.5, 2.3, -0.25), "wall_brick")
+	_add_box(mkt, "MarketWallNorth", Vector3(8.0, 4.6, 0.25), Vector3(-21.5, 2.3, -7.5), "wall_brick")
+
+	# Parede Sul com Porta Frontal em X = -21.5 (largura 1.6m, altura 2.4m)
+	_add_box(mkt, "MarketWallSouthL", Vector3(3.2, 4.6, 0.25), Vector3(-23.9, 2.3, 7.0), "wall_brick")
+	_add_box(mkt, "MarketWallSouthR", Vector3(3.2, 4.6, 0.25), Vector3(-19.1, 2.3, 7.0), "wall_brick")
+	_add_box(mkt, "MarketWallSouthTop", Vector3(1.6, 2.2, 0.25), Vector3(-21.5, 3.5, 7.0), "wall_brick")
+	_add_door_node(mkt, "MarketFrontDoor", Vector3(-22.3, 0.0, 7.0), 1.6, 2.4, true, false)
+
+	# Parede Leste com Porta Traseira Trancada em Z = -4.0 (largura 1.4m, altura 2.3m)
+	_add_box(mkt, "MarketWallEastS", Vector3(0.25, 4.6, 10.3), Vector3(-17.5, 2.3, 1.85), "wall_brick")
+	_add_box(mkt, "MarketWallEastN", Vector3(0.25, 4.6, 2.8), Vector3(-17.5, 2.3, -6.1), "wall_brick")
+	_add_box(mkt, "MarketWallEastTop", Vector3(0.25, 2.3, 1.4), Vector3(-17.5, 3.45, -4.0), "wall_brick")
+	_add_door_node(
+		mkt,
+		"MarketBackDoor",
+		Vector3(-17.5, 0.0, -4.7),
+		1.4,
+		2.3,
+		false,
+		true,
+		"market_back_key",
+		"Chave dos Fundos do Mercado"
+	)
+
+	# Divisória do depósito interno (com passagem aberta em X: -20.2..-18.6)
+	_add_box(mkt, "StorageDividerL", Vector3(1.6, 3.8, 0.2), Vector3(-21.0, 1.9, -2.5), "concrete_dark")
+	_add_box(mkt, "StorageDividerR", Vector3(1.1, 3.8, 0.2), Vector3(-18.05, 1.9, -2.5), "concrete_dark")
+
+	# Móveis internos do mercado
+	_add_box(mkt, "CheckoutCounter", Vector3(2.4, 0.9, 0.7), Vector3(-19.5, 0.45, 2.8), "wood_old")
+	_add_box(mkt, "StoreShelf1", Vector3(0.7, 1.8, 3.0), Vector3(-23.2, 0.9, 3.2), "wood_old")
+	_add_box(mkt, "FallenShelf", Vector3(1.6, 0.65, 0.8), Vector3(-20.2, 0.33, -0.4), "wood_old", Vector3(0.0, 22.0, 0.0))
+	_add_wardrobe_node(mkt, "MarketLocker", Vector3(0.7, 2.0, 1.3), Vector3(-18.2, 1.0, -6.2), Vector3(0.0, -1.0, 0.0), Vector3(-1.1, -1.0, 0.0))
+
+	# Luz fraca de vitrine no mercado frontal (o depósito nos fundos permanece escuro)
+	var m_light: OmniLight3D = OmniLight3D.new()
+	m_light.position = Vector3(-21.5, 3.8, 3.2)
+	m_light.light_color = Color(0.72, 0.76, 0.84)
+	m_light.light_energy = 0.24
+	m_light.omni_range = 7.0
+	m_light.shadow_enabled = false
+	m_light.distance_fade_enabled = true
+	m_light.distance_fade_begin = 20.0
+	mkt.add_child(m_light)
+
+	# Caixotes do lado de fora no beco
+	_add_box(mkt, "AlleyCrateStack", Vector3(1.2, 1.1, 1.2), Vector3(-16.8, 0.55, 5.2), "wood_old")
+	_add_box(mkt, "AlleyCrateTop", Vector3(0.8, 0.75, 0.8), Vector3(-16.7, 1.48, 5.1), "wood_old", Vector3(0.0, 18.0, 0.0))
+
+
+# --------------------------------------------------------------------------- Porão & Túnel Subterrâneo
+
+func _build_basement_and_tunnel() -> void:
+	var bsm: Node3D = _create_group("BasementAndTunnel")
+
+	# 1. Abrigo e porta trancada no quintal norte da casa (X: -1.4..+1.4, Z: -13.2..-7.0)
+	_add_box(bsm, "CellarHoodWallW", Vector3(0.2, 2.4, 6.2), Vector3(-1.4, 1.2, -10.1), "concrete_dark")
+	_add_box(bsm, "CellarHoodWallE", Vector3(0.2, 2.4, 6.2), Vector3(1.4, 1.2, -10.1), "concrete_dark")
+	_add_box(bsm, "CellarHoodRoof", Vector3(3.1, 0.2, 6.4), Vector3(0.0, 2.45, -10.1), "roof_dark")
+	_add_box(bsm, "CellarDoorSideL", Vector3(0.65, 2.4, 0.22), Vector3(-1.02, 1.2, -13.2), "concrete_dark")
+	_add_box(bsm, "CellarDoorSideR", Vector3(0.65, 2.4, 0.22), Vector3(1.02, 1.2, -13.2), "concrete_dark")
+	_add_door_node(
+		bsm,
+		"BasementDoor",
+		Vector3(-0.7, 0.0, -13.2),
+		1.4,
+		2.3,
+		true,
+		true,
+		"basement_key",
+		"Chave do Porão"
+	)
+
+	# Paredes laterais do fosso da rampa (Y: -3.2..0.0) e rampa descendente (+30.65° no eixo X)
+	_add_box(bsm, "NorthPitWallW", Vector3(0.25, 3.2, 6.0), Vector3(-1.35, -1.6, -10.2), "basement_wall")
+	_add_box(bsm, "NorthPitWallE", Vector3(0.25, 3.2, 6.0), Vector3(1.35, -1.6, -10.2), "basement_wall")
+	_add_box(bsm, "NorthPitHeadwall", Vector3(2.8, 3.2, 0.25), Vector3(0.0, -1.6, -13.2), "basement_wall")
+	_add_box(bsm, "BasementEntryRamp", Vector3(2.45, 0.2, 6.4), Vector3(0.0, -1.65, -9.9), "concrete_dark", Vector3(30.65, 0.0, 0.0))
+
+	# 2. Salão do Porão sob a casa (X: -8.0..+4.0, Z: -7.2..+1.0, chão em Y = -3.2)
+	_add_box(bsm, "BasementFloor", Vector3(12.2, 0.2, 8.4), Vector3(-2.0, -3.3, -3.1), "basement_wall")
+	_add_box(bsm, "BasementCeiling", Vector3(12.2, 0.2, 8.4), Vector3(-2.0, -0.35, -3.1), "basement_wall")
+	_add_box(bsm, "BasementWallSouth", Vector3(12.2, 3.1, 0.25), Vector3(-2.0, -1.8, 1.1), "basement_wall")
+	_add_box(bsm, "BasementWallEast", Vector3(0.25, 3.1, 8.4), Vector3(4.1, -1.8, -3.1), "basement_wall")
+	# Parede Norte com abertura para a rampa (X: -1.25..+1.25)
+	_add_box(bsm, "BasementWallNorthW", Vector3(6.8, 3.1, 0.25), Vector3(-4.65, -1.8, -7.2), "basement_wall")
+	_add_box(bsm, "BasementWallNorthE", Vector3(2.8, 3.1, 0.25), Vector3(2.7, -1.8, -7.2), "basement_wall")
+	# Parede Oeste com abertura para o Túnel Subterrâneo (Z: -6.8..-3.8)
+	_add_box(bsm, "BasementWallWestS", Vector3(0.25, 3.1, 4.9), Vector3(-8.0, -1.8, -1.35), "basement_wall")
+	# Pilares, caldeira e estantes do porão
+	_add_box(bsm, "BasementPillar1", Vector3(0.55, 3.0, 0.55), Vector3(-4.5, -1.8, -1.5), "concrete_dark")
+	_add_box(bsm, "OldBoiler", Vector3(1.6, 2.0, 1.3), Vector3(2.4, -2.2, -1.4), "metal_dark")
+	_add_box(bsm, "CellarShelf", Vector3(0.65, 1.8, 2.4), Vector3(-6.8, -2.3, -0.5), "wood_old")
+
+	# 3. Túnel Subterrâneo (X: -24.8..-8.0, Z: -6.8..-3.8, Y = -3.2)
+	_add_box(bsm, "TunnelFloor", Vector3(16.8, 0.2, 3.2), Vector3(-16.4, -3.3, -5.3), "basement_wall")
+	_add_box(bsm, "TunnelCeiling", Vector3(16.8, 0.2, 3.2), Vector3(-16.4, -0.35, -5.3), "basement_wall")
+	_add_box(bsm, "TunnelWallNorth", Vector3(16.8, 3.1, 0.25), Vector3(-16.4, -1.8, -6.8), "basement_wall")
+	_add_box(bsm, "TunnelWallSouth", Vector3(14.0, 3.1, 0.25), Vector3(-14.9, -1.8, -3.8), "basement_wall")
+
+	# 4. Poço e Rampa Oeste saindo dentro do Mini-Mercado (X: -24.8..-21.8, Z: -6.8..+0.5)
+	_add_box(bsm, "MarketPitWallW", Vector3(0.25, 3.4, 7.4), Vector3(-24.8, -1.65, -3.1), "basement_wall")
+	_add_box(bsm, "MarketPitWallE", Vector3(0.25, 3.4, 4.4), Vector3(-21.8, -1.65, -1.6), "basement_wall")
+	_add_box(bsm, "MarketPitSouthCap", Vector3(3.1, 3.4, 0.25), Vector3(-23.3, -1.65, 0.55), "basement_wall")
+	_add_box(bsm, "MarketExitRamp", Vector3(2.75, 0.2, 6.0), Vector3(-23.3, -1.65, -2.0), "concrete_dark", Vector3(-32.6, 0.0, 0.0))
+
+
+# --------------------------------------------------------------------------- Outras Fachadas & Pracinha do Culto
 
 func _build_neighbor_buildings() -> void:
 	var bldgs: Node3D = _create_group("NeighborBuildings")
 
-	# 1. Mini-Mercado "Sol Nascente" (Oeste, X: -25.5..-17.5, Z: -7.5..+7.0)
-	var market: Node3D = Node3D.new()
-	market.name = "MiniMarket"
-	bldgs.add_child(market)
-	_add_box(market, "MarketBody", Vector3(8.0, 4.6, 14.5), Vector3(-21.5, 2.3, -0.25), "wall_brick")
-	_add_box(market, "MarketParapet", Vector3(8.2, 0.9, 0.4), Vector3(-21.5, 4.95, 7.0), "concrete")
-	_add_box(market, "MarketSignBoard", Vector3(5.6, 0.85, 0.16), Vector3(-21.5, 4.0, 7.12), "wood_old")
-	# Toldo quebrado avançando na calçada para gerar sombra tática
-	_add_box(market, "MarketAwning", Vector3(7.4, 0.16, 2.8), Vector3(-21.2, 2.9, 8.4), "awning", Vector3(8.0, 0.0, 0.0))
-	_add_box(market, "AwningPostL", Vector3(0.14, 2.8, 0.14), Vector3(-24.6, 1.4, 9.5), "metal_dark")
-	_add_box(market, "AwningPostR", Vector3(0.14, 2.8, 0.14), Vector3(-17.8, 1.4, 9.5), "metal_dark")
-	_add_box(market, "BoardedWindowFront", Vector3(3.4, 1.6, 0.14), Vector3(-21.5, 1.5, 7.08), "wood_old")
-	# Cerca baixa ligando o fundo do mercado à entrada do beco oeste
-	_add_box(market, "AlleyCrateStack", Vector3(1.2, 1.1, 1.2), Vector3(-16.8, 0.55, 5.2), "wood_old")
-	_add_box(market, "AlleyCrateTop", Vector3(0.8, 0.75, 0.8), Vector3(-16.7, 1.48, 5.1), "wood_old", Vector3(0.0, 18.0, 0.0))
-
-	# 2. Casa Vizinha Abandonada (Leste, X: +17.5..+25.5, Z: -7.0..+7.5)
+	# Casa Vizinha Abandonada (Leste, X: +17.5..+25.5, Z: -7.0..+7.5)
 	var neighbor: Node3D = Node3D.new()
 	neighbor.name = "NeighborHouse"
 	bldgs.add_child(neighbor)
@@ -338,18 +529,41 @@ func _build_neighbor_buildings() -> void:
 	_add_box(neighbor, "NeighborBoardWin2", Vector3(1.8, 1.3, 0.12), Vector3(20.5, 4.6, 7.56), "wood_old")
 	_add_box(neighbor, "NeighborLowWall", Vector3(7.6, 0.95, 0.25), Vector3(21.5, 0.48, 9.4), "concrete_dark")
 
-	# 3. Garagens / Muros Sul atrás da calçada sul (dando profundidade atrás do muro)
+	# Garagens / Muros Sul atrás da calçada sul
 	var south_row: Node3D = Node3D.new()
 	south_row.name = "SouthBuildings"
 	bldgs.add_child(south_row)
 	_add_box(south_row, "GarageWest", Vector3(14.0, 4.4, 7.0), Vector3(-14.0, 2.2, 20.5), "wall_brick")
-	_add_box(south_row, "GarageEast", Vector3(14.0, 4.8, 7.0), Vector3(14.0, 2.4, 20.5), "neighbor_stucco")
+	_add_box(south_row, "GarageEast", Vector3(22.0, 4.8, 7.0), Vector3(18.0, 2.4, 20.5), "neighbor_stucco")
 
+
+func _build_cult_plaza() -> void:
+	var plaza: Node3D = _create_group("CultPlaza")
+	# Piso de pedra da Pracinha (X: +25.5..+36.0, Z: -20.0..+9.6)
+	_add_box(plaza, "PlazaStoneGround", Vector3(10.5, 0.1, 29.6), Vector3(30.75, -0.05, -5.2), "plaza_stone")
+
+	# Bancos quebrados e mureta da praça
+	_add_box(plaza, "PlazaBenchNorth", Vector3(2.2, 0.5, 0.6), Vector3(28.2, 0.25, -4.5), "wood_old")
+	_add_box(plaza, "PlazaBenchSouth", Vector3(2.2, 0.5, 0.6), Vector3(33.2, 0.25, 4.8), "wood_old", Vector3(0.0, -24.0, 0.0))
+	_add_box(plaza, "PlazaBenchWest", Vector3(0.6, 0.45, 2.0), Vector3(27.2, 0.23, 1.8), "wood_old", Vector3(0.0, 12.0, 0.0))
+
+	# Altar Improvisado do Culto no centro da pracinha (30.5, 0, 0)
+	_add_box(plaza, "AltarPedestal", Vector3(1.8, 0.9, 1.8), Vector3(30.5, 0.45, 0.0), "concrete_dark")
+	_add_box(plaza, "AltarPillarL", Vector3(0.32, 2.4, 0.32), Vector3(29.7, 1.9, -0.7), "wood_old")
+	_add_box(plaza, "AltarPillarR", Vector3(0.32, 2.4, 0.32), Vector3(31.3, 1.9, -0.7), "wood_old")
+	_add_box(plaza, "AltarCrossbeam", Vector3(2.1, 0.24, 0.35), Vector3(30.5, 3.0, -0.7), "wood_old")
+	_add_box(plaza, "AltarMirrorShard", Vector3(0.95, 1.4, 0.08), Vector3(30.5, 2.0, -0.6), "tower_altar", Vector3(0.0, 0.0, 7.0))
+	_build_cult_sign(plaza, "PlazaTotemL", Vector3(28.5, 0.0, 7.2), -15.0)
+	_build_cult_sign(plaza, "PlazaTotemR", Vector3(33.0, 0.0, -8.5), 25.0)
+	_build_dead_tree(plaza, "PlazaDeadTree", Vector3(34.2, 0.0, -14.0), 1.2)
+
+
+# --------------------------------------------------------------------------- Props da Rua & Horizonte
 
 func _build_street_props_and_covers() -> void:
 	var props: Node3D = _create_group("StreetPropsAndCovers")
 
-	# 1. Carro Abandonado (X: -6.5, Z: 13.0) — cobertura contra o sol e Lunáticos
+	# 1. Carro Abandonado (X: -6.5, Z: 13.0)
 	var car: Node3D = Node3D.new()
 	car.name = "AbandonedSedan"
 	car.position = Vector3(-6.5, 0.0, 13.0)
@@ -362,7 +576,15 @@ func _build_street_props_and_covers() -> void:
 		for wz: float in [-0.78, 0.78]:
 			_add_box(car, "Wheel", Vector3(0.56, 0.56, 0.24), Vector3(wx, 0.28, wz), "metal_dark", Vector3.ZERO, false)
 
-	# 2. Ponto de Ônibus / Abrigo de Concreto (X: 12.5, Z: 10.4) — teto projeta sombra segura
+	# 1B. Carro tombado perto da entrada da Pracinha (X: 22.8, Z: 13.0)
+	var wreck: Node3D = Node3D.new()
+	wreck.name = "WreckedVan"
+	wreck.position = Vector3(22.8, 0.55, 13.0)
+	wreck.rotation_degrees = Vector3(0.0, -18.0, 22.0)
+	props.add_child(wreck)
+	_add_box(wreck, "VanBody", Vector3(3.6, 1.35, 1.75), Vector3.ZERO, "car_rust")
+
+	# 2. Ponto de Ônibus / Abrigo de Concreto (X: 12.5, Z: 10.35)
 	var bus: Node3D = Node3D.new()
 	bus.name = "BusStopShelter"
 	bus.position = Vector3(12.5, 0.0, 10.35)
@@ -374,12 +596,13 @@ func _build_street_props_and_covers() -> void:
 	_add_box(bus, "BusSignPole", Vector3(0.12, 2.9, 0.12), Vector3(2.1, 1.45, 0.3), "metal_dark")
 	_add_box(bus, "BusSignPlate", Vector3(0.55, 0.65, 0.08), Vector3(2.1, 2.55, 0.3), "cult_sign", Vector3(0.0, 0.0, -6.0))
 
-	# 3. Postes de Luz Quebrados ao longo da calçada
+	# 3. Postes de Luz Quebrados
 	var pole_positions: Array[Vector3] = [
 		Vector3(-14.5, 0.0, 9.8),
 		Vector3(-4.2, 0.0, 9.8),
 		Vector3(5.6, 0.0, 9.8),
 		Vector3(16.2, 0.0, 9.8),
+		Vector3(28.0, 0.0, 9.8),
 		Vector3(9.5, 0.0, 15.6),
 	]
 	for i: int in range(pole_positions.size()):
@@ -392,7 +615,7 @@ func _build_street_props_and_covers() -> void:
 		_add_box(pole, "Arm", Vector3(0.12, 0.12, 1.3), Vector3(0.0, 4.5, 0.6), "metal_dark")
 		_add_box(pole, "DeadLamp", Vector3(0.28, 0.14, 0.45), Vector3(0.0, 4.42, 1.15), "concrete_dark", Vector3.ZERO, false)
 
-	# 4. Totens / Placas do Culto nos cruzamentos
+	# 4. Totens / Placas do Culto
 	_build_cult_sign(props, "CultSign_West", Vector3(-16.2, 0.0, 11.1), 22.0)
 	_build_cult_sign(props, "CultSign_East", Vector3(17.2, 0.0, 11.4), -28.0)
 
@@ -426,7 +649,6 @@ func _build_dead_tree(parent_node: Node3D, tree_name: String, pos: Vector3, scal
 
 func _build_distant_horizon_tower() -> void:
 	var horizon: Node3D = _create_group("HorizonSkyline")
-	# Torre Central ("Espelho da Alma Partida") no horizonte norte
 	var tower: Node3D = Node3D.new()
 	tower.name = "CentralTower"
 	tower.position = Vector3(14.0, 0.0, -78.0)
@@ -437,7 +659,6 @@ func _build_distant_horizon_tower() -> void:
 	_add_box(tower, "RitualPillarR", Vector3(1.8, 9.0, 2.2), Vector3(3.6, 60.5, 0.0), "skyline", Vector3.ZERO, false)
 	_add_box(tower, "BrokenMirrorAltar", Vector3(4.2, 5.2, 0.6), Vector3(0.0, 59.5, 0.0), "tower_altar", Vector3(0.0, 0.0, 6.0), false)
 
-	# Silhuetas de outros prédios distantes formando a cidade morta
 	var buildings: Array[Dictionary] = [
 		{"pos": Vector3(-38.0, 0.0, -84.0), "size": Vector3(12.0, 34.0, 12.0)},
 		{"pos": Vector3(-16.0, 0.0, -88.0), "size": Vector3(10.0, 26.0, 10.0)},

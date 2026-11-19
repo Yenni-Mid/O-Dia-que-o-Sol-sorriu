@@ -126,10 +126,10 @@ anchor_left = 1.0
 anchor_top = 0.5
 anchor_right = 1.0
 anchor_bottom = 0.5
-offset_left = -520.0
-offset_top = 80.0
-offset_right = -64.0
-offset_bottom = 300.0
+offset_left = -620.0
+offset_top = 40.0
+offset_right = -48.0
+offset_bottom = 320.0
 grow_horizontal = 0
 grow_vertical = 2
 
@@ -138,12 +138,14 @@ layout_mode = 2
 theme_override_colors/font_color = Color(0.92, 0.90, 0.82, 1)
 theme_override_font_sizes/font_size = 15
 text = "CONTROLES:
-• WASD — Mover
-• Shift — Correr (gasta fôlego / emite muito ruído)
-• Ctrl — Agachar (furtivo / reduz silhueta nas janelas)
-• F ou Botão Direito — Acender / Apagar Lampião
-• E — Interagir (Ler Ecos, Óleo, Portas, Esconderijo)
-• Esc — Pausar / Sensibilidade"
+• WASD — Mover  |  Q / C — Espreitar esquinas
+• Shift — Correr (gasta fôlego / faz barulho)
+• Ctrl — Agachar (furtivo e abaixa silhueta)
+• F / Botão Direito — Acender / Apagar Lampião
+• G — Arremessar Garrafa (isca)  |  H — Usar Bandagem
+• E — Interagir (Ecos, Óleo, Fitas, Portas, Chaves, Armários)
+• Tab — Mapa Rabiscado & Diário de Ecos  |  Esc — Pausa
+* DIA: Sol drena sanidade. NOITE (19h–06h): Cultistas caçam o lampião."
 
 [node name="OptionsPanel" type="PanelContainer" parent="."]
 visible = false

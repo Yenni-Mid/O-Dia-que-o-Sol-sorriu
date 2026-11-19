@@ -9,6 +9,10 @@
 [ext_resource type="Script" path="res://levels/smiling_sun.gd" id="7_sun"]
 [ext_resource type="PackedScene" path="res://ui/pause_menu.tscn" id="8_pause"]
 [ext_resource type="Script" path="res://ui/screen_fx.gd" id="9_fx"]
+[ext_resource type="Script" path="res://systems/day_night_cycle.gd" id="10_daynight"]
+[ext_resource type="Script" path="res://systems/hallucination_director.gd" id="11_halluc"]
+[ext_resource type="PackedScene" path="res://ui/field_journal_ui.tscn" id="12_journal"]
+[ext_resource type="PackedScene" path="res://ui/vhs_tape_overlay.tscn" id="13_vhs"]
 
 [sub_resource type="ProceduralSkyMaterial" id="SkyMat_sick"]
 sky_top_color = Color(0.25, 0.28, 0.33, 1)
@@ -104,6 +108,12 @@ script = ExtResource("7_sun")
 [node name="Player" parent="SubViewportContainer/SubViewport/World3D" unique_id=649988602 instance=ExtResource("3_o5002")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.15, 23.5)
 
+[node name="DayNightCycle" type="Node" parent="SubViewportContainer/SubViewport/World3D" unique_id=911001001]
+script = ExtResource("10_daynight")
+
+[node name="HallucinationDirector" type="Node" parent="SubViewportContainer/SubViewport/World3D" unique_id=911001002]
+script = ExtResource("11_halluc")
+
 [node name="CanvasLayer_UI" type="CanvasLayer" parent="." unique_id=1765596317]
 layer = 2
 
@@ -122,5 +132,9 @@ grow_vertical = 2
 [node name="EchoReaderUI" parent="CanvasLayer_UI" unique_id=474013184 instance=ExtResource("6_4qlv2")]
 grow_horizontal = 2
 grow_vertical = 2
+
+[node name="FieldJournalUI" parent="CanvasLayer_UI" unique_id=911002001 instance=ExtResource("12_journal")]
+
+[node name="VHSTapeOverlay" parent="CanvasLayer_UI" unique_id=911002002 instance=ExtResource("13_vhs")]
 
 [node name="PauseMenu" parent="CanvasLayer_UI" unique_id=885522114 instance=ExtResource("8_pause")]

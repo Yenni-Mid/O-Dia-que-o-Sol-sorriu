@@ -30,6 +30,8 @@ var _prompt_label: Label
 var _confession_label: Label
 var _objective_label: Label
 var _toast_label: Label
+var _clock_label: Label
+var _inventory_label: Label
 var _crosshair: ColorRect
 var _hiding_overlay: Control
 
@@ -56,6 +58,9 @@ func _ready() -> void:
 	GameEvents.confession_triggered.connect(_on_confession_triggered)
 	GameEvents.player_hidden_changed.connect(_on_player_hidden_changed)
 	GameEvents.echo_opened.connect(_on_echo_opened)
+	GameEvents.time_of_day_changed.connect(_on_time_of_day_changed)
+	GameEvents.inventory_changed.connect(_on_inventory_changed)
+	GameEvents.status_message_requested.connect(_on_status_message_requested)
 	call_deferred("_count_echoes")
 
 
@@ -187,6 +192,28 @@ func _build_layout() -> void:
 	_stamina_row = _stamina_bar.get_parent() as HBoxContainer
 	if _stamina_row != null:
 		_stamina_row.modulate.a = 0.0
+
+	# Relógio Dia/Noite (canto superior direito)
+	_clock_label = _make_label(14, UiTheme.AMBER)
+	_clock_label.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	_clock_label.offset_left = -360.0
+	_clock_label.offset_right = -22.0
+	_clock_label.offset_top = 18.0
+	_clock_label.offset_bottom = 44.0
+	_clock_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_clock_label.text = "15:30 — DIA [SOL SORRIDENTE]"
+	add_child(_clock_label)
+
+	# Barra compacta de inventário e diário (canto inferior direito)
+	_inventory_label = _make_label(13, UiTheme.INK)
+	_inventory_label.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	_inventory_label.offset_left = -460.0
+	_inventory_label.offset_right = -22.0
+	_inventory_label.offset_top = -42.0
+	_inventory_label.offset_bottom = -16.0
+	_inventory_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_inventory_label.text = "[G] Garrafas: 1   |   [H] Bandagens: 1   |   [Tab] Mapa"
+	add_child(_inventory_label)
 
 
 func _make_label(font_size: int, color: Color) -> Label:
@@ -325,3 +352,29 @@ func _on_player_hidden_changed(is_hidden: bool) -> void:
 	if _zone_label != null and is_hidden:
 		_zone_label.text = "ESCONDIDO  —  [E] para sair"
 		_zone_label.add_theme_color_override("font_color", UiTheme.INK)
+
+
+func _on_time_of_day_changed(hour: float, is_night: bool, phase_name: String) -> void:
+	if _clock_label == null:
+		return
+	var total_minutes: int = int(floorf(hour * 60.0))
+	var hh: int = (total_minutes / 60) % 24
+	var mm: int = total_minutes % 60
+	_clock_label.text = "%02d:%02d — %s" % [hh, mm, phase_name]
+	var col: Color = Color(0.95, 0.32, 0.28) if is_night else UiTheme.AMBER
+	_clock_label.add_theme_color_override("font_color", col)
+
+
+func _on_inventory_changed(bottles: int, bandages: int, keys: Array) -> void:
+	if _inventory_label == null:
+		return
+	var key_str: String = "" if keys.is_empty() else ("   |   Chaves: %d" % keys.size())
+	_inventory_label.text = "[G] Garrafas: %d   |   [H] Bandagens: %d%s   |   [Tab] Mapa" % [bottles, bandages, key_str]
+
+
+func _on_status_message_requested(text: String) -> void:
+	if _toast_label == null or text.is_empty():
+		return
+	_toast_label.text = text
+	_toast_label.modulate.a = 1.0
+	_toast_timer = 3.2

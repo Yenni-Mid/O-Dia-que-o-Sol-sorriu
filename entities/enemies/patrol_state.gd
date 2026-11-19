@@ -1,6 +1,11 @@
 class_name PatrolState
 extends Node
-## Estado de patrulha e suspeita dos Lunáticos nas áreas ensolaradas.
+## Estado de patrulha noturna dos Lunáticos: segue waypoints, reage a portas abertas, alarme do Pregador e luz do lampião.
+
+const LANTERN_LURE_RANGE: float = 22.0
+const LANTERN_LURE_DELAY: float = 1.6
+const DOOR_CHECK_INTERVAL: float = 2.0
+const DOOR_SPOT_RANGE: float = 4.0
 
 @export var patrol_speed: float = 2.2
 @export var suspicious_speed: float = 3.0
@@ -18,6 +23,9 @@ var _waypoint_stall_timer: float = 0.0
 var _investigating_point: bool = false
 var _last_heard_position: Vector3 = Vector3.ZERO
 var _suspicious_timer: float = 0.0
+var _lantern_lure_timer: float = 0.0
+var _door_check_timer: float = 1.0
+var _door_investigate_cd: float = 0.0
 var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity") as float
 
 
@@ -26,12 +34,15 @@ func setup(enemy_node: Node, fsm_node: EnemyStateMachine) -> void:
 	_fsm = fsm_node
 	if not GameEvents.player_noise_emitted.is_connected(_on_player_noise_emitted):
 		GameEvents.player_noise_emitted.connect(_on_player_noise_emitted)
+	if not GameEvents.alarm_triggered.is_connected(_on_alarm_triggered):
+		GameEvents.alarm_triggered.connect(_on_alarm_triggered)
 
 
 func enter() -> void:
 	_investigating_point = false
 	_suspicious_timer = 0.0
 	_waypoint_stall_timer = 0.0
+	_lantern_lure_timer = 0.0
 	if _waypoints.is_empty() and _enemy != null:
 		_resolve_waypoints()
 
@@ -46,11 +57,33 @@ func physics_update(delta: float) -> void:
 
 	if not _enemy.is_on_floor():
 		_enemy.velocity.y -= _gravity * delta
+	if _door_investigate_cd > 0.0:
+		_door_investigate_cd -= delta
 
 	var player: PlayerController = _find_player()
 	if player != null and _can_see_player(player):
 		_fsm.transition_to("ChaseState")
 		return
+
+	# Atração noturna pela luz do lampião aceso
+	if _fsm != null and _fsm.is_night_active and player != null and not player.is_hidden:
+		if player.lantern_system != null and player.lantern_system.is_lit and _enemy.global_position.distance_to(player.global_position) <= LANTERN_LURE_RANGE:
+			_lantern_lure_timer += delta
+			if _lantern_lure_timer >= LANTERN_LURE_DELAY:
+				_lantern_lure_timer = 0.0
+				_investigate_point(player.global_position)
+				return
+		else:
+			_lantern_lure_timer = 0.0
+	else:
+		_lantern_lure_timer = 0.0
+
+	# Reação emergente a portas abertas deixadas pelo jogador
+	_door_check_timer -= delta
+	if _door_check_timer <= 0.0:
+		_door_check_timer = DOOR_CHECK_INTERVAL
+		if _door_investigate_cd <= 0.0 and _check_open_doors():
+			return
 
 	var target_pos: Vector3 = _enemy.global_position
 	var move_speed: float = patrol_speed
@@ -86,6 +119,33 @@ func physics_update(delta: float) -> void:
 		_enemy.velocity.z = 0.0
 
 	_enemy.move_and_slide()
+
+
+func _check_open_doors() -> bool:
+	var tree: SceneTree = get_tree()
+	if tree == null:
+		return false
+	for node: Node in tree.get_nodes_in_group("door_interactable"):
+		var door: Node3D = node as Node3D
+		if door == null:
+			continue
+		if bool(door.get("is_open")) and bool(door.get("should_stay_closed")):
+			if _enemy.global_position.distance_to(door.global_position) <= DOOR_SPOT_RANGE:
+				_door_investigate_cd = 14.0
+				_investigate_point(door.global_position)
+				return true
+	return false
+
+
+func _investigate_point(pos: Vector3) -> void:
+	var susp_node: Node = _fsm.get_node_or_null("SuspiciousState")
+	if susp_node != null and susp_node.has_method("set_investigation_target"):
+		susp_node.call("set_investigation_target", pos)
+		_fsm.transition_to("SuspiciousState")
+	else:
+		_last_heard_position = pos
+		_investigating_point = true
+		_suspicious_timer = 3.0
 
 
 func _compute_steered_direction(desired_target: Vector3) -> Vector3:
@@ -148,14 +208,14 @@ func _find_player() -> PlayerController:
 
 
 func _on_player_noise_emitted(origin: Vector3, radius: float) -> void:
-	if _enemy == null or _fsm == null or _fsm.current_state != self:
+	if _enemy == null or _fsm == null or not _fsm.is_night_active or _fsm.current_state != self:
 		return
 	if _enemy.global_position.distance_to(origin) <= radius:
-		var susp_node: Node = _fsm.get_node_or_null("SuspiciousState")
-		if susp_node != null and susp_node.has_method("set_investigation_target"):
-			susp_node.call("set_investigation_target", origin)
-			_fsm.transition_to("SuspiciousState")
-		else:
-			_last_heard_position = origin
-			_investigating_point = true
-			_suspicious_timer = 3.0
+		_investigate_point(origin)
+
+
+func _on_alarm_triggered(origin: Vector3) -> void:
+	if _enemy == null or _fsm == null or not _fsm.is_night_active:
+		return
+	if _fsm.current_state == self:
+		_investigate_point(origin)

@@ -54,6 +54,8 @@ func _setup_audio_3d() -> void:
 
 
 func _process(delta: float) -> void:
+	if not visible:
+		return
 	var st_name: String = ""
 	if _fsm != null and _fsm.current_state != null:
 		st_name = _fsm.current_state.name
