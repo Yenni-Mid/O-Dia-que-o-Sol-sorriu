@@ -592,8 +592,32 @@ func _build_neighbor_buildings() -> void:
 	bldgs.add_child(south_row)
 	_add_box(south_row, "SouthBlock_FarWest", Vector3(6.8, 9.6, 4.8), Vector3(-21.9, 4.8, 18.9), "sobrado_brick")
 	_add_box(south_row, "SouthBlock_MidWest", Vector3(12.3, 11.2, 4.8), Vector3(-9.35, 5.6, 18.9), "wall_brick")
-	_add_box(south_row, "SouthBlock_MidEast", Vector3(11.3, 10.4, 4.8), Vector3(8.85, 5.2, 18.9), "neighbor_stucco")
 	_add_box(south_row, "SouthBlock_FarEast", Vector3(18.0, 9.8, 4.8), Vector3(26.5, 4.9, 18.9), "sobrado_brick")
+
+	# Drogaria / Farmácia Abandonada "Sol & Saúde" (X: +3.2..+14.5, Z: 16.5..21.3) — entrada frontal passando AGACHADO [Ctrl] sob a porta de aço!
+	var pharm: Node3D = Node3D.new()
+	pharm.name = "ExplorablePharmacy"
+	south_row.add_child(pharm)
+	_add_box(pharm, "PharmFloor", Vector3(11.3, 0.08, 4.8), Vector3(8.85, 0.02, 18.9), "market_tile")
+	_add_box(pharm, "PharmUpperFloors", Vector3(11.3, 7.0, 4.8), Vector3(8.85, 6.9, 18.9), "neighbor_stucco")
+	_add_box(pharm, "PharmWallW", Vector3(0.25, 3.4, 4.8), Vector3(3.32, 1.7, 18.9), "neighbor_stucco")
+	_add_box(pharm, "PharmWallE", Vector3(0.25, 3.4, 4.8), Vector3(14.38, 1.7, 18.9), "neighbor_stucco")
+	# Fachada Norte (Z = 16.62) com porta de aço de enrolar semi-aberta em X: 7.3..10.4 (vão inferior livre Y: 0.0..1.20 para passar agachado!)
+	_add_box(pharm, "PharmFrontW", Vector3(4.1, 3.4, 0.25), Vector3(5.25, 1.7, 16.62), "neighbor_stucco")
+	_add_box(pharm, "PharmFrontE", Vector3(4.1, 3.4, 0.25), Vector3(12.45, 1.7, 16.62), "neighbor_stucco")
+	_add_box(pharm, "PharmRollingShutter", Vector3(3.1, 2.2, 0.14), Vector3(8.85, 2.30, 16.62), "rust")
+	_add_box(pharm, "PharmShutterBar", Vector3(3.15, 0.12, 0.20), Vector3(8.85, 1.22, 16.62), "metal_dark")
+	_add_box(pharm, "PharmSignBoard", Vector3(4.8, 0.75, 0.16), Vector3(8.85, 3.85, 16.42), "concrete_dark", Vector3.ZERO, false)
+	# Parede Sul (Z = 21.18) com porta traseira destrancada para a Galeria Comercial Sul (X: 11.2..12.8)
+	_add_box(pharm, "PharmBackW", Vector3(8.0, 3.4, 0.25), Vector3(7.2, 1.7, 21.18), "neighbor_stucco")
+	_add_box(pharm, "PharmBackE", Vector3(1.7, 3.4, 0.25), Vector3(13.65, 1.7, 21.18), "neighbor_stucco")
+	_add_box(pharm, "PharmBackTop", Vector3(1.6, 1.0, 0.25), Vector3(12.0, 2.9, 21.18), "neighbor_stucco")
+	_add_door_node(pharm, "PharmacyBackDoor", Vector3(11.2, 0.0, 21.18), 1.6, 2.4, true, false)
+	# Balcão e prateleiras da Farmácia
+	_add_box(pharm, "PharmCounter", Vector3(2.8, 0.90, 0.75), Vector3(6.2, 0.45, 19.2), "wood_old")
+	_add_box(pharm, "PharmShelfW", Vector3(0.55, 1.9, 3.2), Vector3(3.85, 0.95, 18.9), "wood_old", Vector3.ZERO, false)
+	_add_box(pharm, "PharmShelfE", Vector3(0.55, 1.9, 3.2), Vector3(13.85, 0.95, 18.9), "wood_old", Vector3.ZERO, false)
+
 	# Piso da Galeria Comercial Sul (Z: 16.0..24.4) garantindo chão sólido atrás das lojas sul
 	_add_box(south_row, "SouthGalleryGroundW", Vector3(23.0, 0.1, 8.6), Vector3(-14.5, -0.05, 20.3), "dirt_grass")
 	_add_box(south_row, "SouthGalleryGroundE", Vector3(33.0, 0.1, 8.6), Vector3(19.5, -0.05, 20.3), "dirt_grass")
@@ -604,14 +628,32 @@ func _build_neighbor_buildings() -> void:
 	_add_box(south_row, "SouthRoofTowerE", Vector3(2.6, 2.8, 2.4), Vector3(26.0, 11.2, 19.0), "concrete_dark", Vector3.ZERO, false)
 
 	# Sobrados Urbanos Interiores dividindo os terrenos largos em becos estreitos de 2.7m-3.0m
-	# 1. Sobrado Oeste (X: -14.5..-10.9) cria Beco do Mercado (X: -17.5..-14.5) e Beco Oeste da Casa (X: -10.9..-8.0)
+	# 1. Sobrado Oeste Explorável + Passadiço Aéreo (X: -14.5..-10.9, Z: -7.0..+7.0, 2º andar explorável em Y = 3.3m!)
 	var sobrado_w: Node3D = Node3D.new()
 	sobrado_w.name = "SobradoOeste"
 	bldgs.add_child(sobrado_w)
-	_add_box(sobrado_w, "WingNorth", Vector3(3.6, 9.4, 5.7), Vector3(-12.7, 4.7, -4.15), "sobrado_brick")
-	_add_box(sobrado_w, "WingSouth", Vector3(3.6, 9.4, 5.7), Vector3(-12.7, 4.7, 4.15), "sobrado_brick")
-	_add_box(sobrado_w, "UpperBridge", Vector3(3.6, 6.2, 2.6), Vector3(-12.7, 6.3, 0.0), "sobrado_dark")
-	_add_box(sobrado_w, "RoofLedge", Vector3(3.9, 0.35, 14.3), Vector3(-12.7, 9.4, 0.0), "concrete_dark")
+	# Térreo Sul fechado (Z: +1.3..+7.0) mantendo o túnel térreo central (Z: -1.3..+1.3, Y: 0..3.25) aberto entre os becos!
+	_add_box(sobrado_w, "WingSouth1F", Vector3(3.6, 3.3, 5.7), Vector3(-12.7, 1.65, 4.15), "sobrado_brick")
+	# Térreo Norte (Z: -7.0..-1.3): caixa de escada aberta em Z = -7.0 (Viela Traseira) subindo até o Passadiço Aéreo!
+	_add_box(sobrado_w, "StairHallWallW", Vector3(0.24, 6.8, 5.7), Vector3(-14.38, 3.4, -4.15), "sobrado_brick")
+	_add_box(sobrado_w, "StairHallWallE", Vector3(0.24, 6.8, 5.7), Vector3(-11.02, 3.4, -4.15), "sobrado_brick")
+	_add_box(sobrado_w, "StairHallWallS", Vector3(3.12, 3.3, 0.22), Vector3(-12.7, 1.65, -1.40), "sobrado_brick")
+	_add_box(sobrado_w, "StairEntryHeaderN", Vector3(3.12, 4.2, 0.24), Vector3(-12.7, 4.7, -6.88), "sobrado_brick")
+	# Rampa/Escada interna de madeira subindo de Z=-6.2 (Y=0.0) até Z=-1.4 (Y=3.3)
+	_add_box(sobrado_w, "SobradoStairRamp", Vector3(2.85, 0.22, 5.75), Vector3(-12.7, 1.62, -3.85), "wood_old", Vector3(-34.5, 0.0, 0.0))
+	# Piso do 2º Andar e Passadiço Aéreo (Y = 3.3m, Z: -1.45..+6.85)
+	_add_box(sobrado_w, "UpperBridgeFloor", Vector3(3.4, 0.22, 8.3), Vector3(-12.7, 3.25, 2.7), "wood_old")
+	# Paredes do 2º Andar (Y: 3.3..6.7) com janelas abertas de vigília para os dois becos e para a Avenida Principal
+	_add_box(sobrado_w, "UpperWallW_Low", Vector3(0.22, 1.15, 8.3), Vector3(-14.38, 3.9, 2.7), "sobrado_dark")
+	_add_box(sobrado_w, "UpperWallW_High", Vector3(0.22, 1.1, 8.3), Vector3(-14.38, 6.15, 2.7), "sobrado_dark")
+	_add_box(sobrado_w, "UpperWallE_Low", Vector3(0.22, 1.15, 8.3), Vector3(-11.02, 3.9, 2.7), "sobrado_dark")
+	_add_box(sobrado_w, "UpperWallE_High", Vector3(0.22, 1.1, 8.3), Vector3(-11.02, 6.15, 2.7), "sobrado_dark")
+	_add_box(sobrado_w, "UpperWallS_Low", Vector3(3.4, 1.15, 0.24), Vector3(-12.7, 3.9, 6.88), "sobrado_brick")
+	_add_box(sobrado_w, "UpperWallS_High", Vector3(3.4, 1.1, 0.24), Vector3(-12.7, 6.15, 6.88), "sobrado_brick")
+	# 3º Andar superior (Y: 6.7..9.4) e cornija do telhado
+	_add_box(sobrado_w, "Attic3FMass", Vector3(3.6, 2.7, 14.0), Vector3(-12.7, 8.05, 0.0), "sobrado_dark")
+	_add_box(sobrado_w, "RoofLedge", Vector3(3.9, 0.35, 14.3), Vector3(-12.7, 9.4, 0.0), "concrete_dark", Vector3.ZERO, false)
+	_add_box(sobrado_w, "BridgeWatchTable", Vector3(1.4, 0.76, 0.85), Vector3(-12.7, 3.74, 5.4), "wood_old")
 
 	# 2. Sobrado Leste (X: +10.9..+14.5) cria Beco Leste da Casa (X: +8.0..+10.9) e Beco da Vizinha (X: +14.5..+17.5)
 	var sobrado_e: Node3D = Node3D.new()

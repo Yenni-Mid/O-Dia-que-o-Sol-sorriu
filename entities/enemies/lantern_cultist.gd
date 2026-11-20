@@ -24,6 +24,7 @@ var _investigate_target: Vector3 = Vector3.ZERO
 var _investigate_timer: float = 0.0
 var _lost_timer: float = 0.0
 var _attack_timer: float = 0.0
+var _stun_timer: float = 0.0
 var _vision_next_ms: int = 0
 var _cached_sees: bool = false
 var _walk_phase: float = 0.0
@@ -89,6 +90,11 @@ func _set_active(active: bool) -> void:
 		velocity = Vector3.ZERO
 
 
+func stun_from_flash(duration: float) -> void:
+	_stun_timer = maxf(_stun_timer, duration)
+	_play_alert()
+
+
 func _physics_process(delta: float) -> void:
 	if not _is_night_active:
 		return
@@ -96,6 +102,12 @@ func _physics_process(delta: float) -> void:
 		velocity.y -= _gravity * delta
 	if _attack_timer > 0.0:
 		_attack_timer -= delta
+	if _stun_timer > 0.0:
+		_stun_timer = maxf(0.0, _stun_timer - delta)
+		velocity.x = 0.0
+		velocity.z = 0.0
+		move_and_slide()
+		return
 
 	var player: PlayerController = get_tree().get_first_node_in_group("player") as PlayerController
 	var sees: bool = _check_vision_cached(player)

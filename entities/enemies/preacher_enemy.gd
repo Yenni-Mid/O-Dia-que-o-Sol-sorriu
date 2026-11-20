@@ -17,6 +17,7 @@ var _wp_stall: float = 0.0
 
 var _ring_timer: float = 0.0
 var _alarm_cd: float = 0.0
+var _stun_timer: float = 0.0
 var _vision_next_ms: int = 0
 var _walk_phase: float = 0.0
 var _step_triggered: bool = false
@@ -74,6 +75,11 @@ func _set_active(active: bool) -> void:
 		velocity = Vector3.ZERO
 
 
+func stun_from_flash(duration: float) -> void:
+	_stun_timer = maxf(_stun_timer, duration)
+	_ring_timer = 0.0
+
+
 func _physics_process(delta: float) -> void:
 	if not _is_night_active:
 		return
@@ -81,6 +87,12 @@ func _physics_process(delta: float) -> void:
 		velocity.y -= _gravity * delta
 	if _alarm_cd > 0.0:
 		_alarm_cd -= delta
+	if _stun_timer > 0.0:
+		_stun_timer = maxf(0.0, _stun_timer - delta)
+		velocity.x = 0.0
+		velocity.z = 0.0
+		move_and_slide()
+		return
 
 	var player: PlayerController = get_tree().get_first_node_in_group("player") as PlayerController
 

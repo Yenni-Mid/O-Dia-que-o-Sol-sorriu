@@ -7,6 +7,7 @@ const LAYER_ENVIRONMENT: int = 1
 const PSX_LIT_SHADER: Shader = preload("res://shaders/psx_lit.gdshader")
 const _DoorScript := preload("res://systems/interactables/door_interactable.gd")
 const _WardrobeScript := preload("res://systems/interactables/wardrobe_hide.gd")
+const _SlideProjectorScript := preload("res://systems/interactables/slide_projector.gd")
 
 var _materials: Dictionary = {}
 var _textures: Dictionary = {}
@@ -291,24 +292,37 @@ func _build_school_building() -> void:
 	sch.name = "SchoolBuilding"
 	add_child(sch)
 
-	# 1. Estrutura Principal de 2 Andares (X:-24..+22, Z:-72..-48)
+	# 1. Estrutura Principal de 2 Andares Exploráveis (X:-24..+22, Z:-72..-48)
 	_add_box(sch, "SchoolFloor", Vector3(46.0, 0.08, 24.0), Vector3(-1.0, 0.02, -60.0), "school_floor")
-	_add_box(sch, "SchoolCeiling1F", Vector3(46.4, 0.30, 24.4), Vector3(-1.0, 4.10, -60.0), "concrete_dark")
+	# Laje do 2º Andar (Y = 4.10, topo em Y = 4.25) recortada ao redor do poço da escadaria central (X:+0.2..+4.0, Z:-66.0..-58.8)
+	_add_box(sch, "Floor2F_West", Vector3(24.2, 0.30, 24.0), Vector3(-11.9, 4.10, -60.0), "concrete_dark")
+	_add_box(sch, "Floor2F_SouthMid", Vector3(3.8, 0.30, 10.8), Vector3(2.1, 4.10, -53.4), "concrete_dark")
+	_add_box(sch, "Floor2F_NorthLanding", Vector3(3.8, 0.30, 6.0), Vector3(2.1, 4.10, -69.0), "concrete_dark")
+	_add_box(sch, "Floor2F_East", Vector3(18.0, 0.30, 24.0), Vector3(13.0, 4.10, -60.0), "concrete_dark")
 
-	# Segundo Andar Arquitetônico (Y: 4.25..8.45) com cornija superior e telhado escalonado
-	_add_box(sch, "SchoolSecondStoryMass", Vector3(45.8, 4.1, 23.8), Vector3(-1.0, 6.3, -60.0), "school_upper")
+	# Paredes Externas Ocas do 2º Andar (Y: 4.25..8.45) + Teto do 2º Andar (Y = 8.45)
+	_add_box(sch, "Wall2F_N", Vector3(46.0, 4.2, 0.3), Vector3(-1.0, 6.35, -71.85), "school_upper")
+	_add_box(sch, "Wall2F_W", Vector3(0.3, 4.2, 24.0), Vector3(-23.85, 6.35, -60.0), "school_upper")
+	_add_box(sch, "Wall2F_E", Vector3(0.3, 4.2, 24.0), Vector3(21.85, 6.35, -60.0), "school_upper")
+	# Fachada Sul do 2º Andar com abertura central (X:-1.4..+1.4) para a Varanda do Pórtico!
+	_add_box(sch, "Wall2F_FrontW", Vector3(22.6, 4.2, 0.3), Vector3(-12.7, 6.35, -48.15), "school_upper")
+	_add_box(sch, "Wall2F_FrontE", Vector3(20.6, 4.2, 0.3), Vector3(11.7, 6.35, -48.15), "school_upper")
+	_add_box(sch, "Wall2F_FrontDoorHeader", Vector3(2.8, 1.5, 0.3), Vector3(0.0, 7.70, -48.15), "school_upper")
 	_add_box(sch, "SchoolMidBeltCourse", Vector3(46.8, 0.35, 24.6), Vector3(-1.0, 4.25, -60.0), "concrete", Vector3.ZERO, false)
-	_add_box(sch, "SchoolUpperCornice", Vector3(47.2, 0.45, 25.0), Vector3(-1.0, 8.45, -60.0), "concrete_dark", Vector3.ZERO, false)
+	_add_box(sch, "SchoolCeiling2F", Vector3(46.8, 0.45, 24.8), Vector3(-1.0, 8.45, -60.0), "concrete_dark")
 	_add_box(sch, "SchoolRoofCrown", Vector3(44.0, 0.65, 22.0), Vector3(-1.0, 8.95, -60.0), "roof", Vector3.ZERO, false)
 
-	# 2. Pórtico Monumental de Entrada e Torre do Relógio (X:-4.8..+4.8, Z:-48.1..-45.6)
+	# 2. Pórtico Monumental de Entrada, Varanda Explorável do 2º Andar e Torre do Relógio (X:-4.8..+4.8, Z:-48.1..-45.6)
 	_add_box(sch, "PorticoStep", Vector3(10.4, 0.08, 2.8), Vector3(0.0, 0.02, -46.8), "concrete", Vector3.ZERO, false)
 	for col_x: float in [-4.4, -1.9, 1.9, 4.4]:
 		_add_box(sch, "PorticoColumnBase", Vector3(0.68, 0.45, 0.68), Vector3(col_x, 0.22, -45.9), "concrete_dark", Vector3.ZERO, false)
 		_add_box(sch, "PorticoColumnShaft", Vector3(0.50, 3.8, 0.50), Vector3(col_x, 2.2, -45.9), "concrete", Vector3.ZERO, false)
-	_add_box(sch, "PorticoCanopySlab", Vector3(10.6, 0.42, 2.8), Vector3(0.0, 4.25, -46.8), "concrete_dark")
-	_add_box(sch, "PorticoBalustrade", Vector3(10.4, 0.85, 0.25), Vector3(0.0, 4.85, -45.55), "school_trim", Vector3.ZERO, false)
-	_add_box(sch, "SchoolSignHeader", Vector3(10.0, 0.95, 0.28), Vector3(0.0, 4.75, -47.85), "school_trim", Vector3.ZERO, false)
+	_add_box(sch, "PorticoCanopySlab", Vector3(10.6, 0.42, 2.8), Vector3(0.0, 4.10, -46.8), "concrete_dark")
+	# Guarda-corpo com colisão na Varanda do Pórtico para o jogador observar o pátio com segurança lá de cima
+	_add_box(sch, "PorticoBalustradeFront", Vector3(10.6, 1.15, 0.25), Vector3(0.0, 4.85, -45.55), "school_trim")
+	_add_box(sch, "PorticoBalustradeW", Vector3(0.25, 1.15, 2.8), Vector3(-5.18, 4.85, -46.8), "school_trim")
+	_add_box(sch, "PorticoBalustradeE", Vector3(0.25, 1.15, 2.8), Vector3(5.18, 4.85, -46.8), "school_trim")
+	_add_box(sch, "SchoolSignHeader", Vector3(10.0, 0.95, 0.28), Vector3(0.0, 3.85, -45.45), "school_trim", Vector3.ZERO, false)
 
 	# Frontão / Torre do Relógio acima da entrada central (Y: 8.4..11.4)
 	_add_box(sch, "ClockTowerBody", Vector3(7.6, 2.6, 3.6), Vector3(0.0, 9.7, -49.2), "school_upper", Vector3.ZERO, false)
@@ -352,16 +366,47 @@ func _build_school_building() -> void:
 	_add_box(sch, "HallDividerE_Arch", Vector3(0.25, 1.1, 2.8), Vector3(6.0, 3.25, -52.5), "school_int")
 
 	# Parede longitudinal do corredor principal em Z = -59.0:
-	# Abertura Oeste (Sala de Aula 01): X = -15.5..-12.6 (2.9m, alinhada com BlockedPassage_SchoolClass1 em X=-14)
-	# Abertura Leste (Diretoria): X = +13.2..+14.8 (1.6m, alinhada com PrincipalDoor)
+	# Abertura Oeste (Sala de Aula 01): X = -15.5..-12.6 (2.9m)
+	# Abertura Central (Escadaria do 2º Andar): X = +0.2..+4.0 (3.8m)
+	# Abertura Leste (Diretoria): X = +13.2..+14.8 (1.6m)
 	_add_box(sch, "CorrWallN_1", Vector3(8.5, 3.8, 0.25), Vector3(-19.75, 1.9, -59.0), "school_int")
-	_add_box(sch, "CorrWallN_2", Vector3(25.8, 3.8, 0.25), Vector3(0.3, 1.9, -59.0), "school_int")
+	_add_box(sch, "CorrWallN_2W", Vector3(12.8, 3.8, 0.25), Vector3(-6.2, 1.9, -59.0), "school_int")
+	_add_box(sch, "CorrWallN_2E", Vector3(9.2, 3.8, 0.25), Vector3(8.6, 1.9, -59.0), "school_int")
 	_add_box(sch, "CorrWallN_3", Vector3(7.2, 3.8, 0.25), Vector3(18.4, 1.9, -59.0), "school_int")
 	_add_box(sch, "Class1DoorTop", Vector3(2.9, 1.0, 0.25), Vector3(-14.05, 3.3, -59.0), "school_int")
 	_add_box(sch, "PrincipalDoorTop", Vector3(1.6, 1.4, 0.25), Vector3(14.0, 3.1, -59.0), "school_int")
-	# Divisória entre Sala de Aula 01 e Diretoria em X = 0 (ala norte)
-	_add_box(sch, "NorthWingCenterWall", Vector3(0.25, 3.8, 12.8), Vector3(0.0, 1.9, -65.4), "school_int")
+	# Divisórias da Caixa de Escada Central (X = 0.0 e X = +4.1) e rampa subindo de Z=-58.8 (Y=0) até Z=-66.0 (Y=4.25)
+	_add_box(sch, "NorthWingCenterWall", Vector3(0.25, 8.2, 12.8), Vector3(0.0, 4.1, -65.4), "school_int")
+	_add_box(sch, "StairwellEastWall1F", Vector3(0.25, 4.0, 7.6), Vector3(4.1, 2.0, -62.7), "school_int")
+	_add_box(sch, "StairwellBackCap1F", Vector3(4.1, 4.0, 0.25), Vector3(2.05, 2.0, -66.4), "school_int")
+	_add_box(sch, "SchoolMainStairs", Vector3(3.6, 0.24, 8.4), Vector3(2.1, 2.08, -62.4), "wood_dark", Vector3(30.4, 0.0, 0.0))
 	_add_door(sch, "PrincipalDoor", Vector3(13.2, 0.0, -59.0), 1.6, true)
+
+	# 4B. Segundo Andar Explorável: Sala de Projeção de Slides & Laboratório de Ciências (Y = 4.25m)
+	_add_box(sch, "StairGuardRail2F_E", Vector3(0.20, 1.1, 7.2), Vector3(4.1, 4.8, -62.4), "wood_dark")
+	_add_box(sch, "StairGuardRail2F_S", Vector3(3.8, 1.1, 0.20), Vector3(2.1, 4.8, -58.8), "wood_dark")
+	_add_box(sch, "UpperHallWallW", Vector3(0.25, 4.0, 13.8), Vector3(-11.5, 6.25, -55.0), "school_int")
+	_add_box(sch, "UpperHallWallE", Vector3(0.25, 4.0, 23.6), Vector3(14.5, 6.25, -60.0), "school_int")
+	# Bancadas de laboratório e bancos da Sala de Projeção no 2º andar
+	_add_box(sch, "LabTable2F_W", Vector3(1.2, 0.85, 4.4), Vector3(-8.5, 4.68, -53.5), "wood_dark")
+	_add_box(sch, "ProjectorBench1", Vector3(0.55, 0.48, 3.2), Vector3(6.8, 4.49, -53.5), "wood", Vector3.ZERO, false, true)
+	_add_box(sch, "ProjectorBench2", Vector3(0.55, 0.48, 3.2), Vector3(8.6, 4.49, -53.5), "wood", Vector3.ZERO, false, true)
+
+	var slide_proj: StaticBody3D = StaticBody3D.new()
+	slide_proj.name = "SlideProjector_School"
+	slide_proj.set_script(_SlideProjectorScript)
+	slide_proj.position = Vector3(5.2, 4.25, -53.5)
+	sch.add_child(slide_proj)
+
+	var upper_light: OmniLight3D = OmniLight3D.new()
+	upper_light.position = Vector3(1.5, 7.5, -54.0)
+	upper_light.light_color = Color(0.92, 0.76, 0.48)
+	upper_light.light_energy = 0.48
+	upper_light.omni_range = 11.0
+	upper_light.shadow_enabled = false
+	upper_light.distance_fade_enabled = true
+	upper_light.distance_fade_begin = 26.0
+	sch.add_child(upper_light)
 
 	# 5. Mobiliário do Foyer Central e Corredor Principal (sem colisão nos itens de parede para passagem livre)
 	_add_box(sch, "FoyerTrophyCase", Vector3(0.45, 2.2, 2.2), Vector3(5.6, 1.1, -49.6), "wood_dark", Vector3.ZERO, false, true)
@@ -398,11 +443,11 @@ func _build_school_building() -> void:
 	# CodeSafe_School fica em (17.5, 0.05, -70.6)
 	_add_box(sch, "PrincipalDesk", Vector3(2.4, 0.85, 1.1), Vector3(13.5, 0.42, -66.0), "wood_dark", Vector3.ZERO, true, true)
 	_add_box(sch, "PrincipalChair", Vector3(0.65, 0.95, 0.65), Vector3(13.5, 0.48, -67.2), "wood", Vector3.ZERO, false, true)
-	_add_box(sch, "OfficeBookcaseW", Vector3(0.65, 2.4, 6.0), Vector3(1.0, 1.2, -65.5), "wood_dark", Vector3.ZERO, false, true)
+	_add_box(sch, "OfficeBookcaseW", Vector3(0.65, 2.4, 5.2), Vector3(4.65, 1.2, -64.0), "wood_dark", Vector3.ZERO, false, true)
 	_add_box(sch, "OfficeFilingCab1", Vector3(0.75, 1.45, 0.65), Vector3(15.2, 0.72, -71.1), "metal_dark", Vector3.ZERO, false, true)
 	_add_box(sch, "OfficeFilingCab2", Vector3(0.75, 1.45, 0.65), Vector3(19.6, 0.72, -71.1), "metal_dark", Vector3.ZERO, false, true)
 	_add_box(sch, "OfficeBoard", Vector3(3.4, 1.3, 0.10), Vector3(11.0, 1.9, -71.60), "board", Vector3.ZERO, false, true)
-	_add_box(sch, "SecretaryCounter", Vector3(3.8, 0.88, 0.75), Vector3(6.2, 0.44, -62.5), "wood", Vector3.ZERO, true, true)
+	_add_box(sch, "SecretaryCounter", Vector3(3.4, 0.88, 0.75), Vector3(8.2, 0.44, -62.5), "wood", Vector3.ZERO, true, true)
 
 	# 9. Ala Leste Sul: Enfermaria & Refeitório (X:+6.4..+21.6, Z:-58.6..-48.4)
 	# SchoolLocker (esconderijo) fica em (19.8, 1.0, -52.0)

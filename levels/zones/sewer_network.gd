@@ -4,6 +4,7 @@ extends Node3D
 
 const LAYER_ENVIRONMENT: int = 1
 const PSX_LIT_SHADER: Shader = preload("res://shaders/psx_lit.gdshader")
+const _OilGenScript := preload("res://systems/interactables/oil_generator.gd")
 
 var _materials: Dictionary = {}
 var _mesh_cache: Dictionary = {}
@@ -156,7 +157,14 @@ func _build_cistern_room() -> void:
 	_add_box(c, "CisternWallN", Vector3(6.2, 3.1, 0.25), Vector3(-50.6, -1.8, -29.0), "sewer_wall")
 	_add_box(c, "CisternWallS", Vector3(6.2, 3.1, 0.25), Vector3(-50.6, -1.8, -23.0), "sewer_wall")
 	_add_box(c, "CisternPillar", Vector3(0.7, 3.0, 0.7), Vector3(-50.6, -1.8, -26.0), "concrete_dark")
+	_add_box(c, "SupplyCageSideWall", Vector3(0.18, 2.7, 2.2), Vector3(-50.2, -1.85, -27.8), "concrete_dark")
 	_add_dim_bulb(c, Vector3(-50.6, -0.75, -26.0))
+
+	var gen: StaticBody3D = StaticBody3D.new()
+	gen.name = "OilGenerator_Sewer"
+	gen.set_script(_OilGenScript)
+	gen.position = Vector3(-52.2, -3.2, -24.2)
+	c.add_child(gen)
 
 
 func _build_ramp_gas_station() -> void:

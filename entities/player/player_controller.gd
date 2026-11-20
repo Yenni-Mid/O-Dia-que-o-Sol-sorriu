@@ -202,9 +202,10 @@ func get_detection_distance(base_dark_vision_range: float = 8.0, lit_vision_rang
 		exposed_to_light = true
 	if sanity_component != null and sanity_component.in_sunlight:
 		exposed_to_light = true
+	var lean_stealth_mult: float = 0.55 if absf(_lean_factor) > 0.32 else 1.0
 	if exposed_to_light:
-		return lit_vision_range * visibility_multiplier
-	return base_dark_vision_range * visibility_multiplier
+		return lit_vision_range * visibility_multiplier * lean_stealth_mult
+	return base_dark_vision_range * visibility_multiplier * lean_stealth_mult
 
 
 func enter_hiding_spot(hide_pos: Vector3, exit_pos: Vector3 = Vector3.ZERO, spot: Node = null) -> void:
@@ -318,6 +319,8 @@ func _update_crouch_and_head_bob(delta: float, horizontal_speed: float) -> void:
 		head_pivot.position.y = lerpf(head_pivot.position.y, target_head_y, clampf(crouch_transition_speed * delta, 0.0, 1.0))
 
 		var want_lean: float = (-1.0 if Input.is_action_pressed("lean_left") else 0.0) + (1.0 if Input.is_action_pressed("lean_right") else 0.0)
+		if is_zero_approx(want_lean) and horizontal_speed < 1.2:
+			want_lean = _compute_auto_corner_peek()
 		var target_lean_x: float = _compute_safe_lean_offset(want_lean)
 		head_pivot.position.x = lerpf(head_pivot.position.x, target_lean_x, clampf(10.0 * delta, 0.0, 1.0))
 		_lean_factor = head_pivot.position.x / maxf(lean_distance, 0.01)
@@ -341,7 +344,10 @@ func _update_crouch_and_head_bob(delta: float, horizontal_speed: float) -> void:
 					_step_triggered = true
 					var step_db: float = -18.0 if current_state == MovementState.CROUCHING else (-6.0 if current_state == MovementState.SPRINTING else -11.0)
 					var step_pitch: float = 0.85 if current_state == MovementState.CROUCHING else (1.15 if current_state == MovementState.SPRINTING else 1.0)
-					AudioManager.play_footstep(step_db, step_pitch)
+					if _is_stepping_in_puddle():
+						AudioManager.play_footstep(step_db + 1.5, step_pitch * 1.38)
+					else:
+						AudioManager.play_footstep(step_db, step_pitch)
 			else:
 				_step_triggered = false
 		else:
@@ -375,6 +381,38 @@ func _update_hand_sway(delta: float) -> void:
 	var target_pos: Vector3 = _hand_default_pos + _hand_sway_target
 	hand_pivot.position = hand_pivot.position.lerp(target_pos, clampf(hand_sway_smoothing * delta, 0.0, 1.0))
 	_hand_sway_target = _hand_sway_target.lerp(Vector3.ZERO, clampf(hand_sway_smoothing * delta, 0.0, 1.0))
+
+
+func _compute_auto_corner_peek() -> float:
+	if current_state != MovementState.CROUCHING or head_pivot == null:
+		return 0.0
+	var world_3d: World3D = get_world_3d()
+	if world_3d == null or world_3d.direct_space_state == null:
+		return 0.0
+	var space_state: PhysicsDirectSpaceState3D = world_3d.direct_space_state
+	var origin: Vector3 = global_position + Vector3(0.0, head_pivot.position.y, 0.0)
+	var fwd: Vector3 = -global_transform.basis.z.normalized()
+	var right: Vector3 = global_transform.basis.x.normalized()
+	var excl: Array[RID] = [get_rid()]
+	var hit_center: Dictionary = space_state.intersect_ray(PhysicsRayQueryParameters3D.create(origin, origin + fwd * 1.05, 1, excl))
+	if hit_center.is_empty():
+		return 0.0
+	var hit_left: Dictionary = space_state.intersect_ray(PhysicsRayQueryParameters3D.create(origin - right * 0.48, origin - right * 0.48 + fwd * 1.45, 1, excl))
+	var hit_right: Dictionary = space_state.intersect_ray(PhysicsRayQueryParameters3D.create(origin + right * 0.48, origin + right * 0.48 + fwd * 1.45, 1, excl))
+	if hit_left.is_empty() and not hit_right.is_empty():
+		return -0.65
+	if hit_right.is_empty() and not hit_left.is_empty():
+		return 0.65
+	return 0.0
+
+
+func _is_stepping_in_puddle() -> bool:
+	for p_node: Node in get_tree().get_nodes_in_group("wet_puddle"):
+		if p_node is Node3D:
+			var p3: Node3D = p_node as Node3D
+			if Vector2(global_position.x - p3.global_position.x, global_position.z - p3.global_position.z).length_squared() <= 1.65:
+				return true
+	return false
 
 
 func _compute_safe_lean_offset(want_lean: float) -> float:
@@ -465,3 +503,12 @@ func _ensure_input_actions() -> void:
 		var key_event: InputEventKey = InputEventKey.new()
 		key_event.physical_keycode = bindings[action_name] as Key
 		InputMap.action_add_event(action_name, key_event)
+	# Teclas extras Z e X como atalhos adicionais para espiar nas esquinas (lean_left / lean_right)
+	if InputMap.has_action("lean_left"):
+		var z_ev: InputEventKey = InputEventKey.new()
+		z_ev.physical_keycode = KEY_Z
+		InputMap.action_add_event("lean_left", z_ev)
+	if InputMap.has_action("lean_right"):
+		var x_ev: InputEventKey = InputEventKey.new()
+		x_ev.physical_keycode = KEY_X
+		InputMap.action_add_event("lean_right", x_ev)

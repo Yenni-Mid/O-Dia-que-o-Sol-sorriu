@@ -195,6 +195,12 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -19.5, 0.35, -6.4)
 [node name="OilPickup_Basement" parent="." unique_id=1570514003 instance=ExtResource("2_isfup")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.0, -2.95, -5.0)
 
+[node name="OilPickup_SobradoBridge" parent="." unique_id=1570514004 instance=ExtResource("2_isfup")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -13.1, 4.18, 5.4)
+
+[node name="OilPickup_SewerCage" parent="." unique_id=1570514005 instance=ExtResource("2_isfup")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -52.2, -3.15, -28.0)
+
 [node name="KeyPickup_Basement" type="Area3D" parent="." unique_id=406001001]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -18.8, 0.92, 2.8)
 script = ExtResource("14_key")
@@ -229,6 +235,10 @@ script = ExtResource("13_bandage")
 
 [node name="BandagePickup_Basement" type="Area3D" parent="." unique_id=406003003]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.8, -1.40, -0.5)
+script = ExtResource("13_bandage")
+
+[node name="BandagePickup_Pharmacy" type="Area3D" parent="." unique_id=406003004]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.8, 0.94, 19.2)
 script = ExtResource("13_bandage")
 
 [node name="VHSRecorder_HouseTV" type="Area3D" parent="." unique_id=406004001]
@@ -507,6 +517,27 @@ fallback_id = "echo_chapel_14"
 fallback_author = "Escritura do Altar"
 fallback_date = "Vigília Final"
 fallback_text = "Este quarteirão é apenas a antessala do Espelho da Alma Partida. A Torre Central ergue-se ao norte além dos muros da escola."
+
+[node name="EchoNote_SobradoBridge" parent="." unique_id=408746394 instance=ExtResource("3_3ybw4")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12.3, 4.16, 5.4)
+fallback_id = "echo_sobrado_15"
+fallback_author = "Vigia do Passadiço"
+fallback_date = "Noite 8"
+fallback_text = "Daqui de cima do passadiço dá para ouvir os passos deles nos becos sem ser visto. Se uma Sombra bloquear o caminho lá embaixo, sobrecarregue a válvula do lampião (Botão Direito) para queimá-la por alguns segundos."
+
+[node name="EchoNote_Pharmacy" parent="." unique_id=408746395 instance=ExtResource("3_3ybw4")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.5, 0.92, 19.2)
+fallback_id = "echo_pharmacy_16"
+fallback_author = "Farmacêutico Dr. Celso"
+fallback_date = "Dia 2 após o Sorriso"
+fallback_text = "Abaixei a porta de aço da drogaria antes de fugir pela galeria dos fundos. Nenhum colírio cura quem encarou a coroa solar — as retinas deles continuam refletindo o disco dourado mesmo no escuro."
+
+[node name="EchoNote_ChapelBelfry" parent="." unique_id=408746396 instance=ExtResource("3_3ybw4")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 52.0, 6.34, -4.1)
+fallback_id = "echo_belfry_17"
+fallback_author = "O Sineiro da Capela"
+fallback_date = "Meia-Noite"
+fallback_text = "Do alto deste campanário vejo os três quarteirões mergulhados na neblina sulfurosa e a Torre Central ao norte. À meia-noite o bronze ainda vibra sozinho."
 
 [node name="ShadowHazard_Sewer1" parent="." unique_id=1873891504 instance=ExtResource("4_corlq")]
 transform = Transform3D(1.1, 0, 0, 0, 1, 0, 0, 0, 0.72, -34.6, -3.15, -5.3)

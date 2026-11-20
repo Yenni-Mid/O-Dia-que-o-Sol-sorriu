@@ -12,6 +12,8 @@ const MASK_PLAYER_AND_LANTERN: int = (1 << 1) | (1 << 4) # Layers 2 e 5
 var _tracked_player: PlayerController
 var _player_health: HealthComponent
 var _active_safe_zones: int = 0
+var _flash_suppress_timer: float = 0.0
+var _permanently_suppressed: bool = false
 var _hum_3d: AudioStreamPlayer3D
 
 @onready var visual_mesh: Node3D = get_node_or_null("ShadowMesh") as Node3D
@@ -40,17 +42,19 @@ func _ready() -> void:
 
 
 func _physics_process(delta: float) -> void:
-	var suppressed_by_light: bool = _active_safe_zones > 0
+	if _flash_suppress_timer > 0.0:
+		_flash_suppress_timer = maxf(0.0, _flash_suppress_timer - delta)
+	var suppressed_by_light: bool = (_active_safe_zones > 0) or (_flash_suppress_timer > 0.0) or _permanently_suppressed
 	if visual_mesh != null:
-		var target_scale_y: float = 0.15 if suppressed_by_light else 1.0
+		var target_scale_y: float = 0.08 if suppressed_by_light else 1.0
 		visual_mesh.scale.y = lerpf(visual_mesh.scale.y, target_scale_y, clampf(8.0 * delta, 0.0, 1.0))
-		var target_xz: float = 0.82 if suppressed_by_light else 1.0
+		var target_xz: float = 0.48 if suppressed_by_light else 1.0
 		var xz: float = lerpf(visual_mesh.scale.x, target_xz, clampf(5.0 * delta, 0.0, 1.0))
 		visual_mesh.scale.x = xz
 		visual_mesh.scale.z = xz
 
 	if _hum_3d != null:
-		var target_db: float = -30.0 if suppressed_by_light else -12.0
+		var target_db: float = -34.0 if suppressed_by_light else -12.0
 		_hum_3d.volume_db = lerpf(_hum_3d.volume_db, target_db, clampf(6.0 * delta, 0.0, 1.0))
 
 	if _tracked_player == null:
@@ -64,8 +68,16 @@ func _physics_process(delta: float) -> void:
 			_player_health.take_damage(damage_per_second * delta)
 
 
+func suppress_by_flash(duration: float) -> void:
+	_flash_suppress_timer = maxf(_flash_suppress_timer, duration)
+
+
+func set_permanent_suppression(suppressed: bool) -> void:
+	_permanently_suppressed = suppressed
+
+
 func is_suppressed() -> bool:
-	return _active_safe_zones > 0
+	return _active_safe_zones > 0 or _flash_suppress_timer > 0.0 or _permanently_suppressed
 
 
 func _on_lantern_toggled(is_lit: bool) -> void:

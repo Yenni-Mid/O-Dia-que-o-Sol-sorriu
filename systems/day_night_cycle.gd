@@ -19,6 +19,7 @@ var _sun_light: DirectionalLight3D
 var _world_env: WorldEnvironment
 var _smiling_sun: Node3D
 var _last_emitted_bucket: int = -1
+var _midnight_bell_sent: bool = false
 var _dawn_warn_500_sent: bool = false
 var _dawn_warn_530_sent: bool = false
 var _home_shelter_dwell: float = 0.0
@@ -73,6 +74,11 @@ func _process(delta: float) -> void:
 
 
 func _process_night_expedition(delta: float) -> void:
+	if current_hour >= 0.0 and current_hour < 0.6 and not _midnight_bell_sent:
+		_midnight_bell_sent = true
+		AudioManager.play_bell_alarm()
+		GameEvents.confession_triggered.emit("00:00 — O sino da Capela badala ao longe na neblina...")
+
 	if current_hour >= 5.0 and current_hour < 6.0:
 		if not _dawn_warn_500_sent:
 			_dawn_warn_500_sent = true
@@ -126,6 +132,7 @@ func shelter_at_home_until_next_night() -> void:
 		return
 	_transitioning_night = true
 	night_number += 1
+	_midnight_bell_sent = false
 	_dawn_warn_500_sent = false
 	_dawn_warn_530_sent = false
 	_home_shelter_dwell = 0.0
@@ -139,7 +146,10 @@ func shelter_at_home_until_next_night() -> void:
 
 	SaveManager.set_checkpoint(Vector3(0.0, 0.15, 4.2))
 	AudioManager.play_phase_chime()
-	GameEvents.status_message_requested.emit("NOITE %d (19:15) — O Sol Sorridente se pôs. Seguro para sair da Casa." % night_number)
+	if night_number == 2:
+		GameEvents.status_message_requested.emit("NOITE 2 (19:15) — O culto deixou uma marca na sua varanda durante o dia.")
+	else:
+		GameEvents.status_message_requested.emit("NOITE %d (19:15) — O Sol Sorridente se pôs. Seguro para sair da Casa." % night_number)
 	_transitioning_night = false
 
 

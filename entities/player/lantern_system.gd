@@ -23,6 +23,9 @@ var _glass_mat: StandardMaterial3D
 var _flame_mesh: MeshInstance3D
 var _flame_outer_mesh: MeshInstance3D
 var _last_emitted_oil: float = -1.0
+var _overload_timer: float = 0.0
+var _overload_cooldown: float = 0.0
+var _base_omni_range: float = 7.5
 
 @onready var lantern_mesh: MeshInstance3D = get_node_or_null("LanternMesh") as MeshInstance3D
 @onready var omni_light: OmniLight3D = get_node_or_null("OmniLight3D") as OmniLight3D
@@ -34,6 +37,8 @@ func _ready() -> void:
 	_ensure_input_actions()
 	_configure_noise()
 	_configure_nodes()
+	if omni_light != null:
+		_base_omni_range = omni_light.omni_range
 	current_oil = clampf(current_oil, 0.0, max_oil)
 	_apply_lantern_state()
 	_emit_oil()
@@ -43,12 +48,24 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("toggle_lantern"):
 		toggle_lantern()
 		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed("lantern_overload"):
+		if not is_lit:
+			toggle_lantern()
+		else:
+			trigger_overload()
+		get_viewport().set_input_as_handled()
 
 
 func _process(delta: float) -> void:
-	# Animação tátil de erguer/abaixar o lampião
-	var target_y: float = 0.0 if is_lit else -0.08
-	var target_tilt: float = 0.04 if is_lit else -0.14
+	if _overload_cooldown > 0.0:
+		_overload_cooldown = maxf(0.0, _overload_cooldown - delta)
+	if _overload_timer > 0.0:
+		_overload_timer = maxf(0.0, _overload_timer - delta)
+
+	# Animação tátil de erguer/abaixar o lampião (+ pulso para frente durante sobrecarga)
+	var overload_boost: float = clampf(_overload_timer / 1.8, 0.0, 1.0)
+	var target_y: float = (0.045 * overload_boost) if is_lit else -0.08
+	var target_tilt: float = (0.04 + 0.08 * overload_boost) if is_lit else -0.14
 	position.y = lerpf(position.y, target_y, clampf(10.0 * delta, 0.0, 1.0))
 	rotation.x = lerpf(rotation.x, target_tilt, clampf(10.0 * delta, 0.0, 1.0))
 
@@ -68,20 +85,72 @@ func _process(delta: float) -> void:
 		var starving: float = clampf((0.2 - oil_ratio) / 0.2, 0.0, 1.0)
 		var energy: float = lerpf(MIN_FLICKER_ENERGY, MAX_FLICKER_ENERGY, noise_sample)
 		energy *= lerpf(1.0, 0.55 + 0.45 * noise_sample, starving)
-		omni_light.light_energy = energy
+		omni_light.light_energy = energy + overload_boost * 2.4
+		omni_light.omni_range = _base_omni_range + overload_boost * 5.5
 	if _flame_mesh != null:
-		var flame_scale: float = 0.8 + noise_sample * 0.45
-		_flame_mesh.scale = Vector3(1.0, flame_scale, 1.0)
+		var flame_scale: float = 0.8 + noise_sample * 0.45 + overload_boost * 0.65
+		_flame_mesh.scale = Vector3(1.0 + overload_boost * 0.35, flame_scale, 1.0 + overload_boost * 0.35)
 	if _flame_outer_mesh != null:
-		var outer_scale: float = 0.85 + noise_sample * 0.35
-		_flame_outer_mesh.scale = Vector3(1.0, outer_scale, 1.0)
+		var outer_scale: float = 0.85 + noise_sample * 0.35 + overload_boost * 0.75
+		_flame_outer_mesh.scale = Vector3(1.0 + overload_boost * 0.45, outer_scale, 1.0 + overload_boost * 0.45)
 
 	if current_oil <= 0.0:
 		current_oil = 0.0
+		_overload_timer = 0.0
 		set_lantern_lit(false)
 		if extinguish_audio != null:
 			extinguish_audio.play()
 		GameEvents.lantern_depleted.emit()
+
+
+func trigger_overload() -> bool:
+	if not is_lit:
+		return false
+	if _overload_cooldown > 0.0:
+		return false
+	if current_oil < 10.0:
+		GameEvents.status_message_requested.emit("Óleo insuficiente para sobrecarregar o lampião.")
+		return false
+
+	current_oil = maxf(0.0, current_oil - 10.0)
+	_emit_oil()
+	_overload_timer = 2.2
+	_overload_cooldown = 4.0
+	AudioManager.play_lantern_ignite()
+	GameEvents.camera_shake_requested.emit(0.18)
+
+	var origin: Vector3 = global_position
+	var shadows_hit: int = 0
+	for sh_node: Node in get_tree().get_nodes_in_group("shadow_hazard"):
+		if sh_node is Node3D and sh_node.has_method("suppress_by_flash"):
+			var sh3: Node3D = sh_node as Node3D
+			if sh3.global_position.distance_to(origin) <= 8.5:
+				sh3.call("suppress_by_flash", 6.5)
+				shadows_hit += 1
+
+	var enemies_stunned: int = 0
+	for en_node: Node in get_tree().get_nodes_in_group("enemies"):
+		if en_node is Node3D and en_node.has_method("stun_from_flash"):
+			var en3: Node3D = en_node as Node3D
+			if en3.visible and en3.global_position.distance_to(origin) <= 7.8:
+				en3.call("stun_from_flash", 2.8)
+				enemies_stunned += 1
+
+	if enemies_stunned > 0:
+		GameEvents.status_message_requested.emit("Clarão do lampião! Cultista ofuscado.")
+	elif shadows_hit > 0:
+		GameEvents.status_message_requested.emit("Clarão do lampião! As Sombras Vivas recuaram.")
+	return true
+
+
+func consume_oil_amount(amount: float) -> bool:
+	if current_oil < amount:
+		return false
+	current_oil = maxf(0.0, current_oil - amount)
+	_emit_oil()
+	if current_oil <= 0.0 and is_lit:
+		set_lantern_lit(false)
+	return true
 
 
 func _emit_oil() -> void:
@@ -307,13 +376,17 @@ func _add_lantern_part(part_name: String, mesh_res: Mesh, pos: Vector3, mat: Mat
 
 
 func _ensure_input_actions() -> void:
-	if InputMap.has_action("toggle_lantern"):
-		return
-	InputMap.add_action("toggle_lantern")
-	var key_event: InputEventKey = InputEventKey.new()
-	key_event.physical_keycode = KEY_F
-	InputMap.action_add_event("toggle_lantern", key_event)
+	if not InputMap.has_action("toggle_lantern"):
+		InputMap.add_action("toggle_lantern")
+		var key_event: InputEventKey = InputEventKey.new()
+		key_event.physical_keycode = KEY_F
+		InputMap.action_add_event("toggle_lantern", key_event)
 
-	var mouse_event: InputEventMouseButton = InputEventMouseButton.new()
-	mouse_event.button_index = MOUSE_BUTTON_RIGHT
-	InputMap.action_add_event("toggle_lantern", mouse_event)
+	if not InputMap.has_action("lantern_overload"):
+		InputMap.add_action("lantern_overload")
+		var mouse_event: InputEventMouseButton = InputEventMouseButton.new()
+		mouse_event.button_index = MOUSE_BUTTON_RIGHT
+		InputMap.action_add_event("lantern_overload", mouse_event)
+		var v_event: InputEventKey = InputEventKey.new()
+		v_event.physical_keycode = KEY_V
+		InputMap.action_add_event("lantern_overload", v_event)

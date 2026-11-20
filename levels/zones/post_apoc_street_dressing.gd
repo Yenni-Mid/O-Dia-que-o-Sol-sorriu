@@ -15,6 +15,8 @@ var _mesh_cache: Dictionary = {}
 var _shape_cache: Dictionary = {}
 var _sodium_lights: Array[Dictionary] = []
 var _watcher_windows: Array[Dictionary] = []
+var _alley_rats: Array[Dictionary] = []
+var _night2_porch_mark: Node3D = null
 var _ash_particles: CPUParticles3D = null
 var _flicker_t: float = 0.0
 
@@ -30,6 +32,8 @@ func _exit_tree() -> void:
 	_shape_cache.clear()
 	_sodium_lights.clear()
 	_watcher_windows.clear()
+	_alley_rats.clear()
+	_night2_porch_mark = null
 	_ash_particles = null
 
 
@@ -42,6 +46,8 @@ func rebuild_dressing() -> void:
 	_shape_cache.clear()
 	_sodium_lights.clear()
 	_watcher_windows.clear()
+	_alley_rats.clear()
+	_night2_porch_mark = null
 	_ash_particles = null
 	_init_textures()
 	_init_materials()
@@ -117,6 +123,28 @@ func _process(delta: float) -> void:
 			if w_mat != null:
 				w_mat.emission_enabled = show_candle
 				w_mat.albedo_color = Color(0.95, 0.62, 0.24) if show_candle else Color(0.05, 0.05, 0.07)
+
+		# Ratos de beco que fogem para baixo das caçambas/frestas quando o jogador se aproxima
+		for r_idx: int in range(_alley_rats.size()):
+			var r: Dictionary = _alley_rats[r_idx]
+			var r_node: Node3D = r["node"] as Node3D
+			if r_node == null:
+				continue
+			var home_p: Vector3 = r["home"] as Vector3
+			var hide_p: Vector3 = r["hide"] as Vector3
+			var flee_t: float = float(r["flee_timer"])
+			if p_pos.distance_to(home_p) < 6.2:
+				flee_t = 14.0
+				r["flee_timer"] = flee_t
+			elif flee_t > 0.0 and p_pos.distance_to(home_p) > 12.0:
+				flee_t = maxf(0.0, flee_t - delta)
+				r["flee_timer"] = flee_t
+			var target_p: Vector3 = hide_p if flee_t > 0.0 else home_p
+			r_node.position = r_node.position.move_toward(target_p, (4.8 if flee_t > 0.0 else 1.4) * delta)
+			r_node.visible = r_node.position.distance_to(hide_p) > 0.12
+
+	if _night2_porch_mark != null and dn != null and dn.has_method("get_night_number"):
+		_night2_porch_mark.visible = int(dn.call("get_night_number")) >= 2
 
 
 # --------------------------------------------------------------------------- Texturas & Materiais PS1
@@ -527,7 +555,8 @@ func _build_ground_litter_and_puddles() -> void:
 	for p_idx: int in range(puddle_spots.size()):
 		var pp: Vector3 = puddle_spots[p_idx]
 		var psz: Vector3 = Vector3(1.65 + float(p_idx % 3) * 0.45, 0.01, 1.25 + float(p_idx % 2) * 0.40)
-		_add_box(lit, "WetPuddle_%d" % p_idx, psz, pp, "wet_puddle", Vector3(0.0, float(p_idx * 29), 0.0), false, 52.0)
+		var puddle_node: Node3D = _add_box(lit, "WetPuddle_%d" % p_idx, psz, pp, "wet_puddle", Vector3(0.0, float(p_idx * 29), 0.0), false, 52.0)
+		puddle_node.add_to_group("wet_puddle")
 
 
 func _build_powerlines_and_sodium_lights() -> void:
@@ -712,3 +741,28 @@ func _build_steaming_manholes_watchers_and_ash() -> void:
 			"seed": float(w_idx) * 2.3,
 			"spooked_timer": 0.0,
 		})
+
+	# 4. Ratos low-poly nos becos que correm para as frestas/caçambas quando o jogador se aproxima
+	var rat_data: Array[Dictionary] = [
+		{"home": Vector3(-15.8, 0.06, 2.8), "hide": Vector3(-17.3, 0.06, 1.6)},
+		{"home": Vector3(-16.1, 0.06, -2.5), "hide": Vector3(-14.6, 0.06, -3.4)},
+		{"home": Vector3(-9.5, 0.06, -1.8), "hide": Vector3(-10.8, 0.06, -3.2)},
+		{"home": Vector3(15.9, 0.06, 0.4), "hide": Vector3(17.1, 0.06, -1.8)},
+		{"home": Vector3(-16.8, 0.06, 19.2), "hide": Vector3(-18.2, 0.06, 20.5)},
+		{"home": Vector3(16.1, 0.06, 19.0), "hide": Vector3(17.2, 0.06, 20.4)},
+	]
+	for r_idx: int in range(rat_data.size()):
+		var rd: Dictionary = rat_data[r_idx]
+		var r_home: Vector3 = rd["home"] as Vector3
+		var r_hide: Vector3 = rd["hide"] as Vector3
+		var rat_node: Node3D = _add_box(fx, "AlleyRat_%d" % r_idx, Vector3(0.18, 0.10, 0.34), r_home, "trash_bag", Vector3.ZERO, false, 36.0)
+		_alley_rats.append({
+			"node": rat_node,
+			"home": r_home,
+			"hide": r_hide,
+			"flee_timer": 0.0,
+		})
+
+	# 5. Marca de Vigília do Culto na varanda da Casa Principal (revelada a partir da Noite 2)
+	_night2_porch_mark = _add_box(fx, "Night2PorchCultMark", Vector3(1.1, 0.02, 1.1), Vector3(0.0, 0.025, 7.55), "graffiti_a", Vector3.ZERO, false, 38.0)
+	_night2_porch_mark.visible = false

@@ -30,6 +30,14 @@ func _ready() -> void:
 	_whisper_timer = randf_range(4.0, 9.0)
 
 
+func stun_from_flash(duration: float) -> void:
+	if _fsm != null and _fsm.has_method("apply_flash_stun"):
+		_fsm.call("apply_flash_stun", duration)
+	if _alert_3d != null and _alert_3d.stream != null:
+		_alert_3d.pitch_scale = 1.25
+		_alert_3d.play()
+
+
 func _setup_audio_3d() -> void:
 	_step_3d = AudioStreamPlayer3D.new()
 	_step_3d.name = "StepAudio3D"

@@ -162,13 +162,39 @@ func _build_chapel() -> void:
 	chp.name = "SmilingSunChapel"
 	add_child(chp)
 
-	# Nave da Capela (X:+44..+60, Z:-21..-3)
+	# Nave da Capela (X:+44..+60, Z:-21..-3) com Teto recortado na escadaria oeste (X:44.3..46.8, Z:-15.0..-6.8) e no Campanário!
 	_add_box(chp, "ChapelFloor", Vector3(16.0, 0.08, 18.0), Vector3(52.0, 0.0, -12.0), "stone")
 	_add_box(chp, "ChapelCarpet", Vector3(2.4, 0.03, 14.0), Vector3(52.0, 0.09, -11.0), "carpet", Vector3.ZERO, false, true)
-	_add_box(chp, "ChapelRoof", Vector3(17.0, 0.45, 19.0), Vector3(52.0, 5.3, -12.0), "roof")
-	_add_box(chp, "BellTower", Vector3(4.2, 6.2, 4.2), Vector3(52.0, 7.8, -5.2), "chapel_wall")
-	_add_box(chp, "BellTowerCap", Vector3(4.8, 0.6, 4.8), Vector3(52.0, 11.1, -5.2), "roof")
-	_add_box(chp, "SunSymbol", Vector3(1.6, 1.6, 0.2), Vector3(52.0, 8.2, -3.0), "altar_gold", Vector3(0.0, 0.0, 45.0), false)
+	# Laje de teto/piso superior (Y = 5.20, topo em Y = 5.42) recortada para a escada do campanário
+	_add_box(chp, "ChapelRoofEastMain", Vector3(13.2, 0.44, 19.0), Vector3(53.4, 5.20, -12.0), "roof")
+	_add_box(chp, "ChapelRoofWestNorth", Vector3(2.8, 0.44, 6.2), Vector3(45.4, 5.20, -18.4), "roof")
+	_add_box(chp, "ChapelRoofWestSouth", Vector3(2.8, 0.44, 4.2), Vector3(45.4, 5.20, -4.7), "roof")
+
+	# Escadaria de madeira do Campanário ao longo da parede oeste interna (X:44.4..46.6, subindo de Z=-14.6 Y=0 até Z=-6.8 Y=5.42)
+	_add_box(chp, "BelfryStairRamp", Vector3(2.1, 0.24, 9.5), Vector3(45.5, 2.68, -10.7), "wood", Vector3(34.6, 0.0, 0.0))
+	_add_box(chp, "BelfryStairRail1F", Vector3(0.18, 1.2, 8.2), Vector3(46.65, 2.8, -10.7), "wood")
+
+	# Mezanino e Torre do Sino Explorável no topo (Y = 5.42m, vista panorâmica da cidade e da Torre Central)
+	_add_box(chp, "BelfryDeckGuardN", Vector3(12.8, 1.15, 0.25), Vector3(53.2, 6.0, -7.2), "stone_dark")
+	_add_box(chp, "BelfryDeckGuardE", Vector3(0.25, 1.15, 4.2), Vector3(59.6, 6.0, -5.2), "stone_dark")
+	_add_box(chp, "BelfryDeckGuardW", Vector3(0.25, 1.15, 12.2), Vector3(44.3, 6.0, -8.8), "stone_dark")
+	_add_box(chp, "BelfryDeckGuardS_W", Vector3(5.6, 1.15, 0.25), Vector3(47.1, 6.0, -3.2), "stone_dark")
+	_add_box(chp, "BelfryDeckGuardS_E", Vector3(5.6, 1.15, 0.25), Vector3(56.9, 6.0, -3.2), "stone_dark")
+	# 4 Pilares do Campanário Aberto (X: 49.8..54.2, Z: -7.2..-3.2, Y: 5.4..10.8) + Guarda-corpos de pedra nos 4 arcos
+	for bpx: float in [50.1, 53.9]:
+		for bpz: float in [-6.9, -3.5]:
+			_add_box(chp, "BelfryPillar", Vector3(0.65, 5.4, 0.65), Vector3(bpx, 8.1, bpz), "chapel_wall")
+	_add_box(chp, "BelfryParapetS", Vector3(3.8, 1.15, 0.25), Vector3(52.0, 6.0, -3.4), "chapel_wall")
+	_add_box(chp, "BelfryArchTopS", Vector3(4.4, 1.4, 0.35), Vector3(52.0, 10.1, -3.4), "chapel_wall")
+	_add_box(chp, "BelfryArchTopN", Vector3(4.4, 1.4, 0.35), Vector3(52.0, 10.1, -7.0), "chapel_wall")
+	_add_box(chp, "BelfryArchTopW", Vector3(0.35, 1.4, 4.2), Vector3(50.0, 10.1, -5.2), "chapel_wall")
+	_add_box(chp, "BelfryArchTopE", Vector3(0.35, 1.4, 4.2), Vector3(54.0, 10.1, -5.2), "chapel_wall")
+	_add_box(chp, "BellTowerCap", Vector3(5.0, 0.6, 5.0), Vector3(52.0, 11.1, -5.2), "roof")
+	# Grande Sino de Bronze suspenso no centro do Campanário
+	_add_box(chp, "BellYokeBeam", Vector3(3.2, 0.24, 0.28), Vector3(52.0, 9.2, -5.2), "wood", Vector3.ZERO, false)
+	_add_box(chp, "GreatBronzeBell", Vector3(1.1, 1.25, 1.1), Vector3(52.0, 8.35, -5.2), "altar_gold", Vector3.ZERO, false)
+	_add_box(chp, "BelfryWatchLectern", Vector3(1.1, 0.88, 0.65), Vector3(52.0, 5.86, -4.1), "wood")
+	_add_box(chp, "SunSymbol", Vector3(1.6, 1.6, 0.2), Vector3(52.0, 10.2, -3.1), "altar_gold", Vector3(0.0, 0.0, 45.0), false)
 
 	_add_box(chp, "ChapelWallW", Vector3(0.35, 5.2, 18.0), Vector3(44.15, 2.6, -12.0), "chapel_wall")
 	_add_box(chp, "ChapelWallE", Vector3(0.35, 5.2, 18.0), Vector3(59.85, 2.6, -12.0), "chapel_wall")
@@ -200,9 +226,9 @@ func _build_chapel() -> void:
 	lc.shape = _get_box_shape(Vector3(1.74, 2.54, 0.1))
 	leaf.add_child(lc)
 
-	# Bancos da capela e Altar dourado
+	# Bancos da capela (recuados na esquerda para dar passagem livre à Escadaria do Campanário em X:44.4..46.8) e Altar dourado
 	for pz: float in [-7.5, -10.0, -12.5]:
-		_add_box(chp, "PewL", Vector3(4.0, 0.78, 0.65), Vector3(48.0, 0.39, pz), "wood", Vector3.ZERO, true, true)
+		_add_box(chp, "PewL", Vector3(3.1, 0.78, 0.65), Vector3(48.7, 0.39, pz), "wood", Vector3.ZERO, true, true)
 		_add_box(chp, "PewR", Vector3(4.0, 0.78, 0.65), Vector3(56.0, 0.39, pz), "wood", Vector3.ZERO, true, true)
 
 	_add_box(chp, "AltarStep", Vector3(7.5, 0.35, 3.6), Vector3(52.0, 0.18, -18.2), "stone_dark")

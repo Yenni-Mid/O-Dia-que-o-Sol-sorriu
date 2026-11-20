@@ -16,6 +16,7 @@ var _states: Dictionary = {}
 var _next_vision_ms: int = 0
 var _cached_can_see: bool = false
 var _spawn_position: Vector3 = Vector3.ZERO
+var _stun_timer: float = 0.0
 
 
 func get_player() -> PlayerController:
@@ -166,7 +167,25 @@ func set_enemy_active(active: bool) -> void:
 			enemy.velocity = Vector3.ZERO
 
 
+func apply_flash_stun(duration: float) -> void:
+	_stun_timer = maxf(_stun_timer, duration)
+
+
+func is_stunned() -> bool:
+	return _stun_timer > 0.0
+
+
 func _physics_process(delta: float) -> void:
+	if _stun_timer > 0.0:
+		_stun_timer = maxf(0.0, _stun_timer - delta)
+		var enemy_body: CharacterBody3D = get_parent() as CharacterBody3D
+		if enemy_body != null:
+			enemy_body.velocity.x = 0.0
+			enemy_body.velocity.z = 0.0
+			enemy_body.move_and_slide()
+		if _stun_timer <= 0.0:
+			transition_to("SuspiciousState")
+		return
 	if current_state != null and current_state.has_method("physics_update"):
 		current_state.call("physics_update", delta)
 
