@@ -25,6 +25,7 @@
 [ext_resource type="Script" path="res://systems/interactables/code_safe.gd" id="23_safe"]
 [ext_resource type="Script" path="res://systems/interactables/npc_survivor.gd" id="24_npc"]
 [ext_resource type="Script" path="res://entities/enemies/lantern_cultist.gd" id="25_cultist"]
+[ext_resource type="Script" path="res://systems/interactables/home_rest_point.gd" id="26_homerest"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_775fo"]
 render_priority = 0
@@ -374,6 +375,10 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, -30.5)
 script = ExtResource("22_barrel")
 barrel_id = "barrel_school"
 barrel_name = "Tambor da Escola"
+
+[node name="HomeRestPoint" type="StaticBody3D" parent="." unique_id=407003004]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.35, 0, 6.3)
+script = ExtResource("26_homerest")
 
 [node name="NpcSurvivor_Marcos" type="StaticBody3D" parent="." unique_id=407004001]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -51.8, 0.02, -0.8)

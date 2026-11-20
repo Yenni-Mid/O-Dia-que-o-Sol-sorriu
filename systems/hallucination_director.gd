@@ -153,7 +153,7 @@ func _trigger_directional_whisper(player: PlayerController) -> void:
 
 
 func _spawn_oneshot_whisper(world_pos: Vector3) -> void:
-	var stream: AudioStreamWAV = AudioManager.get_whisper_stream()
+	var stream: AudioStream = AudioManager.get_whisper_stream()
 	if stream == null:
 		return
 	var p3d: AudioStreamPlayer3D = AudioStreamPlayer3D.new()

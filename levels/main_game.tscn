@@ -15,6 +15,7 @@
 [ext_resource type="PackedScene" path="res://ui/vhs_tape_overlay.tscn" id="13_vhs"]
 [ext_resource type="PackedScene" path="res://ui/keypad_ui.tscn" id="14_kpad"]
 [ext_resource type="Script" path="res://systems/radio_detector.gd" id="15_radio"]
+[ext_resource type="Script" path="res://systems/ambient_sound_director.gd" id="16_amb"]
 
 [sub_resource type="ProceduralSkyMaterial" id="SkyMat_sick"]
 sky_top_color = Color(0.25, 0.28, 0.33, 1)
@@ -108,7 +109,7 @@ script = ExtResource("7_sun")
 [node name="GreyboxTest" parent="SubViewportContainer/SubViewport/World3D" unique_id=229286503 instance=ExtResource("2_be87d")]
 
 [node name="Player" parent="SubViewportContainer/SubViewport/World3D" unique_id=649988602 instance=ExtResource("3_o5002")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.15, 23.5)
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0, 0.15, 4.2)
 
 [node name="DayNightCycle" type="Node" parent="SubViewportContainer/SubViewport/World3D" unique_id=911001001]
 script = ExtResource("10_daynight")
@@ -118,6 +119,9 @@ script = ExtResource("11_halluc")
 
 [node name="RadioDetector" type="Node" parent="SubViewportContainer/SubViewport/World3D" unique_id=911001003]
 script = ExtResource("15_radio")
+
+[node name="AmbientSoundDirector" type="Node" parent="SubViewportContainer/SubViewport/World3D" unique_id=911001004]
+script = ExtResource("16_amb")
 
 [node name="CanvasLayer_UI" type="CanvasLayer" parent="." unique_id=1765596317]
 layer = 2

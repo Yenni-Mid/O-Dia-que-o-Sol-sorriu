@@ -40,6 +40,7 @@ var _confession_timer: float = 0.0
 var _toast_timer: float = 0.0
 var _pulse_time: float = 0.0
 var _radio_level: float = 0.0
+var _is_dawn_urgent: bool = false
 var _cached_bottles: int = 1
 var _cached_bandages: int = 1
 var _cached_keys_count: int = 0
@@ -99,6 +100,8 @@ func _process(delta: float) -> void:
 	if _radio_label != null and _radio_level > 0.03:
 		var freq: float = lerpf(4.0, 16.0, _radio_level)
 		_radio_label.modulate.a = 0.5 + 0.5 * absf(sin(_pulse_time * freq))
+	if _clock_label != null:
+		_clock_label.modulate.a = (0.58 + 0.42 * absf(sin(_pulse_time * 5.0))) if _is_dawn_urgent else 1.0
 
 
 # --------------------------------------------------------------------------- Layout
@@ -212,7 +215,7 @@ func _build_layout() -> void:
 	_clock_label.offset_top = 18.0
 	_clock_label.offset_bottom = 44.0
 	_clock_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	_clock_label.text = "14:30 — DIA [SOL SORRIDENTE]"
+	_clock_label.text = "NOITE 1 | 19:15 — NOITE [CULTISTAS À SOLTA]"
 	add_child(_clock_label)
 
 	# Alerta de estática do Rádio (abaixo do relógio)
@@ -383,8 +386,13 @@ func _on_time_of_day_changed(hour: float, is_night: bool, phase_name: String) ->
 	var total_minutes: int = int(floorf(hour * 60.0))
 	var hh: int = (total_minutes / 60) % 24
 	var mm: int = total_minutes % 60
-	_clock_label.text = "%02d:%02d — %s" % [hh, mm, phase_name]
-	var col: Color = Color(0.95, 0.32, 0.28) if is_night else UiTheme.AMBER
+	var night_prefix: String = ""
+	var dn: Node = get_tree().get_first_node_in_group("day_night")
+	if dn != null and dn.has_method("get_night_number"):
+		night_prefix = "NOITE %d | " % int(dn.call("get_night_number"))
+	_clock_label.text = "%s%02d:%02d — %s" % [night_prefix, hh, mm, phase_name]
+	_is_dawn_urgent = (hour >= 5.0 and hour < 6.0)
+	var col: Color = Color(1.0, 0.56, 0.22) if _is_dawn_urgent else (Color(0.95, 0.32, 0.28) if is_night else UiTheme.AMBER)
 	_clock_label.add_theme_color_override("font_color", col)
 
 

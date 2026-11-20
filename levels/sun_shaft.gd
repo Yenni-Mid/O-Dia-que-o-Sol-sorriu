@@ -57,12 +57,17 @@ func _update_shaft(delta: float) -> void:
 
 	if day_night != null and day_night.has_method("is_nighttime"):
 		var night_now: bool = bool(day_night.call("is_nighttime"))
+		var h: float = float(day_night.call("get_hour")) if day_night.has_method("get_hour") else 12.0
 		if night_now:
-			target_intensity = 0.0
-		elif day_night.has_method("get_hour"):
-			var h: float = float(day_night.call("get_hour"))
-			var fade: float = clampf(minf((h - 6.0) / 1.0, (19.0 - h) / 1.0), 0.0, 1.0)
-			target_intensity = intensity * fade
+			if h >= 5.25 and h < 6.0:
+				var pre_t: float = clampf((h - 5.25) / 0.75, 0.0, 1.0)
+				target_intensity = intensity * 0.28 * pre_t
+			else:
+				target_intensity = 0.0
+		else:
+			var dawn_fade: float = lerpf(0.28, 1.0, clampf((h - 6.0) / 1.0, 0.0, 1.0))
+			var dusk_fade: float = clampf((19.0 - h) / 1.0, 0.0, 1.0)
+			target_intensity = intensity * clampf(minf(dawn_fade, dusk_fade), 0.0, 1.0)
 
 	if light != null:
 		if not light.visible or light.light_energy <= 0.22:

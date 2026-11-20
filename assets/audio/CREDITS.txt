@@ -1,0 +1,6 @@
+Sound effects and ambient audio in this folder are sourced from:
+Taira Komori's Free Sound Effects (https://taira-komori.net/freesounden.html)
+
+License summary:
+- Free and royalty-free for commercial and non-commercial projects (games, videos, apps).
+- Do not redistribute, re-sell, or upload the standalone sound files for others to download.

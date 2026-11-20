@@ -8,7 +8,7 @@ extends Node
 func _ready() -> void:
 	get_tree().paused = false
 	AudioManager.stop_all_tension()
-	AudioManager.set_wind_active(true)
+	AudioManager.set_wind_active(false)
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 	var scale_val: int = clampi(SaveManager.psx_scale, 2, 4)
@@ -23,4 +23,10 @@ func _ready() -> void:
 		var player: Node3D = get_node_or_null("SubViewportContainer/SubViewport/World3D/Player") as Node3D
 		if player != null:
 			player.global_position = SaveManager.checkpoint_position
-			GameEvents.status_message_requested.emit("Retornando ao último Tambor-Fogueira aceso.")
+			GameEvents.status_message_requested.emit("Retornando ao último refúgio salvo.")
+	else:
+		call_deferred("_announce_expedition_start")
+
+
+func _announce_expedition_start() -> void:
+	GameEvents.status_message_requested.emit("Noite 1 (19:15) — Saia da Casa para explorar. Volte antes de clarear (05:00)!")

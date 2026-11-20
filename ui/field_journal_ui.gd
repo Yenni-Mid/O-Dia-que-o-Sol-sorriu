@@ -129,7 +129,7 @@ func _refresh_summary() -> void:
 	if dn != null and dn.has_method("get_formatted_time"):
 		hour_str = str(dn.call("get_formatted_time"))
 
-	bag_summary.text = "RELÓGIO: %s\n\nITENS DE CAMPO:\n• [G] Garrafas (isca): %d\n• [H] Bandagens (+40 HP): %d\n• Ferramentas: %s\n• Chaves: %s\n\nANOTAÇÕES:\n• De dia: o Sol drena sanidade na rua.\n• À noite (19h–06h): os Cultistas saem e caçam a luz do lampião.\n• Tambores-Fogueira: acenda com óleo para salvar e descansar.\n• Esgoto liga Porão ao Mercado, Posto e Escola.\n\n[Q / C] Espreitar esquinas." % [
+	bag_summary.text = "RELÓGIO: %s\n\nITENS DE CAMPO:\n• [G] Garrafas (isca): %d\n• [H] Bandagens (+40 HP): %d\n• Ferramentas: %s\n• Chaves: %s\n\nANOTAÇÕES:\n• Saia da Casa à noite (19:15) e explore o quarteirão.\n• Ao clarear (05:00–06:00), volte para dentro da Casa!\n• Os Cultistas caçam a luz do lampião à noite.\n• De dia, o Sol Sorridente ainda queima quem ficar fora.\n\n[Q / C] Espreitar esquinas." % [
 		hour_str,
 		bottles,
 		bandages,

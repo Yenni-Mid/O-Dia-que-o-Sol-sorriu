@@ -24,6 +24,7 @@ func _ready() -> void:
 	GameEvents.player_damaged.connect(_on_player_damaged)
 	GameEvents.player_died.connect(_on_game_over)
 	GameEvents.sanity_depleted.connect(_on_game_over)
+	GameEvents.night_transition_requested.connect(_on_night_transition)
 
 
 func _process(delta: float) -> void:
@@ -70,3 +71,8 @@ func _on_player_damaged(amount: float) -> void:
 
 func _on_game_over() -> void:
 	_fade_target = 0.55
+
+
+func _on_night_transition(_night_num: int) -> void:
+	_fade = 1.0
+	_fade_target = 0.0

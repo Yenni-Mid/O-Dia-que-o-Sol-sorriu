@@ -1,7 +1,7 @@
 extends Node
-## Gerenciador global de áudio com síntese procedural (sem assets externos).
+## Gerenciador global de áudio com assets reais (Taira Komori) e síntese procedural de fallback.
 ## Usa um pool de vozes para SFX (sons não se cortam), canais dedicados para passos/batimento
-## e loops ambientes (vento e drone solar) com fade suave.
+## e fornece getters para o AmbientSoundDirector e atores 3D.
 
 const MIX_RATE: int = 22050
 const SFX_POOL_SIZE: int = 8
@@ -19,31 +19,40 @@ var _wind_player: AudioStreamPlayer
 var _sun_tween: Tween
 var _wind_tween: Tween
 
-var _stream_footstep: AudioStreamWAV
-var _stream_ignite: AudioStreamWAV
-var _stream_extinguish: AudioStreamWAV
-var _stream_door: AudioStreamWAV
-var _stream_alert: AudioStreamWAV
-var _stream_heartbeat: AudioStreamWAV
-var _stream_sun_drone: AudioStreamWAV
-var _stream_wind: AudioStreamWAV
-var _stream_hurt: AudioStreamWAV
-var _stream_pickup: AudioStreamWAV
-var _stream_ui_click: AudioStreamWAV
-var _stream_paper: AudioStreamWAV
-var _stream_whisper: AudioStreamWAV
-var _stream_breath: AudioStreamWAV
-var _stream_shadow_hum: AudioStreamWAV
-var _stream_lunatic_step: AudioStreamWAV
-var _stream_glass_break: AudioStreamWAV
-var _stream_unlock: AudioStreamWAV
-var _stream_locked: AudioStreamWAV
-var _stream_bell_alarm: AudioStreamWAV
-var _stream_vhs_static: AudioStreamWAV
-var _stream_phase_chime: AudioStreamWAV
-var _stream_metal_cut: AudioStreamWAV
-var _stream_wood_break: AudioStreamWAV
-var _stream_radio_static: AudioStreamWAV
+var _stream_footstep: AudioStream
+var _stream_ignite: AudioStream
+var _stream_extinguish: AudioStream
+var _stream_door: AudioStream
+var _stream_alert: AudioStream
+var _stream_heartbeat: AudioStream
+var _stream_sun_drone: AudioStream
+var _stream_wind: AudioStream
+var _stream_hurt: AudioStream
+var _stream_pickup: AudioStream
+var _stream_ui_click: AudioStream
+var _stream_paper: AudioStream
+var _stream_whisper: AudioStream
+var _stream_breath: AudioStream
+var _stream_shadow_hum: AudioStream
+var _stream_lunatic_step: AudioStream
+var _stream_glass_break: AudioStream
+var _stream_unlock: AudioStream
+var _stream_locked: AudioStream
+var _stream_bell_alarm: AudioStream
+var _stream_vhs_static: AudioStream
+var _stream_phase_chime: AudioStream
+var _stream_metal_cut: AudioStream
+var _stream_wood_break: AudioStream
+var _stream_radio_static: AudioStream
+
+var _stream_night_crickets: AudioStream
+var _stream_indoor_dark: AudioStream
+var _stream_sewer_drone: AudioStream
+var _stream_fire_loop: AudioStream
+var _stream_owl: AudioStream
+var _stream_crow: AudioStream
+var _stream_sewer_drip: AudioStream
+var _stream_dawn_warning: AudioStream
 
 var _heartbeat_intensity: float = 0.0
 var _heartbeat_timer: float = 0.0
@@ -64,6 +73,21 @@ func _ready() -> void:
 	_wind_player = _make_channel("WindPlayer", SILENT_DB)
 
 	_build_procedural_streams()
+	_load_external_audio_overrides()
+
+
+func _exit_tree() -> void:
+	if _sun_tween != null and _sun_tween.is_valid():
+		_sun_tween.kill()
+	if _wind_tween != null and _wind_tween.is_valid():
+		_wind_tween.kill()
+	_sun_tween = null
+	_wind_tween = null
+	for ch: Node in get_children():
+		if ch is AudioStreamPlayer:
+			var ap: AudioStreamPlayer = ch as AudioStreamPlayer
+			ap.stop()
+			ap.stream = null
 
 
 func _make_channel(channel_name: String, volume: float) -> AudioStreamPlayer:
@@ -76,14 +100,18 @@ func _make_channel(channel_name: String, volume: float) -> AudioStreamPlayer:
 
 func _process(delta: float) -> void:
 	if get_tree().paused or _heartbeat_intensity <= 0.05:
+		if _heart_player != null and _heart_player.playing:
+			_heart_player.stop()
 		return
+	var level: float = clampf(_heartbeat_intensity, 0.0, 1.0)
+	if _heart_player != null:
+		_heart_player.volume_db = lerpf(-16.0, -4.0, level)
+		_heart_player.pitch_scale = lerpf(0.92, 1.16, level)
 	_heartbeat_timer -= delta
 	if _heartbeat_timer <= 0.0:
-		var level: float = clampf(_heartbeat_intensity, 0.0, 1.0)
-		_heartbeat_timer = lerpf(1.1, 0.48, level)
-		if _stream_heartbeat != null:
+		_heartbeat_timer = lerpf(1.4, 0.72, level)
+		if _stream_heartbeat != null and _heart_player != null and not _heart_player.playing:
 			_heart_player.stream = _stream_heartbeat
-			_heart_player.volume_db = lerpf(-16.0, -3.0, level)
 			_heart_player.play()
 
 
@@ -141,30 +169,30 @@ func play_paper() -> void:
 
 
 func play_whisper() -> void:
-	play_sfx(_stream_whisper, -13.0, randf_range(0.8, 1.15))
+	play_sfx(_stream_whisper, -11.0, randf_range(0.85, 1.1))
 
 
 func play_breath() -> void:
 	play_sfx(_stream_breath, -8.0, randf_range(0.92, 1.08))
 
 
-func get_door_stream() -> AudioStreamWAV:
+func get_door_stream() -> AudioStream:
 	return _stream_door
 
 
-func get_alert_stream() -> AudioStreamWAV:
+func get_alert_stream() -> AudioStream:
 	return _stream_alert
 
 
-func get_whisper_stream() -> AudioStreamWAV:
+func get_whisper_stream() -> AudioStream:
 	return _stream_whisper
 
 
-func get_shadow_hum_stream() -> AudioStreamWAV:
+func get_shadow_hum_stream() -> AudioStream:
 	return _stream_shadow_hum
 
 
-func get_lunatic_step_stream() -> AudioStreamWAV:
+func get_lunatic_step_stream() -> AudioStream:
 	return _stream_lunatic_step
 
 
@@ -172,7 +200,7 @@ func play_glass_break() -> void:
 	play_sfx(_stream_glass_break, -3.0, randf_range(0.92, 1.08))
 
 
-func get_glass_break_stream() -> AudioStreamWAV:
+func get_glass_break_stream() -> AudioStream:
 	return _stream_glass_break
 
 
@@ -188,16 +216,20 @@ func play_bell_alarm() -> void:
 	play_sfx(_stream_bell_alarm, -4.0)
 
 
-func get_bell_alarm_stream() -> AudioStreamWAV:
+func get_bell_alarm_stream() -> AudioStream:
 	return _stream_bell_alarm
 
 
-func get_vhs_static_stream() -> AudioStreamWAV:
+func get_vhs_static_stream() -> AudioStream:
 	return _stream_vhs_static
 
 
 func play_phase_chime() -> void:
 	play_sfx(_stream_phase_chime, -4.0)
+
+
+func play_dawn_warning() -> void:
+	play_sfx(_stream_dawn_warning, -5.0)
 
 
 func play_metal_cut() -> void:
@@ -208,8 +240,40 @@ func play_wood_break() -> void:
 	play_sfx(_stream_wood_break, -3.5)
 
 
-func get_radio_static_stream() -> AudioStreamWAV:
+func get_radio_static_stream() -> AudioStream:
 	return _stream_radio_static
+
+
+func get_wind_stream() -> AudioStream:
+	return _stream_wind
+
+
+func get_night_crickets_stream() -> AudioStream:
+	return _stream_night_crickets
+
+
+func get_indoor_dark_stream() -> AudioStream:
+	return _stream_indoor_dark
+
+
+func get_sewer_drone_stream() -> AudioStream:
+	return _stream_sewer_drone
+
+
+func get_fire_loop_stream() -> AudioStream:
+	return _stream_fire_loop
+
+
+func get_owl_stream() -> AudioStream:
+	return _stream_owl
+
+
+func get_crow_stream() -> AudioStream:
+	return _stream_crow
+
+
+func get_sewer_drip_stream() -> AudioStream:
+	return _stream_sewer_drip
 
 
 func set_master_volume(linear: float) -> void:
@@ -281,6 +345,48 @@ func _fade_loop(player: AudioStreamPlayer, stream: AudioStream, active: bool, ta
 		tw.tween_property(player, "volume_db", SILENT_DB, 0.9)
 		tw.tween_callback(player.stop)
 	return tw
+
+
+func _load_audio(res_path: String, fallback: AudioStream, loop_enabled: bool = false) -> AudioStream:
+	if not ResourceLoader.exists(res_path):
+		return fallback
+	var loaded: AudioStream = ResourceLoader.load(res_path) as AudioStream
+	if loaded == null:
+		return fallback
+	if loaded is AudioStreamMP3:
+		(loaded as AudioStreamMP3).loop = loop_enabled
+	return loaded
+
+
+func _load_external_audio_overrides() -> void:
+	_stream_wind = _load_audio("res://assets/audio/amb_night_wind.mp3", _stream_wind, true)
+	_stream_night_crickets = _load_audio("res://assets/audio/amb_night_crickets.mp3", _stream_wind, true)
+	_stream_indoor_dark = _load_audio("res://assets/audio/amb_indoor_dark.mp3", _stream_shadow_hum, true)
+	_stream_sewer_drone = _load_audio("res://assets/audio/amb_sewer_drone.mp3", _stream_shadow_hum, true)
+	_stream_fire_loop = _load_audio("res://assets/audio/amb_fire_loop.mp3", _stream_wind, true)
+	_stream_sun_drone = _load_audio("res://assets/audio/amb_sun_drone.mp3", _stream_sun_drone, true)
+	_stream_owl = _load_audio("res://assets/audio/amb_owl.mp3", null, false)
+	_stream_crow = _load_audio("res://assets/audio/amb_crow.mp3", null, false)
+	_stream_sewer_drip = _load_audio("res://assets/audio/sfx_sewer_drip.mp3", null, false)
+	_stream_dawn_warning = _load_audio("res://assets/audio/sfx_dawn_warning.mp3", _stream_phase_chime, false)
+
+	_stream_door = _load_audio("res://assets/audio/sfx_door_creak.mp3", _stream_door, false)
+	_stream_unlock = _load_audio("res://assets/audio/sfx_unlock.mp3", _stream_unlock, false)
+	_stream_locked = _load_audio("res://assets/audio/sfx_locked.mp3", _stream_locked, false)
+	_stream_glass_break = _load_audio("res://assets/audio/sfx_glass_break.mp3", _stream_glass_break, false)
+	_stream_bell_alarm = _load_audio("res://assets/audio/sfx_hell_bell.mp3", _stream_bell_alarm, false)
+	_stream_alert = _load_audio("res://assets/audio/sfx_enemy_alert.mp3", _stream_alert, false)
+	_stream_whisper = _load_audio("res://assets/audio/sfx_whisper.mp3", _stream_whisper, false)
+	_stream_heartbeat = _load_audio("res://assets/audio/sfx_heartbeat.mp3", _stream_heartbeat, false)
+	_stream_wood_break = _load_audio("res://assets/audio/sfx_wood_break.mp3", _stream_wood_break, false)
+	_stream_metal_cut = _load_audio("res://assets/audio/sfx_metal_cut.mp3", _stream_metal_cut, false)
+	_stream_paper = _load_audio("res://assets/audio/sfx_paper.mp3", _stream_paper, false)
+	_stream_pickup = _load_audio("res://assets/audio/sfx_pickup.mp3", _stream_pickup, false)
+	_stream_ui_click = _load_audio("res://assets/audio/sfx_ui_click.mp3", _stream_ui_click, false)
+	_stream_radio_static = _load_audio("res://assets/audio/sfx_radio_static.mp3", _stream_radio_static, true)
+	_stream_vhs_static = _load_audio("res://assets/audio/sfx_vhs_static.mp3", _stream_vhs_static, true)
+	_stream_hurt = _load_audio("res://assets/audio/sfx_hurt.mp3", _stream_hurt, false)
+	_stream_ignite = _load_audio("res://assets/audio/sfx_lantern_ignite.mp3", _stream_ignite, false)
 
 
 func _build_procedural_streams() -> void:
