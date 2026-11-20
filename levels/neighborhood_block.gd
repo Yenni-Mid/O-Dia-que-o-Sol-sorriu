@@ -107,10 +107,10 @@ func _make_asphalt_texture() -> ImageTexture:
 	rng.seed = 701
 	for y: int in range(64):
 		for x: int in range(64):
-			var v: float = clampf(0.84 + rng.randf_range(-0.14, 0.12), 0.55, 1.0)
-			if (x + y * 3) % 41 == 0:
-				v *= 0.65
-			img.set_pixel(x, y, Color(v, v, v, 1.0))
+			var v: float = clampf(0.80 + rng.randf_range(-0.16, 0.12), 0.48, 1.0)
+			if (x + y * 3) % 41 == 0 or (absi((x * 2 - y) % 53) <= 1 and (x + y) % 5 < 3):
+				v *= 0.56
+			img.set_pixel(x, y, Color(v, v * 0.99, v * 0.97, 1.0))
 	return ImageTexture.create_from_image(img)
 
 
@@ -158,10 +158,12 @@ func _make_brick_texture() -> ImageTexture:
 		var row: int = y / 8
 		var shift: int = 8 if (row % 2) == 1 else 0
 		var mh: bool = (y % 8) == 0
+		var soot: float = 0.60 + 0.40 * clampf(float(64 - y) / 26.0, 0.0, 1.0)
 		for x: int in range(64):
 			var mv: bool = ((x + shift) % 16) == 0
-			var v: float = 0.58 if (mh or mv) else clampf(0.90 + rng.randf_range(-0.08, 0.08), 0.60, 1.0)
-			img.set_pixel(x, y, Color(v, v * 0.95, v * 0.92, 1.0))
+			var v: float = 0.50 if (mh or mv) else clampf(0.88 + rng.randf_range(-0.10, 0.08), 0.52, 1.0)
+			v *= soot
+			img.set_pixel(x, y, Color(v, v * 0.93, v * 0.89, 1.0))
 	return ImageTexture.create_from_image(img)
 
 

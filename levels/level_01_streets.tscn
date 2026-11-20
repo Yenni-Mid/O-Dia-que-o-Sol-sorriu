@@ -26,6 +26,7 @@
 [ext_resource type="Script" path="res://systems/interactables/npc_survivor.gd" id="24_npc"]
 [ext_resource type="Script" path="res://entities/enemies/lantern_cultist.gd" id="25_cultist"]
 [ext_resource type="Script" path="res://systems/interactables/home_rest_point.gd" id="26_homerest"]
+[ext_resource type="Script" path="res://levels/zones/post_apoc_street_dressing.gd" id="27_postapoc"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_775fo"]
 render_priority = 0
@@ -77,6 +78,9 @@ script = ExtResource("18_chapel")
 
 [node name="SewerNetwork" type="Node3D" parent="NavigationRegion3D" unique_id=314159894]
 script = ExtResource("19_sewer")
+
+[node name="PostApocStreetDressing" type="Node3D" parent="NavigationRegion3D" unique_id=314159895]
+script = ExtResource("27_postapoc")
 
 [node name="PatrolWaypoints" type="Node3D" parent="." unique_id=401001001]
 

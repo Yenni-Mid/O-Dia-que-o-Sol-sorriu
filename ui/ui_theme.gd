@@ -29,10 +29,10 @@ static func get_theme() -> Theme:
 	t.set_color("font_focus_color", "Button", AMBER)
 	t.set_color("font_pressed_color", "Button", Color(1.0, 0.92, 0.7))
 
-	# Textos com contorno escuro (legíveis sobre a cena 3D)
+	# Textos com contorno escuro forte (legíveis sobre a cena 3D)
 	t.set_color("font_color", "Label", INK)
-	t.set_color("font_outline_color", "Label", Color(0, 0, 0, 0.85))
-	t.set_constant("outline_size", "Label", 4)
+	t.set_color("font_outline_color", "Label", Color(0, 0, 0, 0.94))
+	t.set_constant("outline_size", "Label", 5)
 
 	# Painéis
 	t.set_stylebox("panel", "Panel", make_box(BG, AMBER_DIM, 2, 14))
