@@ -25,6 +25,7 @@ var _flame_outer_mesh: MeshInstance3D
 var _last_emitted_oil: float = -1.0
 var _overload_timer: float = 0.0
 var _overload_cooldown: float = 0.0
+var _refill_pulse_timer: float = 0.0
 var _base_omni_range: float = 7.5
 var _map_open: bool = false
 
@@ -67,12 +68,15 @@ func _process(delta: float) -> void:
 		_overload_cooldown = maxf(0.0, _overload_cooldown - delta)
 	if _overload_timer > 0.0:
 		_overload_timer = maxf(0.0, _overload_timer - delta)
+	if _refill_pulse_timer > 0.0:
+		_refill_pulse_timer = maxf(0.0, _refill_pulse_timer - delta)
 
 	# Animação tátil de erguer/abaixar o lampião (+ deslocamento lateral suave quando o Mapa [M] está erguido)
 	var overload_boost: float = clampf(_overload_timer / 1.8, 0.0, 1.0)
+	var refill_boost: float = sin((_refill_pulse_timer / 0.45) * PI) * 0.45 if _refill_pulse_timer > 0.0 else 0.0
 	var target_x: float = 0.075 if _map_open else 0.0
 	var target_z: float = 0.04 if _map_open else 0.0
-	var target_y: float = (0.045 * overload_boost) if is_lit else -0.08
+	var target_y: float = (0.045 * overload_boost + 0.03 * refill_boost) if is_lit else (-0.08 + 0.04 * refill_boost)
 	var target_tilt: float = (0.04 + 0.08 * overload_boost) if is_lit else -0.14
 	position.x = lerpf(position.x, target_x, clampf(8.0 * delta, 0.0, 1.0))
 	position.y = lerpf(position.y, target_y, clampf(10.0 * delta, 0.0, 1.0))
@@ -193,6 +197,8 @@ func add_oil(amount: float) -> void:
 	if is_zero_approx(amount):
 		return
 	current_oil = clampf(current_oil + amount, 0.0, max_oil)
+	if amount > 0.0:
+		_refill_pulse_timer = 0.45
 	_emit_oil()
 
 

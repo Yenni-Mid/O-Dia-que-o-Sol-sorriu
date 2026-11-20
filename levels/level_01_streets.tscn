@@ -29,6 +29,7 @@
 [ext_resource type="Script" path="res://levels/zones/post_apoc_street_dressing.gd" id="27_postapoc"]
 [ext_resource type="Script" path="res://systems/interactables/survival_radio.gd" id="28_radio"]
 [ext_resource type="Script" path="res://systems/interactables/shortcut_gate.gd" id="29_shortcut"]
+[ext_resource type="Script" path="res://systems/interactables/inspectable_prop.gd" id="30_inspect"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_775fo"]
 render_priority = 0
@@ -600,6 +601,38 @@ script = ExtResource("25_cultist")
 [node name="LanternCultist_School" type="CharacterBody3D" parent="." unique_id=2079065562]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, 0.1, -35)
 script = ExtResource("25_cultist")
+
+[node name="LanternCultist_Crossroad" type="CharacterBody3D" parent="." unique_id=2079065563]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 0.1, -17.5)
+script = ExtResource("25_cultist")
+min_night_to_spawn = 2
+
+[node name="LanternCultist_Crossroad_Waypoints" type="Node3D" parent="." unique_id=402007001]
+
+[node name="WP_CrossW" type="Marker3D" parent="LanternCultist_Crossroad_Waypoints" unique_id=402007002]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -20, 0.1, -17.5)
+
+[node name="WP_CrossC" type="Marker3D" parent="LanternCultist_Crossroad_Waypoints" unique_id=402007003]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, -17.5)
+
+[node name="WP_CrossE" type="Marker3D" parent="LanternCultist_Crossroad_Waypoints" unique_id=402007004]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 0.1, -17.5)
+
+[node name="InspectProp_LeoPhoto" type="Area3D" parent="." unique_id=407008001]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.25, 4.36, 0.9)
+script = ExtResource("30_inspect")
+item_id = "leo_photo"
+item_title = "Foto do Leo"
+item_description = "Retrato tirado na varanda antes do fenômeno solar. O vidro está trincado no canto."
+back_note = "Anotado no verso: \"Se o alarme tocar, não olhe para o céu. Procure a Escola.\""
+
+[node name="InspectProp_EclipseNews" type="Area3D" parent="." unique_id=407008002]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.3, 0.82, 3.6)
+script = ExtResource("30_inspect")
+item_id = "eclipse_news"
+item_title = "Recorte de Jornal (17/10)"
+item_description = "Edição especial de 17 de Outubro: \"ANOMALIA SOLAR PARALISA O PAÍS ÀS 14H12.\""
+back_note = "Circulado à caneta: \"1710 — Dia em que o Sol sorriu.\""
 
 [node name="LunaticSchool" parent="." unique_id=2079065571 instance=ExtResource("5_d8n8u")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, -55)

@@ -333,28 +333,30 @@ func _build_preacher_visual() -> void:
 	vis.name = "PreacherVisual"
 	add_child(vis)
 
-	var robe_mat: Material = _make_psx_mat(Color(0.14, 0.08, 0.16))
-	var hood_mat: Material = _make_psx_mat(Color(0.10, 0.06, 0.12))
-	var mask_mat: Material = _make_psx_mat(Color(0.95, 0.78, 0.25))
-	var dark_mat: Material = _make_psx_mat(Color(0.05, 0.02, 0.02))
+	var robe_tex: ImageTexture = CultistVisualBuilder.make_robe_texture(733)
+	var mask_tex: ImageTexture = CultistVisualBuilder.make_mask_texture(Color(0.94, 0.78, 0.28), Color(0.76, 0.07, 0.07))
+
+	var robe_mat: Material = CultistVisualBuilder.make_psx_mat(Color(0.18, 0.10, 0.20), robe_tex)
+	var shawl_mat: Material = CultistVisualBuilder.make_psx_mat(Color(0.56, 0.44, 0.22), robe_tex)
+	var hood_mat: Material = CultistVisualBuilder.make_psx_mat(Color(0.09, 0.06, 0.11), robe_tex)
+	var belt_mat: Material = CultistVisualBuilder.make_psx_mat(Color(0.42, 0.30, 0.12))
+	var pants_mat: Material = CultistVisualBuilder.make_psx_mat(Color(0.08, 0.06, 0.10))
+	var mask_mat: Material = CultistVisualBuilder.make_psx_mat(Color(0.98, 0.92, 0.80), mask_tex)
 	var brass_mat: Material = _make_psx_mat(Color(0.76, 0.56, 0.20))
 
-	_add_part(vis, "RobeSkirt", Vector3(0.64, 0.92, 0.42), Vector3(0.0, 0.46, 0.0), robe_mat)
+	_add_part(vis, "LegL", Vector3(0.24, 0.76, 0.26), Vector3(-0.15, 0.38, 0.0), pants_mat)
+	_add_part(vis, "LegR", Vector3(0.24, 0.76, 0.26), Vector3(0.15, 0.38, 0.0), pants_mat)
+	_add_part(vis, "RobeFlapL", Vector3(0.30, 0.60, 0.38), Vector3(-0.17, 0.60, 0.0), robe_mat)
+	_add_part(vis, "RobeFlapR", Vector3(0.30, 0.58, 0.38), Vector3(0.17, 0.61, 0.0), robe_mat)
 
 	_body_pivot = Node3D.new()
 	_body_pivot.name = "BodyPivot"
 	_body_pivot.position = Vector3(0.0, 0.90, 0.0)
 	vis.add_child(_body_pivot)
 
-	_add_part(_body_pivot, "RobeTorso", Vector3(0.56, 0.68, 0.34), Vector3(0.0, 0.34, 0.0), robe_mat)
-	_add_part(_body_pivot, "HoodBack", Vector3(0.42, 0.46, 0.38), Vector3(0.0, 0.82, 0.04), hood_mat)
-	_add_part(_body_pivot, "HoodPeak", Vector3(0.28, 0.22, 0.28), Vector3(0.0, 1.12, 0.08), hood_mat, Vector3(-12.0, 0.0, 0.0))
-
-	# Máscara dourada solar
-	var mask: MeshInstance3D = _add_part(_body_pivot, "SunMask", Vector3(0.38, 0.42, 0.04), Vector3(0.0, 0.80, -0.18), mask_mat)
-	_add_part(mask, "EyeL", Vector3(0.06, 0.10, 0.02), Vector3(-0.08, 0.06, -0.02), dark_mat)
-	_add_part(mask, "EyeR", Vector3(0.06, 0.10, 0.02), Vector3(0.08, 0.06, -0.02), dark_mat)
-	_add_part(mask, "Smile", Vector3(0.20, 0.05, 0.02), Vector3(0.0, -0.08, -0.02), dark_mat)
+	_add_part(_body_pivot, "RobeTorso", Vector3(0.58, 0.70, 0.34), Vector3(0.0, 0.35, 0.0), robe_mat)
+	CultistVisualBuilder.attach_shawl_and_belt(_body_pivot, 0.38, shawl_mat, belt_mat)
+	CultistVisualBuilder.attach_hood_and_mask(_body_pivot, 0.82, hood_mat, mask_mat, Color(1.0, 0.86, 0.38), true)
 
 	# Braço esquerdo (protege a máscara ao levar clarão do lampião)
 	_left_arm = Node3D.new()

@@ -92,7 +92,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		if _is_game_over:
 			return
 		if event.is_action_pressed("ui_cancel"):
-			for modal_name: String in ["EchoReaderUI", "FieldJournalUI", "VHSTapeOverlay", "KeypadUI", "DialogueUI", "NightSummaryUI"]:
+			for modal_name: String in ["EchoReaderUI", "FieldJournalUI", "VHSTapeOverlay", "KeypadUI", "DialogueUI", "ItemInspectUI", "NightSummaryUI"]:
 				var modal: Control = get_parent().get_node_or_null(modal_name) as Control
 				if modal != null and modal.visible:
 					return

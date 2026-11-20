@@ -49,6 +49,8 @@ func interact() -> void:
 	if player == null or player.lantern_system == null:
 		return
 	player.lantern_system.add_oil(oil_amount)
+	if player.has_method("trigger_hand_action_gesture"):
+		player.call("trigger_hand_action_gesture", 2)
 	AudioManager.play_pickup()
 	queue_free()
 

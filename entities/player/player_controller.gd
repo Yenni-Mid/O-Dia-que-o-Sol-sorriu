@@ -68,6 +68,9 @@ var _exhausted: bool = false
 var _last_emitted_stamina: float = -1.0
 var _hiding_exit_pos: Vector3 = Vector3.ZERO
 var _hiding_wardrobe: Node = null
+var _hide_breath_timer: float = 0.0
+var _action_anim_timer: float = 0.0
+var _action_anim_mode: int = 0
 var _lean_factor: float = 0.0
 var _lean_roll: float = 0.0
 
@@ -144,6 +147,7 @@ func _physics_process(delta: float) -> void:
 	if is_hidden:
 		velocity = Vector3.ZERO
 		_recover_stamina(stamina_recover_idle * delta)
+		_update_hiding_tension(delta)
 		_update_hand_sway(delta)
 		_update_camera_feel(delta, 0.0)
 		return
@@ -344,10 +348,8 @@ func _update_crouch_and_head_bob(delta: float, horizontal_speed: float) -> void:
 					_step_triggered = true
 					var step_db: float = -18.0 if current_state == MovementState.CROUCHING else (-6.0 if current_state == MovementState.SPRINTING else -11.0)
 					var step_pitch: float = 0.85 if current_state == MovementState.CROUCHING else (1.15 if current_state == MovementState.SPRINTING else 1.0)
-					if _is_stepping_in_puddle():
-						AudioManager.play_footstep(step_db + 1.5, step_pitch * 1.38)
-					else:
-						AudioManager.play_footstep(step_db, step_pitch)
+					var surface: String = _detect_surface_type()
+					AudioManager.play_footstep_surface(surface, step_db, step_pitch)
 			else:
 				_step_triggered = false
 		else:
@@ -378,9 +380,65 @@ func _update_camera_feel(delta: float, horizontal_speed: float) -> void:
 func _update_hand_sway(delta: float) -> void:
 	if hand_pivot == null:
 		return
-	var target_pos: Vector3 = _hand_default_pos + _hand_sway_target
+	var action_offset: Vector3 = Vector3.ZERO
+	var action_roll: float = 0.0
+	if _action_anim_timer > 0.0:
+		_action_anim_timer = maxf(0.0, _action_anim_timer - delta)
+		var prog: float = sin((_action_anim_timer / 0.42) * PI)
+		if _action_anim_mode == 1:
+			# Gesto de usar bandagem: mão abaixa e volta
+			action_offset = Vector3(-0.04 * prog, -0.14 * prog, 0.03 * prog)
+			action_roll = 0.22 * prog
+		elif _action_anim_mode == 2:
+			# Gesto de abastecer óleo: ergue e inclina levemente
+			action_offset = Vector3(-0.02 * prog, 0.06 * prog, -0.04 * prog)
+			action_roll = -0.18 * prog
+
+	var target_pos: Vector3 = _hand_default_pos + _hand_sway_target + action_offset
 	hand_pivot.position = hand_pivot.position.lerp(target_pos, clampf(hand_sway_smoothing * delta, 0.0, 1.0))
+	hand_pivot.rotation.z = lerpf(hand_pivot.rotation.z, action_roll, clampf(12.0 * delta, 0.0, 1.0))
 	_hand_sway_target = _hand_sway_target.lerp(Vector3.ZERO, clampf(hand_sway_smoothing * delta, 0.0, 1.0))
+
+
+func trigger_hand_action_gesture(mode: int) -> void:
+	_action_anim_mode = mode
+	_action_anim_timer = 0.42
+
+
+func _update_hiding_tension(delta: float) -> void:
+	var min_dist: float = 999.0
+	for en_node: Node in get_tree().get_nodes_in_group("enemies"):
+		if en_node is Node3D:
+			var en3: Node3D = en_node as Node3D
+			if en3.visible:
+				min_dist = minf(min_dist, global_position.distance_to(en3.global_position))
+	if min_dist <= 10.5:
+		var tension: float = clampf(1.0 - (min_dist / 10.5), 0.22, 0.90)
+		AudioManager.set_heartbeat_intensity(tension)
+		_hide_breath_timer -= delta
+		if _hide_breath_timer <= 0.0:
+			_hide_breath_timer = lerpf(3.0, 1.5, tension)
+			AudioManager.play_breath()
+	else:
+		_hide_breath_timer = 0.6
+
+
+func _detect_surface_type() -> String:
+	if global_position.y < -1.2 or _is_stepping_in_puddle():
+		return "water"
+	var p: Vector3 = global_position
+	# Casa Principal (1º e 2º andar) e Passadiço Oeste 2º andar
+	if (p.x >= -8.0 and p.x <= 8.0 and p.z >= -7.0 and p.z <= 7.0 and p.y >= -0.2) or (p.x >= -14.5 and p.x <= -10.9 and p.y > 2.5):
+		return "wood"
+	# Escola, Mini-Mercado, Drogaria e Loja do Posto
+	if (
+		(p.x >= -24.0 and p.x <= 22.0 and p.z >= -72.0 and p.z <= -48.0)
+		or (p.x >= -25.5 and p.x <= -17.5 and p.z >= -7.5 and p.z <= 7.0)
+		or (p.x >= 3.2 and p.x <= 14.5 and p.z >= 16.5 and p.z <= 21.3)
+		or (p.x >= -57.0 and p.x <= -46.0 and p.z >= -6.0 and p.z <= 4.0)
+	):
+		return "tile"
+	return "asphalt"
 
 
 func _compute_auto_corner_peek() -> float:
@@ -478,6 +536,7 @@ func _try_use_bandage() -> void:
 		return
 	if health != null:
 		health.heal(40.0)
+	trigger_hand_action_gesture(1)
 	AudioManager.play_paper()
 	GameEvents.status_message_requested.emit("Bandagem aplicada (+40 Vida)")
 

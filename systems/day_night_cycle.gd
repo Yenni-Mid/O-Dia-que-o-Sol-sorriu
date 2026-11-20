@@ -225,11 +225,15 @@ func _apply_lighting() -> void:
 	var dusk_weight: float = 0.0
 	var day_t: float = 0.0
 	var pre_dawn: float = 0.0
+	var late_night_fog: float = 0.0
 	if not is_night:
 		day_t = clampf((current_hour - 6.0) / 13.0, 0.0, 1.0)
 		dusk_weight = 1.0 - clampf(sin(day_t * PI) * 1.4, 0.0, 1.0)
 	elif current_hour >= 5.0 and current_hour < 6.0:
 		pre_dawn = clampf(current_hour - 5.0, 0.0, 1.0)
+		late_night_fog = 1.0
+	elif current_hour >= 3.0 and current_hour < 5.0:
+		late_night_fog = clampf((current_hour - 3.0) / 2.0, 0.0, 1.0)
 
 	if _sun_light != null:
 		if is_night:
@@ -256,9 +260,11 @@ func _apply_lighting() -> void:
 			env.ambient_light_color = Color(0.28, 0.32, 0.42).lerp(Color(0.62, 0.46, 0.34), pre_dawn)
 			env.ambient_light_energy = lerpf(0.24, 0.48, pre_dawn)
 			env.fog_light_color = Color(0.14, 0.13, 0.14).lerp(Color(0.62, 0.42, 0.22), pre_dawn)
-			env.fog_density = lerpf(0.0235, 0.029, pre_dawn)
+			var base_fog: float = lerpf(0.0235, 0.032, late_night_fog)
+			env.fog_density = lerpf(base_fog, 0.029, pre_dawn)
 			env.fog_height = 4.2
-			env.fog_height_density = lerpf(0.14, 0.18, pre_dawn)
+			var base_h_fog: float = lerpf(0.14, 0.21, late_night_fog)
+			env.fog_height_density = lerpf(base_h_fog, 0.18, pre_dawn)
 			if env.sky != null and env.sky.sky_material is ProceduralSkyMaterial:
 				var sky_mat: ProceduralSkyMaterial = env.sky.sky_material as ProceduralSkyMaterial
 				sky_mat.sky_top_color = Color(0.05, 0.05, 0.08).lerp(Color(0.26, 0.20, 0.18), pre_dawn)

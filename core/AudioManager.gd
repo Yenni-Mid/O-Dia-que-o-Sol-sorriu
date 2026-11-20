@@ -20,6 +20,9 @@ var _sun_tween: Tween
 var _wind_tween: Tween
 
 var _stream_footstep: AudioStream
+var _stream_step_wood: AudioStream
+var _stream_step_tile: AudioStream
+var _stream_step_water: AudioStream
 var _stream_ignite: AudioStream
 var _stream_extinguish: AudioStream
 var _stream_door: AudioStream
@@ -132,10 +135,27 @@ func play_sfx(stream: AudioStream, volume_db: float = 0.0, pitch: float = 1.0) -
 
 
 func play_footstep(volume_db: float = -10.0, pitch: float = 1.0) -> void:
-	if _step_player == null or _stream_footstep == null:
+	play_footstep_surface("asphalt", volume_db, pitch)
+
+
+func play_footstep_surface(surface: String, volume_db: float = -10.0, pitch: float = 1.0) -> void:
+	if _step_player == null:
 		return
-	_step_player.stream = _stream_footstep
-	_step_player.volume_db = volume_db
+	var chosen: AudioStream = _stream_footstep
+	var db_adj: float = 0.0
+	if surface == "wood" and _stream_step_wood != null:
+		chosen = _stream_step_wood
+		db_adj = -1.5
+	elif surface == "tile" and _stream_step_tile != null:
+		chosen = _stream_step_tile
+		db_adj = -2.5
+	elif surface == "water" and _stream_step_water != null:
+		chosen = _stream_step_water
+		db_adj = 1.5
+	if chosen == null:
+		return
+	_step_player.stream = chosen
+	_step_player.volume_db = volume_db + db_adj
 	_step_player.pitch_scale = pitch * randf_range(0.92, 1.08)
 	_step_player.play()
 
@@ -411,6 +431,9 @@ func _load_external_audio_overrides() -> void:
 
 func _build_procedural_streams() -> void:
 	_stream_footstep = _synth_wave(0.09, 95.0, 45.0, 0.55, false)
+	_stream_step_wood = _synth_wave(0.10, 155.0, 72.0, 0.28, false)
+	_stream_step_tile = _synth_wave(0.065, 420.0, 190.0, 0.35, false)
+	_stream_step_water = _synth_noise_burst(0.13, 0.78, 97)
 	_stream_ignite = _synth_wave(0.18, 520.0, 180.0, 0.85, false)
 	_stream_extinguish = _synth_wave(0.24, 300.0, 90.0, 0.9, false)
 	_stream_door = _synth_wave(0.32, 140.0, 210.0, 0.2, false)

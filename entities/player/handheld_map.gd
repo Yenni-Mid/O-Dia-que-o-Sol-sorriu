@@ -40,6 +40,7 @@ func _ready() -> void:
 	GameEvents.dialogue_requested.connect(_on_dialogue_requested)
 	GameEvents.vhs_tape_requested.connect(_on_vhs_requested)
 	GameEvents.keypad_requested.connect(_on_keypad_requested)
+	GameEvents.item_inspect_requested.connect(_on_dialogue_requested)
 	GameEvents.night_transition_requested.connect(_on_night_transition_close)
 	GameEvents.player_died.connect(_on_force_close)
 	GameEvents.sanity_depleted.connect(_on_force_close)

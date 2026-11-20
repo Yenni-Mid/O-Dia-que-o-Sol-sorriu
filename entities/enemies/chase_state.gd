@@ -78,6 +78,8 @@ func physics_update(delta: float) -> void:
 			var susp_node: Node = _fsm.get_node_or_null("SuspiciousState")
 			if susp_node != null and susp_node.has_method("set_investigation_target"):
 				susp_node.call("set_investigation_target", _last_known_pos)
+				if player.is_hidden and _enemy.global_position.distance_to(player.global_position) <= 8.0:
+					susp_node.set("_wait_timer", 4.8)
 				_fsm.transition_to("SuspiciousState")
 			else:
 				_fsm.transition_to("PatrolState")

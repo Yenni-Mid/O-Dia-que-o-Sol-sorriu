@@ -243,13 +243,16 @@ func _build_mask_and_badge() -> void:
 	if base_capsule != null:
 		base_capsule.visible = false
 
-	var coat_mat: Material = _make_psx_mat(Color(0.24, 0.21, 0.19))
-	var rag_mat: Material = _make_psx_mat(Color(0.36, 0.29, 0.20))
-	var pants_mat: Material = _make_psx_mat(Color(0.14, 0.14, 0.16))
-	var skin_mat: Material = _make_psx_mat(Color(0.56, 0.50, 0.44))
-	var mask_mat: Material = _make_psx_mat(Color(0.90, 0.87, 0.78))
-	var eye_mat: Material = _make_psx_mat(Color(0.06, 0.05, 0.05))
-	var smile_mat: Material = _make_psx_mat(Color(0.78, 0.09, 0.08))
+	var robe_tex: ImageTexture = CultistVisualBuilder.make_robe_texture(711)
+	var mask_tex: ImageTexture = CultistVisualBuilder.make_mask_texture(Color(0.88, 0.78, 0.46), Color(0.68, 0.08, 0.07))
+
+	var coat_mat: Material = CultistVisualBuilder.make_psx_mat(Color(0.48, 0.41, 0.32), robe_tex)
+	var shawl_mat: Material = CultistVisualBuilder.make_psx_mat(Color(0.32, 0.28, 0.23), robe_tex)
+	var hood_mat: Material = CultistVisualBuilder.make_psx_mat(Color(0.10, 0.09, 0.10), robe_tex)
+	var belt_mat: Material = CultistVisualBuilder.make_psx_mat(Color(0.18, 0.13, 0.10))
+	var pants_mat: Material = CultistVisualBuilder.make_psx_mat(Color(0.13, 0.12, 0.14))
+	var skin_mat: Material = CultistVisualBuilder.make_psx_mat(Color(0.58, 0.50, 0.42))
+	var mask_mat: Material = CultistVisualBuilder.make_psx_mat(Color(0.95, 0.92, 0.85), mask_tex)
 
 	_mat_suspicious = StandardMaterial3D.new()
 	_mat_suspicious.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
@@ -267,58 +270,45 @@ func _build_mask_and_badge() -> void:
 	_cultist_body.name = "CultistBody"
 	add_child(_cultist_body)
 
-	# Pernas (pivô no quadril em y = 0.72)
+	# Pernas com barra de túnica esfarrapada em cima (pivô no quadril em y = 0.72)
 	_left_leg = Node3D.new()
 	_left_leg.name = "LeftLeg"
 	_left_leg.position = Vector3(-0.14, 0.72, 0.0)
 	_cultist_body.add_child(_left_leg)
-	_create_box_part(_left_leg, "LegMesh", Vector3(0.20, 0.72, 0.22), Vector3(0.0, -0.36, 0.0), pants_mat)
+	_create_box_part(_left_leg, "LegMesh", Vector3(0.19, 0.72, 0.21), Vector3(0.0, -0.36, 0.0), pants_mat)
+	_create_box_part(_left_leg, "TunicFlapL", Vector3(0.24, 0.48, 0.26), Vector3(0.0, -0.22, 0.0), coat_mat, Vector3(0.0, 0.0, 3.0))
 
 	_right_leg = Node3D.new()
 	_right_leg.name = "RightLeg"
 	_right_leg.position = Vector3(0.14, 0.72, 0.0)
 	_cultist_body.add_child(_right_leg)
-	_create_box_part(_right_leg, "LegMesh", Vector3(0.20, 0.72, 0.22), Vector3(0.0, -0.36, 0.0), pants_mat)
+	_create_box_part(_right_leg, "LegMesh", Vector3(0.19, 0.72, 0.21), Vector3(0.0, -0.36, 0.0), pants_mat)
+	_create_box_part(_right_leg, "TunicFlapR", Vector3(0.24, 0.46, 0.26), Vector3(0.0, -0.21, 0.0), coat_mat, Vector3(0.0, 0.0, -3.0))
 
-	# Tronco + cabeça + braços (pivô na cintura em y = 0.72)
+	# Tronco + xale rasgado + capuz + máscara (pivô na cintura em y = 0.72)
 	_torso_pivot = Node3D.new()
 	_torso_pivot.name = "TorsoPivot"
 	_torso_pivot.position = Vector3(0.0, 0.72, 0.0)
 	_cultist_body.add_child(_torso_pivot)
 
-	_create_box_part(_torso_pivot, "TorsoCoat", Vector3(0.54, 0.72, 0.32), Vector3(0.0, 0.36, 0.0), coat_mat)
-	_create_box_part(_torso_pivot, "SashRag", Vector3(0.56, 0.24, 0.34), Vector3(0.0, 0.02, 0.0), rag_mat)
-	_create_box_part(_torso_pivot, "HeadMesh", Vector3(0.32, 0.34, 0.30), Vector3(0.0, 0.90, 0.0), skin_mat)
+	_create_box_part(_torso_pivot, "TorsoCoat", Vector3(0.54, 0.68, 0.31), Vector3(0.0, 0.34, 0.0), coat_mat)
+	CultistVisualBuilder.attach_shawl_and_belt(_torso_pivot, 0.36, shawl_mat, belt_mat)
+	CultistVisualBuilder.attach_hood_and_mask(_torso_pivot, 0.88, hood_mat, mask_mat, Color(0.92, 0.82, 0.50), false)
 
-	# Braços (pivô nos ombros)
+	# Mangas largas + mãos (pivô nos ombros)
 	_left_arm = Node3D.new()
 	_left_arm.name = "LeftArm"
-	_left_arm.position = Vector3(-0.36, 0.64, 0.0)
+	_left_arm.position = Vector3(-0.36, 0.62, 0.0)
 	_torso_pivot.add_child(_left_arm)
-	_create_box_part(_left_arm, "ArmMesh", Vector3(0.16, 0.62, 0.18), Vector3(0.0, -0.26, 0.0), coat_mat)
-	_create_box_part(_left_arm, "HandMesh", Vector3(0.13, 0.14, 0.14), Vector3(0.0, -0.60, 0.0), skin_mat)
+	_create_box_part(_left_arm, "ArmMesh", Vector3(0.18, 0.56, 0.20), Vector3(0.0, -0.25, 0.0), coat_mat)
+	_create_box_part(_left_arm, "HandMesh", Vector3(0.12, 0.14, 0.13), Vector3(0.0, -0.58, 0.0), skin_mat)
 
 	_right_arm = Node3D.new()
 	_right_arm.name = "RightArm"
-	_right_arm.position = Vector3(0.36, 0.64, 0.0)
+	_right_arm.position = Vector3(0.36, 0.62, 0.0)
 	_torso_pivot.add_child(_right_arm)
-	_create_box_part(_right_arm, "ArmMesh", Vector3(0.16, 0.62, 0.18), Vector3(0.0, -0.26, 0.0), coat_mat)
-	_create_box_part(_right_arm, "HandMesh", Vector3(0.13, 0.14, 0.14), Vector3(0.0, -0.60, 0.0), skin_mat)
-
-	# Máscara de papelão com olhos assimétricos e sorriso rasgado
-	var mask_plate: MeshInstance3D = _create_box_part(
-		_torso_pivot,
-		"CardboardMask",
-		Vector3(0.42, 0.44, 0.04),
-		Vector3(0.0, 0.90, -0.18),
-		mask_mat,
-		Vector3(0.0, 0.0, -4.0)
-	)
-	_create_box_part(mask_plate, "EyeLeft", Vector3(0.07, 0.08, 0.02), Vector3(-0.09, 0.08, -0.02), eye_mat)
-	_create_box_part(mask_plate, "EyeRight", Vector3(0.09, 0.06, 0.02), Vector3(0.09, 0.06, -0.02), eye_mat)
-	_create_box_part(mask_plate, "SmileCenter", Vector3(0.16, 0.05, 0.02), Vector3(0.0, -0.09, -0.02), smile_mat)
-	_create_box_part(mask_plate, "SmileLeft", Vector3(0.10, 0.045, 0.02), Vector3(-0.11, -0.06, -0.02), smile_mat, Vector3(0.0, 0.0, -28.0))
-	_create_box_part(mask_plate, "SmileRight", Vector3(0.10, 0.045, 0.02), Vector3(0.11, -0.06, -0.02), smile_mat, Vector3(0.0, 0.0, 28.0))
+	_create_box_part(_right_arm, "ArmMesh", Vector3(0.18, 0.56, 0.20), Vector3(0.0, -0.25, 0.0), coat_mat)
+	_create_box_part(_right_arm, "HandMesh", Vector3(0.12, 0.14, 0.13), Vector3(0.0, -0.58, 0.0), skin_mat)
 
 	_alert_badge = MeshInstance3D.new()
 	_alert_badge.name = "AlertBadge"

@@ -17,6 +17,7 @@ var _sodium_lights: Array[Dictionary] = []
 var _watcher_windows: Array[Dictionary] = []
 var _alley_rats: Array[Dictionary] = []
 var _night2_porch_mark: Node3D = null
+var _night3_school_mark: Node3D = null
 var _ash_particles: CPUParticles3D = null
 var _flicker_t: float = 0.0
 
@@ -34,6 +35,7 @@ func _exit_tree() -> void:
 	_watcher_windows.clear()
 	_alley_rats.clear()
 	_night2_porch_mark = null
+	_night3_school_mark = null
 	_ash_particles = null
 
 
@@ -48,6 +50,7 @@ func rebuild_dressing() -> void:
 	_watcher_windows.clear()
 	_alley_rats.clear()
 	_night2_porch_mark = null
+	_night3_school_mark = null
 	_ash_particles = null
 	_init_textures()
 	_init_materials()
@@ -144,7 +147,10 @@ func _process(delta: float) -> void:
 			r_node.visible = r_node.position.distance_to(hide_p) > 0.12
 
 	if _night2_porch_mark != null and dn != null and dn.has_method("get_night_number"):
-		_night2_porch_mark.visible = int(dn.call("get_night_number")) >= 2
+		var cur_n: int = int(dn.call("get_night_number"))
+		_night2_porch_mark.visible = cur_n >= 2
+		if _night3_school_mark != null:
+			_night3_school_mark.visible = cur_n >= 3
 
 
 # --------------------------------------------------------------------------- Texturas & Materiais PS1
@@ -763,6 +769,8 @@ func _build_steaming_manholes_watchers_and_ash() -> void:
 			"flee_timer": 0.0,
 		})
 
-	# 5. Marca de Vigília do Culto na varanda da Casa Principal (revelada a partir da Noite 2)
+	# 5. Marca de Vigília do Culto na varanda da Casa Principal (revelada a partir da Noite 2) e no pátio da Escola (Noite 3+)
 	_night2_porch_mark = _add_box(fx, "Night2PorchCultMark", Vector3(1.1, 0.02, 1.1), Vector3(0.0, 0.025, 7.55), "graffiti_a", Vector3.ZERO, false, 38.0)
 	_night2_porch_mark.visible = false
+	_night3_school_mark = _add_box(fx, "Night3SchoolCultMark", Vector3(1.5, 0.02, 1.5), Vector3(0.0, 0.03, -24.5), "graffiti_b", Vector3.ZERO, false, 40.0)
+	_night3_school_mark.visible = false

@@ -64,13 +64,20 @@ func _process(delta: float) -> void:
 		t_indoor = -16.0
 	else:
 		if is_night:
-			t_wind = -15.0
+			var late_wind: float = clampf((hour - 3.0) / 2.0, 0.0, 1.0) if (hour >= 3.0 and hour < 5.0) else 0.0
+			t_wind = lerpf(-15.0, -11.5, late_wind)
 			var dawn_fade: float = clampf((hour - 5.0), 0.0, 1.0) if (hour >= 5.0 and hour < 6.0) else 0.0
 			t_crickets = lerpf(-19.0, -34.0, dawn_fade)
 			t_indoor = -38.0
 		else:
 			t_wind = -17.0
 			t_indoor = -44.0
+
+	if player != null and bool(player.get("is_hidden")):
+		t_wind = maxf(SILENT_DB, t_wind - 13.0) if t_wind > SILENT_DB else SILENT_DB
+		t_crickets = maxf(SILENT_DB, t_crickets - 15.0) if t_crickets > SILENT_DB else SILENT_DB
+		t_indoor = maxf(SILENT_DB, t_indoor - 11.0) if t_indoor > SILENT_DB else SILENT_DB
+		t_sewer = maxf(SILENT_DB, t_sewer - 12.0) if t_sewer > SILENT_DB else SILENT_DB
 
 	if get_tree().paused:
 		t_wind = maxf(SILENT_DB, t_wind - 10.0) if t_wind > SILENT_DB else SILENT_DB

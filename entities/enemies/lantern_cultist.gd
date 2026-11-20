@@ -14,6 +14,7 @@ enum State { PATROL, INVESTIGATE, CHASE }
 @export var attack_range: float = 1.65
 @export var attack_damage: float = 22.0
 @export var attack_cooldown: float = 1.35
+@export var min_night_to_spawn: int = 1
 
 var _state: State = State.PATROL
 var _is_night_active: bool = false
@@ -72,6 +73,7 @@ func _ready() -> void:
 
 	GameEvents.night_started.connect(_on_night_started)
 	GameEvents.day_started.connect(_on_day_started)
+	GameEvents.night_transition_requested.connect(_on_night_transition_requested)
 	GameEvents.player_noise_emitted.connect(_on_noise_or_alarm)
 	GameEvents.alarm_triggered.connect(_on_alarm_triggered)
 	call_deferred("_sync_day_night")
@@ -89,18 +91,27 @@ func _on_night_started() -> void:
 	_set_active(true)
 
 
+func _on_night_transition_requested(_night_num: int) -> void:
+	_set_active(true)
+
+
 func _on_day_started() -> void:
 	_set_active(false)
 
 
 func _set_active(active: bool) -> void:
-	_is_night_active = active
-	visible = active
-	collision_layer = 4 if active else 0
-	set_physics_process(active)
+	var night_now: int = 1
+	var dn: Node = get_tree().get_first_node_in_group("day_night")
+	if dn != null and dn.has_method("get_night_number"):
+		night_now = int(dn.call("get_night_number"))
+	var allowed: bool = active and (night_now >= min_night_to_spawn)
+	_is_night_active = allowed
+	visible = allowed
+	collision_layer = 4 if allowed else 0
+	set_physics_process(allowed)
 	if _spot_light != null:
-		_spot_light.visible = active
-	if active:
+		_spot_light.visible = allowed
+	if allowed:
 		global_position = _spawn_pos
 		velocity = Vector3.ZERO
 		_state = State.PATROL
@@ -476,34 +487,43 @@ func _build_visual() -> void:
 	vis.name = "CultistVisual"
 	add_child(vis)
 
-	var cloak: Material = _make_mat(Color(0.24, 0.08, 0.08))
-	var hood: Material = _make_mat(Color(0.16, 0.05, 0.06))
-	var mask: Material = _make_mat(Color(0.92, 0.78, 0.34))
+	var robe_tex: ImageTexture = CultistVisualBuilder.make_robe_texture(722)
+	var mask_tex: ImageTexture = CultistVisualBuilder.make_mask_texture(Color(0.90, 0.76, 0.36), Color(0.74, 0.08, 0.07))
+
+	var cloak: Material = CultistVisualBuilder.make_psx_mat(Color(0.28, 0.11, 0.10), robe_tex)
+	var shawl: Material = CultistVisualBuilder.make_psx_mat(Color(0.18, 0.11, 0.11), robe_tex)
+	var hood: Material = CultistVisualBuilder.make_psx_mat(Color(0.09, 0.06, 0.07), robe_tex)
+	var belt: Material = CultistVisualBuilder.make_psx_mat(Color(0.16, 0.10, 0.08))
+	var pants: Material = CultistVisualBuilder.make_psx_mat(Color(0.11, 0.09, 0.10))
+	var mask: Material = CultistVisualBuilder.make_psx_mat(Color(0.96, 0.92, 0.85), mask_tex)
 	var iron: Material = _make_mat(Color(0.18, 0.19, 0.22))
 	var glow: Material = _make_mat(Color(1.0, 0.72, 0.25), true)
 
-	_add_part(vis, Vector3(0.56, 0.90, 0.38), Vector3(0.0, 0.45, 0.0), cloak)
+	_add_part(vis, Vector3(0.22, 0.72, 0.24), Vector3(-0.14, 0.36, 0.0), pants)
+	_add_part(vis, Vector3(0.22, 0.72, 0.24), Vector3(0.14, 0.36, 0.0), pants)
+	_add_part(vis, Vector3(0.26, 0.56, 0.34), Vector3(-0.16, 0.58, 0.0), cloak)
+	_add_part(vis, Vector3(0.26, 0.54, 0.34), Vector3(0.16, 0.59, 0.0), cloak)
 
 	_body_pivot = Node3D.new()
 	_body_pivot.name = "BodyPivot"
 	_body_pivot.position = Vector3(0.0, 0.90, 0.0)
 	vis.add_child(_body_pivot)
 
-	_add_part(_body_pivot, Vector3(0.50, 0.64, 0.32), Vector3(0.0, 0.32, 0.0), cloak)
-	_add_part(_body_pivot, Vector3(0.36, 0.40, 0.34), Vector3(0.0, 0.76, 0.03), hood)
-	_add_part(_body_pivot, Vector3(0.32, 0.36, 0.04), Vector3(0.0, 0.76, -0.15), mask)
+	_add_part(_body_pivot, Vector3(0.54, 0.64, 0.32), Vector3(0.0, 0.32, 0.0), cloak)
+	CultistVisualBuilder.attach_shawl_and_belt(_body_pivot, 0.34, shawl, belt)
+	CultistVisualBuilder.attach_hood_and_mask(_body_pivot, 0.76, hood, mask, Color(1.0, 0.82, 0.42), false)
 
 	_left_arm = Node3D.new()
 	_left_arm.name = "LeftArm"
-	_left_arm.position = Vector3(-0.32, 0.42, -0.05)
+	_left_arm.position = Vector3(-0.34, 0.42, -0.05)
 	_body_pivot.add_child(_left_arm)
-	_add_part(_left_arm, Vector3(0.12, 0.48, 0.12), Vector3(0.0, -0.22, -0.06), cloak)
+	_add_part(_left_arm, Vector3(0.15, 0.50, 0.16), Vector3(0.0, -0.22, -0.04), cloak)
 
 	_lantern_arm = Node3D.new()
 	_lantern_arm.name = "LanternArm"
-	_lantern_arm.position = Vector3(0.32, 0.42, -0.05)
+	_lantern_arm.position = Vector3(0.34, 0.42, -0.05)
 	_body_pivot.add_child(_lantern_arm)
-	_add_part(_lantern_arm, Vector3(0.12, 0.44, 0.12), Vector3(0.0, -0.22, -0.16), cloak)
+	_add_part(_lantern_arm, Vector3(0.15, 0.46, 0.16), Vector3(0.0, -0.22, -0.16), cloak)
 	_add_part(_lantern_arm, Vector3(0.16, 0.24, 0.16), Vector3(0.0, -0.46, -0.34), iron)
 	_add_part(_lantern_arm, Vector3(0.10, 0.14, 0.10), Vector3(0.0, -0.46, -0.34), glow)
 
