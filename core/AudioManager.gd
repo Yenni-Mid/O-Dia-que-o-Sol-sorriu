@@ -56,6 +56,7 @@ var _stream_dawn_warning: AudioStream
 var _stream_menu_hover: AudioStream
 var _stream_menu_confirm: AudioStream
 var _stream_menu_back: AudioStream
+var _stream_dialogue_blip: AudioStream
 
 var _heartbeat_intensity: float = 0.0
 var _heartbeat_timer: float = 0.0
@@ -177,6 +178,10 @@ func play_menu_confirm() -> void:
 
 func play_menu_back() -> void:
 	play_sfx(_stream_menu_back if _stream_menu_back != null else _stream_ui_click, -6.5, 0.94)
+
+
+func play_dialogue_blip(pitch_base: float = 1.0) -> void:
+	play_sfx(_stream_dialogue_blip if _stream_dialogue_blip != null else _stream_ui_click, -15.5, pitch_base * randf_range(0.92, 1.08))
 
 
 func play_paper() -> void:
@@ -433,6 +438,25 @@ func _build_procedural_streams() -> void:
 	_stream_menu_hover = _synth_menu_hover()
 	_stream_menu_confirm = _synth_menu_confirm()
 	_stream_menu_back = _synth_wave(0.15, 340.0, 185.0, 0.08, false)
+	_stream_dialogue_blip = _synth_dialogue_blip()
+
+
+func _synth_dialogue_blip() -> AudioStreamWAV:
+	var duration: float = 0.036
+	var count: int = int(duration * float(MIX_RATE))
+	var samples: PackedFloat32Array = PackedFloat32Array()
+	samples.resize(count)
+	var ph: float = 0.0
+	for i: int in range(count):
+		var t: float = float(i) / float(maxi(1, count - 1))
+		var attack: float = clampf(t * 16.0, 0.0, 1.0)
+		var decay: float = pow(1.0 - t, 1.9)
+		var env: float = attack * decay
+		var freq: float = lerpf(320.0, 270.0, t)
+		ph += TAU * freq / float(MIX_RATE)
+		var tri: float = 2.0 * absf(fposmod(ph / TAU, 1.0) * 2.0 - 1.0) - 1.0
+		samples[i] = (sin(ph) * 0.65 + tri * 0.35) * env * 0.28
+	return _to_wav(samples, false)
 
 
 func _synth_menu_hover() -> AudioStreamWAV:

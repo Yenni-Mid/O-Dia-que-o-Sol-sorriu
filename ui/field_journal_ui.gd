@@ -49,7 +49,7 @@ func _can_open_journal() -> bool:
 		return false
 	var ui_layer: Node = get_parent()
 	if ui_layer != null:
-		for other_name: String in ["EchoReaderUI", "VHSTapeOverlay", "PauseMenu", "KeypadUI"]:
+		for other_name: String in ["EchoReaderUI", "VHSTapeOverlay", "PauseMenu", "KeypadUI", "DialogueUI"]:
 			var other: Control = ui_layer.get_node_or_null(other_name) as Control
 			if other != null and other.visible:
 				return false
@@ -111,7 +111,18 @@ func _refresh_summary() -> void:
 			keys = inv.call("get_keys") as Array
 		if inv.has_method("get_tools"):
 			tools = inv.call("get_tools") as Array
-	var keys_str: String = "Nenhuma" if keys.is_empty() else ", ".join(PackedStringArray(keys))
+	var key_names: Array[String] = []
+	for k_item: Variant in keys:
+		var kid: String = str(k_item)
+		if kid == "market_back_key":
+			key_names.append("Chave dos Fundos do Mercado")
+		elif kid == "basement_key":
+			key_names.append("Chave do Porão")
+		elif kid == "chapel_key":
+			key_names.append("Chave da Capela")
+		else:
+			key_names.append(kid)
+	var keys_str: String = "Nenhuma" if key_names.is_empty() else ", ".join(PackedStringArray(key_names))
 	var tool_names: Array[String] = []
 	for t: Variant in tools:
 		var tid: String = str(t)
@@ -129,7 +140,7 @@ func _refresh_summary() -> void:
 	if dn != null and dn.has_method("get_formatted_time"):
 		hour_str = str(dn.call("get_formatted_time"))
 
-	bag_summary.text = "RELÓGIO: %s\n\nITENS DE CAMPO:\n• [G] Garrafas (isca): %d\n• [H] Bandagens (+40 HP): %d\n• Ferramentas: %s\n• Chaves: %s\n\nANOTAÇÕES:\n• Saia da Casa à noite (19:15) e explore o quarteirão.\n• Ao clarear (05:00–06:00), volte para dentro da Casa!\n• Os Cultistas caçam a luz do lampião à noite.\n• De dia, o Sol Sorridente ainda queima quem ficar fora.\n\n[Q / C] Espreitar esquinas." % [
+	bag_summary.text = "RELÓGIO: %s\n\nITENS DE CAMPO:\n• [G] Garrafas (isca): %d\n• [H] Bandagens (+40 HP): %d\n• Ferramentas: %s\n• Chaves: %s\n\nANOTAÇÕES:\n• Pressione [M] para erguer o Mapa na mão (sem pausar).\n• Saia da Casa à noite (19:15) e explore os becos.\n• Ao clarear (05:00–06:00), volte para dentro da Casa!\n• Os Cultistas caçam a luz do lampião à noite.\n\n[Q / C] Espreitar esquinas." % [
 		hour_str,
 		bottles,
 		bandages,

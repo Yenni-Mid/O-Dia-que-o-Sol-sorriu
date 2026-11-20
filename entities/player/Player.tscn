@@ -6,6 +6,7 @@
 [ext_resource type="Script" uid="uid://b6iw65xjapt4e" path="res://entities/player/sanity_component.gd" id="4_rl6fg"]
 [ext_resource type="Script" uid="uid://214it837h32w" path="res://entities/player/health_component.gd" id="5_q57vx"]
 [ext_resource type="Script" path="res://entities/player/inventory_component.gd" id="6_inv"]
+[ext_resource type="Script" path="res://entities/player/handheld_map.gd" id="7_map"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_ak4un"]
 radius = 0.35
@@ -49,6 +50,9 @@ target_position = Vector3(0, 100, 0)
 
 [node name="HeadPivot" type="Node3D" parent="." unique_id=388937371]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6, 0)
+
+[node name="HandheldMap" type="Node3D" parent="HeadPivot" unique_id=970785799]
+script = ExtResource("7_map")
 
 [node name="Camera3D" type="Camera3D" parent="HeadPivot" unique_id=508110989]
 current = true

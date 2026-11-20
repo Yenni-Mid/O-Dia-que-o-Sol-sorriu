@@ -16,6 +16,7 @@
 [ext_resource type="PackedScene" path="res://ui/keypad_ui.tscn" id="14_kpad"]
 [ext_resource type="Script" path="res://systems/radio_detector.gd" id="15_radio"]
 [ext_resource type="Script" path="res://systems/ambient_sound_director.gd" id="16_amb"]
+[ext_resource type="PackedScene" path="res://ui/dialogue_ui.tscn" id="17_dialogue"]
 
 [sub_resource type="ProceduralSkyMaterial" id="SkyMat_sick"]
 sky_top_color = Color(0.25, 0.28, 0.33, 1)
@@ -150,5 +151,7 @@ grow_vertical = 2
 [node name="VHSTapeOverlay" parent="CanvasLayer_UI" unique_id=911002002 instance=ExtResource("13_vhs")]
 
 [node name="KeypadUI" parent="CanvasLayer_UI" unique_id=911002003 instance=ExtResource("14_kpad")]
+
+[node name="DialogueUI" parent="CanvasLayer_UI" unique_id=911002004 instance=ExtResource("17_dialogue")]
 
 [node name="PauseMenu" parent="CanvasLayer_UI" unique_id=885522114 instance=ExtResource("8_pause")]

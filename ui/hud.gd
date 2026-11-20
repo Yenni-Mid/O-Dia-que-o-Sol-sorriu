@@ -46,6 +46,7 @@ var _keys_lbl: Label
 var _crosshair: ColorRect
 var _crosshair_border: ColorRect
 var _hiding_overlay: Control
+var _map_hint_label: Label
 
 var _confession_timer: float = 0.0
 var _toast_timer: float = 0.0
@@ -53,6 +54,8 @@ var _obj_panel_timer: float = 4.5
 var _pulse_time: float = 0.0
 var _radio_level: float = 0.0
 var _is_dawn_urgent: bool = false
+var _dialogue_active: bool = false
+var _map_open: bool = false
 var _eye_state: int = -1
 var _in_sunlight: bool = false
 var _collected_ids: Dictionary = {}
@@ -83,6 +86,9 @@ func _ready() -> void:
 	GameEvents.lantern_toggled.connect(_on_lantern_toggled)
 	GameEvents.lantern_depleted.connect(_on_lantern_depleted)
 	GameEvents.player_movement_state_changed.connect(_on_player_movement_state_changed)
+	GameEvents.map_toggled.connect(_on_map_toggled)
+	GameEvents.dialogue_requested.connect(_on_dialogue_started)
+	GameEvents.dialogue_closed.connect(_on_dialogue_closed)
 
 	call_deferred("_count_echoes")
 	call_deferred("_sync_initial_player_visuals")
@@ -191,31 +197,45 @@ func _build_layout() -> void:
 	_prompt_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	add_child(_prompt_label)
 
-	# Confissões / legendas diegéticas discretas na base da tela
-	_confession_label = _make_label(14, Color(0.86, 0.80, 0.68, 0.90))
+	# Confissões / legendas diegéticas discretas acima dos medidores inferiores (zero colisão com Sanidade/Óleo/Vida)
+	_confession_label = _make_label(14, Color(0.86, 0.80, 0.68, 0.94))
 	_confession_label.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
-	_confession_label.offset_left = -320.0
-	_confession_label.offset_right = 320.0
-	_confession_label.offset_top = -54.0
-	_confession_label.offset_bottom = -22.0
+	_confession_label.offset_left = -260.0
+	_confession_label.offset_right = 260.0
+	_confession_label.offset_top = -124.0
+	_confession_label.offset_bottom = -88.0
 	_confession_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_confession_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_confession_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_confession_label.modulate.a = 0.0
 	add_child(_confession_label)
 
-	# Avisos curtos discretos na mesma faixa inferior (sem poluir o meio da tela)
-	_toast_label = _make_label(14, Color(0.86, 0.80, 0.68, 0.90))
+	# Avisos curtos discretos na mesma faixa segura acima da barra inferior
+	_toast_label = _make_label(14, Color(0.86, 0.80, 0.68, 0.94))
 	_toast_label.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
-	_toast_label.offset_left = -320.0
-	_toast_label.offset_right = 320.0
-	_toast_label.offset_top = -54.0
-	_toast_label.offset_bottom = -22.0
+	_toast_label.offset_left = -260.0
+	_toast_label.offset_right = 260.0
+	_toast_label.offset_top = -124.0
+	_toast_label.offset_bottom = -88.0
 	_toast_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_toast_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_toast_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_toast_label.modulate.a = 0.0
 	add_child(_toast_label)
+
+	# Prompt discreto "[M] FECHAR MAPA" entre SANIDADE e VIDA quando o Mapa 3D está erguido (Imagem 3)
+	_map_hint_label = _make_label(18, COLOR_BONE)
+	_map_hint_label.add_theme_constant_override("outline_size", 6)
+	_map_hint_label.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	_map_hint_label.offset_left = -160.0
+	_map_hint_label.offset_right = 160.0
+	_map_hint_label.offset_top = -62.0
+	_map_hint_label.offset_bottom = -30.0
+	_map_hint_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_map_hint_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_map_hint_label.text = "[M] FECHAR MAPA"
+	_map_hint_label.visible = false
+	add_child(_map_hint_label)
 
 	# Objetivo compacto (aparece no início / ao coletar Eco e depois desvanece)
 	_obj_panel = PanelContainer.new()
@@ -376,7 +396,7 @@ func _build_layout() -> void:
 	_keys_lbl = _make_item_badge(inv_strip, "key", "0")
 	_keys_box = _keys_lbl.get_parent() as HBoxContainer
 	_keys_box.visible = false
-	_make_item_badge(inv_strip, "map", "[TAB]")
+	_make_item_badge(inv_strip, "map", "[M] / [TAB]")
 
 	# Linha Postura + Barra Vida
 	var health_row: HBoxContainer = HBoxContainer.new()
@@ -595,13 +615,14 @@ func _on_lighting_zone_changed(zone: int) -> void:
 
 
 func _on_interaction_prompt_changed(prompt_text: String) -> void:
+	var suppressed: bool = _dialogue_active or _map_open
 	if _prompt_label != null:
-		_prompt_label.text = prompt_text.to_upper() if not prompt_text.is_empty() else ""
-	_set_crosshair_active(not prompt_text.is_empty())
+		_prompt_label.text = "" if suppressed else (prompt_text.to_upper() if not prompt_text.is_empty() else "")
+	_set_crosshair_active((not suppressed) and (not prompt_text.is_empty()))
 
 
 func _on_confession_triggered(text: String) -> void:
-	if _confession_label == null:
+	if _confession_label == null or _dialogue_active:
 		return
 	_toast_timer = 0.0
 	if _toast_label != null:
@@ -686,7 +707,7 @@ func _on_radio_interference_changed(level: float) -> void:
 
 
 func _on_status_message_requested(text: String) -> void:
-	if _toast_label == null or text.is_empty():
+	if _toast_label == null or text.is_empty() or _dialogue_active:
 		return
 	_confession_timer = 0.0
 	if _confession_label != null:
@@ -694,3 +715,40 @@ func _on_status_message_requested(text: String) -> void:
 	_toast_label.text = text
 	_toast_label.modulate.a = 1.0
 	_toast_timer = 2.1
+
+
+func _refresh_overlay_crosshair() -> void:
+	var hide_center: bool = _dialogue_active or _map_open
+	if _crosshair != null:
+		_crosshair.visible = not hide_center
+	if _crosshair_border != null:
+		_crosshair_border.visible = not hide_center
+	if _prompt_label != null and hide_center:
+		_prompt_label.text = ""
+
+
+func _on_map_toggled(is_open: bool) -> void:
+	_map_open = is_open
+	if _map_hint_label != null:
+		_map_hint_label.visible = is_open and not _dialogue_active
+	_refresh_overlay_crosshair()
+
+
+func _on_dialogue_started(_payload: Dictionary) -> void:
+	_dialogue_active = true
+	_toast_timer = 0.0
+	_confession_timer = 0.0
+	if _toast_label != null:
+		_toast_label.modulate.a = 0.0
+	if _confession_label != null:
+		_confession_label.modulate.a = 0.0
+	if _map_hint_label != null:
+		_map_hint_label.visible = false
+	_refresh_overlay_crosshair()
+
+
+func _on_dialogue_closed() -> void:
+	_dialogue_active = false
+	if _map_hint_label != null:
+		_map_hint_label.visible = _map_open
+	_refresh_overlay_crosshair()

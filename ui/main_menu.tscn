@@ -228,7 +228,8 @@ text = "CONTROLES:
 • F — Acender / Apagar Lampião
 • Botão Direito / V — Sobrecarga do Lampião (repele Sombras e ofusca)
 • G — Arremessar Garrafa (isca)  |  H — Usar Bandagem
-• E — Interagir (Ecos, Óleo, Fitas, Portas,Projetor, Gerador, Armários)
+• E — Interagir (Ecos, Óleo, Fitas, Portas, Projetor, Gerador, Armários)
+• M — Erguer / Baixar Mapa Físico na Mão (sem pausar)
 • Tab — Mapa Rabiscado & Diário de Ecos  |  Esc — Pausa"
 
 [node name="CloseControlsButton" type="Button" parent="ControlsPanel/VBox"]

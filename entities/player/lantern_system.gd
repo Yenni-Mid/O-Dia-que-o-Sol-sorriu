@@ -26,6 +26,7 @@ var _last_emitted_oil: float = -1.0
 var _overload_timer: float = 0.0
 var _overload_cooldown: float = 0.0
 var _base_omni_range: float = 7.5
+var _map_open: bool = false
 
 @onready var lantern_mesh: MeshInstance3D = get_node_or_null("LanternMesh") as MeshInstance3D
 @onready var omni_light: OmniLight3D = get_node_or_null("OmniLight3D") as OmniLight3D
@@ -42,6 +43,11 @@ func _ready() -> void:
 	current_oil = clampf(current_oil, 0.0, max_oil)
 	_apply_lantern_state()
 	_emit_oil()
+	GameEvents.map_toggled.connect(_on_map_toggled)
+
+
+func _on_map_toggled(open_state: bool) -> void:
+	_map_open = open_state
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -62,11 +68,15 @@ func _process(delta: float) -> void:
 	if _overload_timer > 0.0:
 		_overload_timer = maxf(0.0, _overload_timer - delta)
 
-	# Animação tátil de erguer/abaixar o lampião (+ pulso para frente durante sobrecarga)
+	# Animação tátil de erguer/abaixar o lampião (+ deslocamento lateral suave quando o Mapa [M] está erguido)
 	var overload_boost: float = clampf(_overload_timer / 1.8, 0.0, 1.0)
+	var target_x: float = 0.075 if _map_open else 0.0
+	var target_z: float = 0.04 if _map_open else 0.0
 	var target_y: float = (0.045 * overload_boost) if is_lit else -0.08
 	var target_tilt: float = (0.04 + 0.08 * overload_boost) if is_lit else -0.14
+	position.x = lerpf(position.x, target_x, clampf(8.0 * delta, 0.0, 1.0))
 	position.y = lerpf(position.y, target_y, clampf(10.0 * delta, 0.0, 1.0))
+	position.z = lerpf(position.z, target_z, clampf(8.0 * delta, 0.0, 1.0))
 	rotation.x = lerpf(rotation.x, target_tilt, clampf(10.0 * delta, 0.0, 1.0))
 
 	if not is_lit:
