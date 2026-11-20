@@ -17,6 +17,13 @@ func _ready() -> void:
 	_build_generator_and_gate()
 
 
+func _exit_tree() -> void:
+	_floodlights.clear()
+	_status_lamp_mat = null
+	_piston_mesh = null
+	_supply_gate = null
+
+
 func _process(delta: float) -> void:
 	if not is_running:
 		return

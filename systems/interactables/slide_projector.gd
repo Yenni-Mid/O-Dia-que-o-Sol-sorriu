@@ -21,6 +21,12 @@ func _ready() -> void:
 	_build_projector_and_screen()
 
 
+func _exit_tree() -> void:
+	_slide_textures.clear()
+	_screen_mat = null
+	_beam_light = null
+
+
 func get_interaction_prompt() -> String:
 	if _slide_index < 0:
 		return "[E] Ligar Projetor de Slides"

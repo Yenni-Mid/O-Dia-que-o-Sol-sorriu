@@ -53,6 +53,9 @@ var _stream_owl: AudioStream
 var _stream_crow: AudioStream
 var _stream_sewer_drip: AudioStream
 var _stream_dawn_warning: AudioStream
+var _stream_menu_hover: AudioStream
+var _stream_menu_confirm: AudioStream
+var _stream_menu_back: AudioStream
 
 var _heartbeat_intensity: float = 0.0
 var _heartbeat_timer: float = 0.0
@@ -161,7 +164,19 @@ func play_pickup() -> void:
 
 
 func play_ui_click() -> void:
-	play_sfx(_stream_ui_click, -12.0, randf_range(0.95, 1.05))
+	play_sfx(_stream_ui_click, -10.0, randf_range(0.96, 1.04))
+
+
+func play_menu_hover() -> void:
+	play_sfx(_stream_menu_hover if _stream_menu_hover != null else _stream_ui_click, -7.5, randf_range(0.97, 1.03))
+
+
+func play_menu_confirm() -> void:
+	play_sfx(_stream_menu_confirm if _stream_menu_confirm != null else _stream_ignite, -4.5, 1.0)
+
+
+func play_menu_back() -> void:
+	play_sfx(_stream_menu_back if _stream_menu_back != null else _stream_ui_click, -6.5, 0.94)
 
 
 func play_paper() -> void:
@@ -415,6 +430,56 @@ func _build_procedural_streams() -> void:
 	_stream_metal_cut = _synth_wave(0.24, 960.0, 320.0, 0.72, false)
 	_stream_wood_break = _synth_noise_burst(0.36, 0.45, 79)
 	_stream_radio_static = _synth_noise_loop(2.2, 0.42, 91)
+	_stream_menu_hover = _synth_menu_hover()
+	_stream_menu_confirm = _synth_menu_confirm()
+	_stream_menu_back = _synth_wave(0.15, 340.0, 185.0, 0.08, false)
+
+
+func _synth_menu_hover() -> AudioStreamWAV:
+	var duration: float = 0.075
+	var count: int = int(duration * float(MIX_RATE))
+	var samples: PackedFloat32Array = PackedFloat32Array()
+	samples.resize(count)
+	var p1: float = 0.0
+	var p2: float = 0.0
+	for i: int in range(count):
+		var t: float = float(i) / float(maxi(1, count - 1))
+		var attack: float = clampf(t * 24.0, 0.0, 1.0)
+		var decay: float = pow(1.0 - t, 2.4)
+		var env: float = attack * decay
+		var f1: float = lerpf(580.0, 420.0, t)
+		var f2: float = lerpf(1160.0, 840.0, t)
+		p1 += TAU * f1 / float(MIX_RATE)
+		p2 += TAU * f2 / float(MIX_RATE)
+		var click_transient: float = (1.0 - clampf(t * 12.0, 0.0, 1.0)) * sin(p2 * 1.5) * 0.35
+		samples[i] = (sin(p1) * 0.65 + sin(p2) * 0.25 + click_transient) * env * 0.55
+	return _to_wav(samples, false)
+
+
+func _synth_menu_confirm() -> AudioStreamWAV:
+	var duration: float = 0.56
+	var count: int = int(duration * float(MIX_RATE))
+	var samples: PackedFloat32Array = PackedFloat32Array()
+	samples.resize(count)
+	var ph_root: float = 0.0
+	var ph_fifth: float = 0.0
+	var ph_oct: float = 0.0
+	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
+	rng.seed = 1710
+	var flare_LP: float = 0.0
+	for i: int in range(count):
+		var t: float = float(i) / float(maxi(1, count - 1))
+		var attack: float = clampf(t * 28.0, 0.0, 1.0)
+		var decay: float = pow(1.0 - t, 1.65)
+		var env: float = attack * decay
+		ph_root += TAU * 220.0 / float(MIX_RATE)
+		ph_fifth += TAU * 329.63 / float(MIX_RATE)
+		ph_oct += TAU * 440.0 / float(MIX_RATE)
+		flare_LP = lerpf(flare_LP, rng.randf_range(-1.0, 1.0), 0.18)
+		var flare_env: float = pow(1.0 - clampf(t * 2.2, 0.0, 1.0), 2.2)
+		var chord: float = sin(ph_root) * 0.48 + sin(ph_fifth) * 0.34 + sin(ph_oct) * 0.22
+		samples[i] = (chord * env + flare_LP * flare_env * 0.24) * 0.62
+	return _to_wav(samples, false)
 
 
 func _synth_wave(duration: float, freq_start: float, freq_end: float, noise_mix: float, loop_enabled: bool) -> AudioStreamWAV:
