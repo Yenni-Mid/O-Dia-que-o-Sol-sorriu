@@ -17,6 +17,8 @@ const PSX_LIT_SHADER: Shader = preload("res://shaders/psx_lit.gdshader")
 @export var reward_key_name: String = ""
 
 var _completed: bool = false
+var _clara_trades_done: int = 0
+var _rafael_gave_bottle: bool = false
 var _head_node: Node3D
 var _talk_cooldown: float = 0.0
 
@@ -67,9 +69,23 @@ func _open_npc_dialogue(inv: Node) -> void:
 	AudioManager.play_breath()
 	var is_marcos: bool = (npc_id == "marcos")
 	var is_helena: bool = (npc_id == "helena")
-	var role: String = "SOBREVIVENTE DO POSTO" if is_marcos else ("VIZINHA REFUGIADA" if is_helena else "SOBREVIVENTE")
-	var pitch: float = 0.78 if is_marcos else (1.16 if is_helena else 1.0)
-	var accent: Color = Color(0.56, 0.78, 0.44) if is_marcos else (Color(0.88, 0.56, 0.64) if is_helena else Color(0.95, 0.76, 0.34))
+	var is_clara: bool = (npc_id == "clara")
+	var is_rafael: bool = (npc_id == "rafael")
+	var role: String = "SOBREVIVENTE DO POSTO" if is_marcos else (
+		"VIZINHA REFUGIADA" if is_helena else (
+			"FARMACÊUTICA REFUGIADA" if is_clara else (
+				"VIGIA DO PASSADIÇO" if is_rafael else "SOBREVIVENTE"
+			)
+		)
+	)
+	var pitch: float = 0.78 if is_marcos else (1.16 if is_helena else (1.22 if is_clara else (0.86 if is_rafael else 1.0)))
+	var accent: Color = Color(0.56, 0.78, 0.44) if is_marcos else (
+		Color(0.88, 0.56, 0.64) if is_helena else (
+			Color(0.54, 0.84, 0.78) if is_clara else (
+				Color(0.56, 0.72, 0.90) if is_rafael else Color(0.95, 0.76, 0.34)
+			)
+		)
+	)
 
 	if is_marcos:
 		var pages: Array[String] = []
@@ -98,12 +114,13 @@ func _open_npc_dialogue(inv: Node) -> void:
 		return
 
 	if is_helena:
+		SaveManager.mark_school_code_known()
 		var pages_h: Array[String] = [post_line if _completed else intro_line]
 		_completed = true
 		var cb_safe: Callable = func() -> void:
 			_open_followup(role, pitch, accent, [
 				"Entre pelo portão norte e siga pelo corredor da Escola Municipal Aurora Solar até a sala da Diretoria, na ala nordeste.",
-				"A senha do cofre é 1710 — o dia em que o Sol parou no céu. A Chave da Capela está trancada lá dentro."
+				"A senha do cofre é 1710 — o dia em que o Sol parou no céu. Anotei isso no seu mapa. A Chave da Capela está trancada lá dentro."
 			])
 		var cb_leo: Callable = func() -> void:
 			_open_followup(role, pitch, accent, [
@@ -116,6 +133,72 @@ func _open_npc_dialogue(inv: Node) -> void:
 			{"label": "Tranque a porta atrás de mim. Já volto."},
 		]
 		_emit_dialogue(role, pitch, accent, pages_h, choices_h)
+		return
+
+	if is_clara:
+		var bottles_cnt: int = int(inv.call("get_bottles")) if (inv != null and inv.has_method("get_bottles")) else 0
+		var pages_c: Array[String] = []
+		if _clara_trades_done >= 3:
+			pages_c = [
+				"Não tenho mais estoque de soro nem combustível sobrando atrás do balcão...",
+				"Se os cultistas rondarem a vitrine, passe agachado pela grade de aço ou saia pela galeria dos fundos."
+			]
+		else:
+			pages_c = [
+				"Fique longe da vitrine e fale baixo! Abaixo a grade de ferro toda madrugada antes da primeira fresta de sol.",
+				"Se me trouxer uma garrafa de vidro limpa (%d/3 trocas disponíveis), consigo destilar álcool para o seu lampião ou preparar uma bandagem." % _clara_trades_done
+			]
+		var choices_c: Array[Dictionary] = []
+		if _clara_trades_done < 3 and bottles_cnt > 0:
+			var cb_clara_trade: Callable = func() -> void:
+				_open_clara_trade_menu(role, pitch, accent)
+			choices_c.append({"label": "Trocar 1 Garrafa por suprimentos", "callback": cb_clara_trade})
+		var cb_clara_lore: Callable = func() -> void:
+			_open_followup(role, pitch, accent, [
+				"Nos primeiros dias após o Sol sorrir, dezenas chegaram à drogaria com as pupilas queimadas em formato de círculo dourado.",
+				"Nenhum colírio ou analgésico adiantava. Sob a luz do Sol, a mente vaza confissões compulsivas até queimar — apenas chamas humanas comuns, como lampiões a óleo e tambores de fogo, acalmam o nervo óptico."
+			])
+		choices_c.append({"label": "O que a luz do Sol faz com as pessoas?", "callback": cb_clara_lore})
+		choices_c.append({"label": "Fique abaixada atrás do balcão."})
+		_emit_dialogue(role, pitch, accent, pages_c, choices_c)
+		return
+
+	if is_rafael:
+		var pages_r: Array[String] = []
+		if not _rafael_gave_bottle:
+			var added_bottle: bool = (inv != null and inv.has_method("add_bottle") and bool(inv.call("add_bottle")))
+			_rafael_gave_bottle = true
+			if added_bottle:
+				AudioManager.play_pickup()
+				pages_r = [
+					"Subiu pela escada dos fundos? Aqui de cima do passadiço dá para vigiar os dois becos sem eles desconfiarem.",
+					"Pegue esta garrafa vazia que sobrou da vigília (+1 Garrafa [G]). Atire no asfalto longe deles se precisar atravessar a avenida."
+				]
+			else:
+				pages_r = [
+					"Você está com os bolsos cheios de garrafas já! Aqui de cima do passadiço dá para vigiar os dois becos sem ser visto.",
+					"Se deixar o óleo da mesa no canto direito, pode salvar seu lampião na volta da Escola."
+				]
+		else:
+			pages_r = [
+				"Ouvi tambores no pátio da Escola e passos rápidos de cultistas na avenida... mantenha o lampião baixo perto das esquinas."
+			]
+		var cb_patrol: Callable = func() -> void:
+			_open_followup(role, pitch, accent, [
+				"Os Cultistas do Lampião varrem a rua com um feixe largo. Nunca deixe uma porta aberta atrás de você — se eles notarem porta escancarada na ronda, param para investigar.",
+				"Se ficar cercado sem ter para onde correr, pressione [Botão Direito] ou [V] para sobrecarregar o lampião: o clarão queima Sombras Vivas e cega o culto por quase três segundos."
+			])
+		var cb_shortcuts: Callable = func() -> void:
+			_open_followup(role, pitch, accent, [
+				"O muro da Escola tem duas grades de serviço trancadas por dentro: uma no lado oeste do portão principal e outra na travessa entre o Posto e o Pátio.",
+				"Quando você atravessar pelo túnel do esgoto ou cortar as correntes do portão central, solte esses ferrolhos pelo lado de dentro para criar rotas de fuga em segundos."
+			])
+		var choices_r: Array[Dictionary] = [
+			{"label": "Como funcionam as rondas dos Cultistas?", "callback": cb_patrol},
+			{"label": "Existem atalhos rápidos nos becos?", "callback": cb_shortcuts},
+			{"label": "Continue vigiando a avenida."},
+		]
+		_emit_dialogue(role, pitch, accent, pages_r, choices_r)
 		return
 
 	# Fallback genérico reutilizável para novos NPCs
@@ -149,6 +232,48 @@ func _perform_marcos_trade(role: String, pitch: float, accent: Color) -> void:
 		reward_line,
 		"Use o Pé de Cabra nas tábuas da Casa Vizinha e dentro da Escola. Se precisar de óleo, há um depósito atrás da grade elétrica da cisterna no esgoto."
 	])
+
+
+func _open_clara_trade_menu(role: String, pitch: float, accent: Color) -> void:
+	var cb_band: Callable = func() -> void:
+		var cur_inv: Node = get_tree().get_first_node_in_group("inventory")
+		if cur_inv == null or not cur_inv.has_method("get_bottles") or int(cur_inv.call("get_bottles")) <= 0:
+			_open_followup(role, pitch, accent, ["Você não está com nenhuma garrafa agora."])
+			return
+		if cur_inv.has_method("add_bandage") and bool(cur_inv.call("add_bandage")):
+			cur_inv.call("consume_bottle")
+			_clara_trades_done += 1
+			AudioManager.play_pickup()
+			_open_followup(role, pitch, accent, [
+				"Aqui está — gaze estéril e antisséptico (+1 Bandagem [H]). Use se algum lunático cortar seu braço."
+			])
+		else:
+			_open_followup(role, pitch, accent, [
+				"Sua bolsa de bandagens já está cheia! Posso trocar a garrafa por óleo para o lampião se quiser."
+			])
+
+	var cb_oil: Callable = func() -> void:
+		var cur_inv: Node = get_tree().get_first_node_in_group("inventory")
+		var player: PlayerController = get_tree().get_first_node_in_group("player") as PlayerController
+		if cur_inv == null or not cur_inv.has_method("consume_bottle") or not bool(cur_inv.call("consume_bottle")):
+			_open_followup(role, pitch, accent, ["Você não está com nenhuma garrafa agora."])
+			return
+		_clara_trades_done += 1
+		if player != null and player.lantern_system != null:
+			player.lantern_system.add_oil(35.0)
+		AudioManager.play_pickup()
+		_open_followup(role, pitch, accent, [
+			"Despejei álcool medicinal purificado no seu reservatório (+35% Óleo do Lampião). Queima claro sem fazer fumaça."
+		])
+
+	var trade_choices: Array[Dictionary] = [
+		{"label": "Receber 1 Bandagem (+40 HP)", "callback": cb_band},
+		{"label": "Receber +35% de Óleo para o Lampião", "callback": cb_oil},
+		{"label": "Agora não."},
+	]
+	_emit_dialogue(role, pitch, accent, [
+		"Preciso de vidro limpo para destilar álcool e soro. O que você prefere levar por esta garrafa?"
+	], trade_choices)
 
 
 func _open_followup(role: String, pitch: float, accent: Color, pages: Array[String]) -> void:
@@ -197,9 +322,14 @@ func _grant_rewards(inv: Node) -> void:
 
 
 func get_interaction_prompt() -> String:
+	var inv: Node = get_tree().get_first_node_in_group("inventory")
+	if npc_id == "clara":
+		var b_cnt: int = int(inv.call("get_bottles")) if (inv != null and inv.has_method("get_bottles")) else 0
+		if _clara_trades_done < 3 and b_cnt > 0:
+			return "[E] Trocar Garrafa / Falar com %s" % npc_name
+		return "[E] Conversar com %s" % npc_name
 	if _completed or request_item == "none":
 		return "[E] Conversar com %s" % npc_name
-	var inv: Node = get_tree().get_first_node_in_group("inventory")
 	if request_item == "bandage":
 		if inv != null and inv.has_method("get_bandages") and int(inv.call("get_bandages")) > 0:
 			return "[E] Entregar Bandagem para %s" % npc_name

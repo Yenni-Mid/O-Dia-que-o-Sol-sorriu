@@ -5,6 +5,7 @@ extends CharacterBody3D
 var _alert_badge: MeshInstance3D
 var _mat_suspicious: StandardMaterial3D
 var _mat_chase: StandardMaterial3D
+var _mat_stun: StandardMaterial3D
 var _fsm: EnemyStateMachine
 var _last_state_name: String = ""
 
@@ -14,6 +15,7 @@ var _left_arm: Node3D
 var _right_arm: Node3D
 var _left_leg: Node3D
 var _right_leg: Node3D
+var _stun_particles: CPUParticles3D
 var _walk_phase: float = 0.0
 var _step_triggered: bool = false
 var _whisper_timer: float = 4.0
@@ -26,16 +28,62 @@ var _whisper_3d: AudioStreamPlayer3D
 func _ready() -> void:
 	_fsm = get_node_or_null("StateMachine") as EnemyStateMachine
 	_build_mask_and_badge()
+	_setup_stun_particles()
 	_setup_audio_3d()
 	_whisper_timer = randf_range(4.0, 9.0)
+
+
+func _exit_tree() -> void:
+	_mat_suspicious = null
+	_mat_chase = null
+	_mat_stun = null
+	_stun_particles = null
+	_alert_badge = null
+	_fsm = null
+	_cultist_body = null
+	_torso_pivot = null
+	_left_arm = null
+	_right_arm = null
+	_left_leg = null
+	_right_leg = null
 
 
 func stun_from_flash(duration: float) -> void:
 	if _fsm != null and _fsm.has_method("apply_flash_stun"):
 		_fsm.call("apply_flash_stun", duration)
+	if _stun_particles != null:
+		_stun_particles.restart()
+		_stun_particles.emitting = true
 	if _alert_3d != null and _alert_3d.stream != null:
-		_alert_3d.pitch_scale = 1.25
+		_alert_3d.pitch_scale = 1.32
 		_alert_3d.play()
+	if _whisper_3d != null and _whisper_3d.stream != null:
+		_whisper_3d.pitch_scale = 1.25
+		_whisper_3d.play()
+
+
+func _setup_stun_particles() -> void:
+	_stun_particles = CPUParticles3D.new()
+	_stun_particles.name = "FlashStunSmoke"
+	_stun_particles.position = Vector3(0.0, 1.65, -0.18)
+	_stun_particles.one_shot = true
+	_stun_particles.explosiveness = 0.92
+	_stun_particles.emitting = false
+	_stun_particles.amount = 14
+	_stun_particles.lifetime = 0.55
+	var pm: BoxMesh = BoxMesh.new()
+	pm.size = Vector3(0.07, 0.07, 0.07)
+	_stun_particles.mesh = pm
+	var pmat: StandardMaterial3D = StandardMaterial3D.new()
+	pmat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	pmat.albedo_color = Color(0.95, 0.90, 0.78)
+	_stun_particles.material_override = pmat
+	_stun_particles.direction = Vector3(0.0, 0.6, -0.8)
+	_stun_particles.spread = 65.0
+	_stun_particles.gravity = Vector3(0.0, 1.2, 0.0)
+	_stun_particles.initial_velocity_min = 1.6
+	_stun_particles.initial_velocity_max = 3.2
+	add_child(_stun_particles)
 
 
 func _setup_audio_3d() -> void:
@@ -93,17 +141,40 @@ func _process(delta: float) -> void:
 				_whisper_3d.pitch_scale = randf_range(0.75, 1.05)
 				_whisper_3d.play()
 
-	_animate_limbs(delta, st_name)
+	var is_stunned: bool = (_fsm != null and _fsm.is_stunned())
+	if _alert_badge != null and is_stunned:
+		_alert_badge.visible = true
+		_alert_badge.material_override = _mat_stun if ((Time.get_ticks_msec() / 90) % 2 == 0) else _mat_suspicious
+
+	_animate_limbs(delta, st_name, is_stunned)
 
 
-func _animate_limbs(delta: float, state_name: String) -> void:
+func _animate_limbs(delta: float, state_name: String, is_stunned: bool = false) -> void:
 	if _torso_pivot == null:
 		return
+
+	if is_stunned:
+		_step_triggered = false
+		_torso_pivot.rotation.x = lerpf(_torso_pivot.rotation.x, 0.28, minf(1.0, 14.0 * delta))
+		_torso_pivot.rotation.z = sin(Time.get_ticks_msec() * 0.055) * 0.14
+		if _left_arm != null:
+			_left_arm.rotation.x = lerpf(_left_arm.rotation.x, 2.35, minf(1.0, 16.0 * delta))
+			_left_arm.rotation.z = lerpf(_left_arm.rotation.z, 0.45, minf(1.0, 16.0 * delta))
+		if _right_arm != null:
+			_right_arm.rotation.x = lerpf(_right_arm.rotation.x, 2.35, minf(1.0, 16.0 * delta))
+			_right_arm.rotation.z = lerpf(_right_arm.rotation.z, -0.45, minf(1.0, 16.0 * delta))
+		return
+
 	var horiz_speed: float = Vector2(velocity.x, velocity.z).length()
 	var is_chasing: bool = (state_name == "ChaseState" or state_name == "AttackState")
 
 	var target_lean: float = -0.22 if is_chasing else (-0.06 if horiz_speed > 0.2 else 0.0)
 	_torso_pivot.rotation.x = lerpf(_torso_pivot.rotation.x, target_lean, minf(1.0, 8.0 * delta))
+	_torso_pivot.rotation.z = lerpf(_torso_pivot.rotation.z, 0.0, minf(1.0, 10.0 * delta))
+	if _left_arm != null:
+		_left_arm.rotation.z = lerpf(_left_arm.rotation.z, 0.0, minf(1.0, 10.0 * delta))
+	if _right_arm != null:
+		_right_arm.rotation.z = lerpf(_right_arm.rotation.z, 0.0, minf(1.0, 10.0 * delta))
 
 	if horiz_speed > 0.2:
 		_walk_phase += delta * horiz_speed * 2.8
@@ -187,6 +258,10 @@ func _build_mask_and_badge() -> void:
 	_mat_chase = StandardMaterial3D.new()
 	_mat_chase.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	_mat_chase.albedo_color = Color(1.0, 0.15, 0.12)
+
+	_mat_stun = StandardMaterial3D.new()
+	_mat_stun.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	_mat_stun.albedo_color = Color(1.0, 0.98, 0.85)
 
 	_cultist_body = Node3D.new()
 	_cultist_body.name = "CultistBody"

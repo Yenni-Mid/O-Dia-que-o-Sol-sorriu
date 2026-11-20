@@ -2,6 +2,7 @@ extends CharacterBody3D
 ## Inimigo noturno: Cultista do Lampião — patrulha varrendo a rua com holofote SpotLight3D e caça intrusos à noite.
 
 const PSX_LIT_SHADER: Shader = preload("res://shaders/psx_lit.gdshader")
+const DOOR_SPOT_RANGE: float = 7.5
 
 enum State { PATROL, INVESTIGATE, CHASE }
 
@@ -25,6 +26,9 @@ var _investigate_timer: float = 0.0
 var _lost_timer: float = 0.0
 var _attack_timer: float = 0.0
 var _stun_timer: float = 0.0
+var _door_check_timer: float = 1.4
+var _door_investigate_cd: float = 0.0
+var _investigating_door: Node = null
 var _vision_next_ms: int = 0
 var _cached_sees: bool = false
 var _walk_phase: float = 0.0
@@ -33,11 +37,26 @@ var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity") 
 
 var _vision_ray: RayCast3D
 var _nav_agent: NavigationAgent3D
+var _body_pivot: Node3D
+var _left_arm: Node3D
 var _lantern_arm: Node3D
 var _spot_light: SpotLight3D
+var _stun_particles: CPUParticles3D
 var _step_audio: AudioStreamPlayer3D
 var _alert_audio: AudioStreamPlayer3D
 var _whisper_audio: AudioStreamPlayer3D
+
+
+func _exit_tree() -> void:
+	_waypoints.clear()
+	_investigating_door = null
+	_body_pivot = null
+	_left_arm = null
+	_lantern_arm = null
+	_spot_light = null
+	_stun_particles = null
+	_vision_ray = null
+	_nav_agent = null
 
 
 func _ready() -> void:
@@ -92,7 +111,14 @@ func _set_active(active: bool) -> void:
 
 func stun_from_flash(duration: float) -> void:
 	_stun_timer = maxf(_stun_timer, duration)
-	_play_alert()
+	if _stun_particles != null:
+		_stun_particles.restart()
+		_stun_particles.emitting = true
+	if _alert_audio != null and _alert_audio.stream != null:
+		_alert_audio.pitch_scale = 1.32
+		_alert_audio.play()
+	else:
+		AudioManager.play_enemy_alert()
 
 
 func _physics_process(delta: float) -> void:
@@ -102,10 +128,13 @@ func _physics_process(delta: float) -> void:
 		velocity.y -= _gravity * delta
 	if _attack_timer > 0.0:
 		_attack_timer -= delta
+	if _door_investigate_cd > 0.0:
+		_door_investigate_cd = maxf(0.0, _door_investigate_cd - delta)
 	if _stun_timer > 0.0:
 		_stun_timer = maxf(0.0, _stun_timer - delta)
 		velocity.x = 0.0
 		velocity.z = 0.0
+		_animate_stun_reaction(delta)
 		move_and_slide()
 		return
 
@@ -116,6 +145,7 @@ func _physics_process(delta: float) -> void:
 		if _state != State.CHASE:
 			_play_alert()
 		_state = State.CHASE
+		_investigating_door = null
 		_investigate_target = player.global_position
 		_lost_timer = 0.0
 	elif _state == State.CHASE:
@@ -128,8 +158,15 @@ func _physics_process(delta: float) -> void:
 		if player.lantern_system != null and player.lantern_system.is_lit:
 			if global_position.distance_to(player.global_position) <= 22.0:
 				_state = State.INVESTIGATE
+				_investigating_door = null
 				_investigate_target = player.global_position
 				_investigate_timer = 4.5
+
+	if _state == State.PATROL and _door_investigate_cd <= 0.0:
+		_door_check_timer -= delta
+		if _door_check_timer <= 0.0:
+			_door_check_timer = 1.8
+			_check_open_doors(player)
 
 	match _state:
 		State.CHASE:
@@ -163,10 +200,47 @@ func _do_chase(delta: float, player: PlayerController, sees: bool) -> void:
 func _do_investigate(delta: float) -> void:
 	_investigate_timer -= delta
 	var flat_dist: float = Vector2(global_position.x, global_position.z).distance_to(Vector2(_investigate_target.x, _investigate_target.z))
+	if _investigating_door != null and is_instance_valid(_investigating_door) and flat_dist <= 1.8:
+		if bool(_investigating_door.get("is_open")) and _investigating_door.has_method("close_by_enemy"):
+			_investigating_door.call("close_by_enemy")
+		_investigating_door = null
+		_state = State.PATROL
+		return
 	if flat_dist <= 1.2 or _investigate_timer <= 0.0:
+		_investigating_door = null
 		_state = State.PATROL
 		return
 	_move_toward_target(_investigate_target, patrol_speed * 1.3, delta)
+
+
+func _check_open_doors(player: PlayerController) -> void:
+	var forward: Vector3 = -global_transform.basis.z
+	forward.y = 0.0
+	var fwd_norm: Vector3 = forward.normalized() if forward.length_squared() > 0.01 else Vector3.FORWARD
+	for node: Node in get_tree().get_nodes_in_group("door_interactable"):
+		var door: Node3D = node as Node3D
+		if door == null:
+			continue
+		if bool(door.get("is_open")) and bool(door.get("should_stay_closed")) and bool(door.get("opened_by_player")):
+			var to_d: Vector3 = door.global_position - global_position
+			var dist: float = to_d.length()
+			if dist > DOOR_SPOT_RANGE:
+				continue
+			if dist > 4.2:
+				var flat_d: Vector3 = Vector3(to_d.x, 0.0, to_d.z).normalized()
+				if fwd_norm.dot(flat_d) < -0.1:
+					continue
+			_state = State.INVESTIGATE
+			_investigating_door = door
+			_investigate_target = door.global_position
+			_investigate_timer = 6.5
+			_door_investigate_cd = 16.0
+			if _whisper_audio != null and _whisper_audio.stream != null:
+				_whisper_audio.pitch_scale = 0.88
+				_whisper_audio.play()
+			if player != null and global_position.distance_to(player.global_position) <= 14.0:
+				GameEvents.confession_triggered.emit("[Cultista do Lampião]: \"Quem deixou esta porta aberta...?\"")
+			return
 
 
 func _do_patrol(delta: float) -> void:
@@ -211,7 +285,29 @@ func _move_toward_target(target_pos: Vector3, speed: float, delta: float) -> voi
 		_step_triggered = false
 
 
+func _animate_stun_reaction(delta: float) -> void:
+	if _body_pivot != null:
+		_body_pivot.rotation.x = lerpf(_body_pivot.rotation.x, 0.26, minf(1.0, 14.0 * delta))
+		_body_pivot.rotation.z = sin(Time.get_ticks_msec() * 0.055) * 0.13
+	if _left_arm != null:
+		_left_arm.rotation.x = lerpf(_left_arm.rotation.x, 2.30, minf(1.0, 16.0 * delta))
+		_left_arm.rotation.z = lerpf(_left_arm.rotation.z, 0.45, minf(1.0, 16.0 * delta))
+	if _lantern_arm != null:
+		_lantern_arm.rotation.x = lerpf(_lantern_arm.rotation.x, -1.45, minf(1.0, 14.0 * delta))
+		_lantern_arm.rotation.y = sin(Time.get_ticks_msec() * 0.07) * 0.50
+	if _spot_light != null:
+		_spot_light.light_energy = 0.4 + 2.4 * absf(sin(Time.get_ticks_msec() * 0.05))
+
+
 func _animate_lantern(delta: float) -> void:
+	if _body_pivot != null:
+		_body_pivot.rotation.x = lerpf(_body_pivot.rotation.x, 0.0, minf(1.0, 8.0 * delta))
+		_body_pivot.rotation.z = lerpf(_body_pivot.rotation.z, 0.0, minf(1.0, 8.0 * delta))
+	if _left_arm != null:
+		_left_arm.rotation.x = lerpf(_left_arm.rotation.x, 0.0, minf(1.0, 8.0 * delta))
+		_left_arm.rotation.z = lerpf(_left_arm.rotation.z, 0.0, minf(1.0, 8.0 * delta))
+	if _spot_light != null:
+		_spot_light.light_energy = lerpf(_spot_light.light_energy, 2.6, minf(1.0, 8.0 * delta))
 	if _lantern_arm == null:
 		return
 	var t: float = Time.get_ticks_msec() * 0.0022
@@ -387,17 +483,51 @@ func _build_visual() -> void:
 	var glow: Material = _make_mat(Color(1.0, 0.72, 0.25), true)
 
 	_add_part(vis, Vector3(0.56, 0.90, 0.38), Vector3(0.0, 0.45, 0.0), cloak)
-	_add_part(vis, Vector3(0.50, 0.64, 0.32), Vector3(0.0, 1.22, 0.0), cloak)
-	_add_part(vis, Vector3(0.36, 0.40, 0.34), Vector3(0.0, 1.66, 0.03), hood)
-	_add_part(vis, Vector3(0.32, 0.36, 0.04), Vector3(0.0, 1.66, -0.15), mask)
+
+	_body_pivot = Node3D.new()
+	_body_pivot.name = "BodyPivot"
+	_body_pivot.position = Vector3(0.0, 0.90, 0.0)
+	vis.add_child(_body_pivot)
+
+	_add_part(_body_pivot, Vector3(0.50, 0.64, 0.32), Vector3(0.0, 0.32, 0.0), cloak)
+	_add_part(_body_pivot, Vector3(0.36, 0.40, 0.34), Vector3(0.0, 0.76, 0.03), hood)
+	_add_part(_body_pivot, Vector3(0.32, 0.36, 0.04), Vector3(0.0, 0.76, -0.15), mask)
+
+	_left_arm = Node3D.new()
+	_left_arm.name = "LeftArm"
+	_left_arm.position = Vector3(-0.32, 0.42, -0.05)
+	_body_pivot.add_child(_left_arm)
+	_add_part(_left_arm, Vector3(0.12, 0.48, 0.12), Vector3(0.0, -0.22, -0.06), cloak)
 
 	_lantern_arm = Node3D.new()
 	_lantern_arm.name = "LanternArm"
-	_lantern_arm.position = Vector3(0.32, 1.32, -0.05)
-	vis.add_child(_lantern_arm)
+	_lantern_arm.position = Vector3(0.32, 0.42, -0.05)
+	_body_pivot.add_child(_lantern_arm)
 	_add_part(_lantern_arm, Vector3(0.12, 0.44, 0.12), Vector3(0.0, -0.22, -0.16), cloak)
 	_add_part(_lantern_arm, Vector3(0.16, 0.24, 0.16), Vector3(0.0, -0.46, -0.34), iron)
 	_add_part(_lantern_arm, Vector3(0.10, 0.14, 0.10), Vector3(0.0, -0.46, -0.34), glow)
+
+	_stun_particles = CPUParticles3D.new()
+	_stun_particles.name = "FlashStunSmoke"
+	_stun_particles.position = Vector3(0.0, 1.66, -0.18)
+	_stun_particles.one_shot = true
+	_stun_particles.explosiveness = 0.92
+	_stun_particles.emitting = false
+	_stun_particles.amount = 14
+	_stun_particles.lifetime = 0.55
+	var pm: BoxMesh = BoxMesh.new()
+	pm.size = Vector3(0.07, 0.07, 0.07)
+	_stun_particles.mesh = pm
+	var pmat: StandardMaterial3D = StandardMaterial3D.new()
+	pmat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	pmat.albedo_color = Color(0.95, 0.90, 0.78)
+	_stun_particles.material_override = pmat
+	_stun_particles.direction = Vector3(0.0, 0.6, -0.8)
+	_stun_particles.spread = 65.0
+	_stun_particles.gravity = Vector3(0.0, 1.2, 0.0)
+	_stun_particles.initial_velocity_min = 1.6
+	_stun_particles.initial_velocity_max = 3.2
+	vis.add_child(_stun_particles)
 
 	_spot_light = SpotLight3D.new()
 	_spot_light.name = "CultistSpotLight"

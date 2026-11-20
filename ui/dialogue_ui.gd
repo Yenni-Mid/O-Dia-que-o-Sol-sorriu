@@ -420,6 +420,12 @@ func _get_portrait_texture(portrait_id: String) -> ImageTexture:
 		return _portraits[portrait_id] as ImageTexture
 
 	var img: Image = Image.create(32, 32, false, Image.FORMAT_RGBA8)
+	if portrait_id == "radio":
+		_draw_radio_portrait(img)
+		var radio_tex: ImageTexture = ImageTexture.create_from_image(img)
+		_portraits[portrait_id] = radio_tex
+		return radio_tex
+
 	var coat_col: Color = Color(0.24, 0.28, 0.22)
 	var hair_col: Color = Color(0.22, 0.16, 0.11)
 	var skin_col: Color = Color(0.74, 0.58, 0.44)
@@ -430,6 +436,16 @@ func _get_portrait_texture(portrait_id: String) -> ImageTexture:
 		hair_col = Color(0.56, 0.54, 0.52)
 		skin_col = Color(0.76, 0.62, 0.52)
 		bg_col = Color(0.09, 0.07, 0.08)
+	elif portrait_id == "clara":
+		coat_col = Color(0.78, 0.80, 0.78)
+		hair_col = Color(0.20, 0.12, 0.09)
+		skin_col = Color(0.74, 0.60, 0.50)
+		bg_col = Color(0.06, 0.09, 0.09)
+	elif portrait_id == "rafael":
+		coat_col = Color(0.18, 0.22, 0.30)
+		hair_col = Color(0.16, 0.14, 0.12)
+		skin_col = Color(0.70, 0.54, 0.42)
+		bg_col = Color(0.06, 0.07, 0.10)
 	elif portrait_id == "player":
 		coat_col = Color(0.16, 0.14, 0.12)
 		hair_col = Color(0.14, 0.10, 0.08)
@@ -447,7 +463,7 @@ func _get_portrait_texture(portrait_id: String) -> ImageTexture:
 				c = Color(bg_col.r + glow, bg_col.g + glow * 0.7, bg_col.b + glow * 0.4, 1.0)
 
 			var dx: float = float(x - 16)
-			# Ombros e casaco
+			# Ombros e casaco / jaleco
 			if y >= 22 and absf(dx) <= 9.0 + float(y - 22) * 0.55:
 				c = coat_col
 				if absf(dx) < 3.0 and y < 26:
@@ -456,6 +472,16 @@ func _get_portrait_texture(portrait_id: String) -> ImageTexture:
 					c = Color(0.46, 0.20, 0.16)
 				elif portrait_id == "helena" and y >= 22 and y <= 25 and absf(dx) < 5.5:
 					c = Color(0.52, 0.34, 0.38)
+				elif portrait_id == "clara":
+					if absf(dx) < 2.2 and y < 28:
+						c = Color(0.30, 0.52, 0.54)
+					# Cruz vermelha de enfermeira no peito direito
+					var rx: int = x - 21
+					var ry: int = y - 26
+					if (absi(rx) <= 2 and absi(ry) == 0) or (absi(ry) <= 2 and absi(rx) == 0):
+						c = Color(0.78, 0.14, 0.14)
+				elif portrait_id == "rafael" and y >= 21 and y <= 25 and absf(dx) < 6.5:
+					c = Color(0.34, 0.26, 0.18)
 
 			# Pescoço
 			if y >= 18 and y <= 22 and absf(dx) <= 2.6:
@@ -466,14 +492,20 @@ func _get_portrait_texture(portrait_id: String) -> ImageTexture:
 			if head_d <= 1.0:
 				var side_shade: float = clampf(0.95 - (dx + 2.0) * 0.035, 0.62, 1.0)
 				c = Color(skin_col.r * side_shade, skin_col.g * side_shade, skin_col.b * side_shade, 1.0)
-				# Cabelo / Barba
 				if y <= 9 or (y <= 13 and absf(dx) >= 4.4):
 					c = hair_col
 				elif portrait_id == "helena" and y <= 18 and absf(dx) >= 4.6:
 					c = hair_col
+				elif portrait_id == "clara" and y <= 17 and absf(dx) >= 4.8:
+					c = hair_col
 				elif portrait_id == "marcos" and y >= 15 and absf(dx) <= 4.4:
 					c = hair_col.darkened(0.15)
-				# Olhos e expressão séria
+				elif portrait_id == "rafael":
+					if y <= 10:
+						c = Color(0.16, 0.22, 0.18)
+					elif y >= 15 and y <= 18 and absf(dx) <= 4.0:
+						c = Color(skin_col.r * 0.72, skin_col.g * 0.70, skin_col.b * 0.68, 1.0)
+				# Olhos e expressão
 				if y == 12 and (absf(dx + 2.1) <= 0.8 or absf(dx - 2.1) <= 0.8):
 					c = Color(0.08, 0.06, 0.05)
 				elif y == 11 and (absf(dx + 2.2) <= 1.4 or absf(dx - 2.2) <= 1.4):
@@ -482,9 +514,40 @@ func _get_portrait_texture(portrait_id: String) -> ImageTexture:
 					c = Color(0.44, 0.24, 0.20)
 			elif portrait_id == "helena" and y >= 7 and y <= 16 and absf(dx) <= 6.2 and (y <= 9 or absf(dx) >= 4.8):
 				c = hair_col
+			elif portrait_id == "clara" and y >= 9 and y <= 14 and absf(dx) <= 6.6 and absf(dx) >= 5.0:
+				c = hair_col
+			elif portrait_id == "rafael" and y >= 5 and y <= 10 and absf(dx) <= 6.2:
+				c = Color(0.20, 0.26, 0.20) if y < 9 else Color(0.14, 0.18, 0.14)
 
 			img.set_pixel(x, y, c)
 
 	var tex: ImageTexture = ImageTexture.create_from_image(img)
 	_portraits[portrait_id] = tex
 	return tex
+
+
+func _draw_radio_portrait(img: Image) -> void:
+	for y: int in range(32):
+		for x: int in range(32):
+			var c: Color = Color(0.05, 0.07, 0.06, 1.0)
+			# Antena inclinada no topo direito
+			if y >= 2 and y < 10 and x == (24 + (9 - y) / 3):
+				c = Color(0.68, 0.72, 0.70, 1.0)
+			# Corpo do rádio portátil (x: 4..27, y: 10..27)
+			if x >= 4 and x <= 27 and y >= 10 and y <= 27:
+				var border: bool = (x == 4 or x == 27 or y == 10 or y == 27)
+				c = Color(0.16, 0.14, 0.12, 1.0) if border else Color(0.28, 0.20, 0.14, 1.0)
+				# Grade do alto-falante à esquerda
+				if x >= 6 and x <= 14 and y >= 13 and y <= 24:
+					c = Color(0.08, 0.07, 0.06, 1.0) if (y % 2 == 0 or x % 2 == 0) else Color(0.18, 0.16, 0.14, 1.0)
+				# Visor luminoso âmbar/verde à direita
+				if x >= 17 and x <= 25 and y >= 13 and y <= 18:
+					c = Color(0.18, 0.42, 0.22, 1.0)
+					if y == 15 or y == 16:
+						c = Color(0.56, 0.92, 0.46, 1.0) if x != 21 else Color(0.95, 0.36, 0.16, 1.0)
+				# Botões giratórios à direita inferior
+				var d1: float = Vector2(float(x - 19), float(y - 23)).length()
+				var d2: float = Vector2(float(x - 24), float(y - 23)).length()
+				if d1 <= 1.8 or d2 <= 1.8:
+					c = Color(0.56, 0.54, 0.48, 1.0)
+			img.set_pixel(x, y, c)

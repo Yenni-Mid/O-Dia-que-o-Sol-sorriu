@@ -24,9 +24,22 @@ var _step_triggered: bool = false
 var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity") as float
 
 var _vision_ray: RayCast3D
+var _body_pivot: Node3D
+var _left_arm: Node3D
 var _bell_arm: Node3D
+var _stun_particles: CPUParticles3D
 var _bell_audio: AudioStreamPlayer3D
+var _alert_audio: AudioStreamPlayer3D
 var _step_audio: AudioStreamPlayer3D
+
+
+func _exit_tree() -> void:
+	_waypoints.clear()
+	_body_pivot = null
+	_left_arm = null
+	_bell_arm = null
+	_stun_particles = null
+	_vision_ray = null
 
 
 func _ready() -> void:
@@ -78,6 +91,14 @@ func _set_active(active: bool) -> void:
 func stun_from_flash(duration: float) -> void:
 	_stun_timer = maxf(_stun_timer, duration)
 	_ring_timer = 0.0
+	if _stun_particles != null:
+		_stun_particles.restart()
+		_stun_particles.emitting = true
+	if _alert_audio != null and _alert_audio.stream != null:
+		_alert_audio.pitch_scale = 0.72
+		_alert_audio.play()
+	else:
+		AudioManager.play_enemy_alert()
 
 
 func _physics_process(delta: float) -> void:
@@ -91,8 +112,23 @@ func _physics_process(delta: float) -> void:
 		_stun_timer = maxf(0.0, _stun_timer - delta)
 		velocity.x = 0.0
 		velocity.z = 0.0
+		if _body_pivot != null:
+			_body_pivot.rotation.x = lerpf(_body_pivot.rotation.x, 0.24, minf(1.0, 14.0 * delta))
+			_body_pivot.rotation.z = sin(Time.get_ticks_msec() * 0.055) * 0.12
+		if _left_arm != null:
+			_left_arm.rotation.x = lerpf(_left_arm.rotation.x, 2.35, minf(1.0, 16.0 * delta))
+			_left_arm.rotation.z = lerpf(_left_arm.rotation.z, 0.42, minf(1.0, 16.0 * delta))
+		if _bell_arm != null:
+			_bell_arm.rotation.x = lerpf(_bell_arm.rotation.x, -1.55 + sin(Time.get_ticks_msec() * 0.06) * 0.25, minf(1.0, 14.0 * delta))
 		move_and_slide()
 		return
+
+	if _body_pivot != null:
+		_body_pivot.rotation.x = lerpf(_body_pivot.rotation.x, 0.0, minf(1.0, 8.0 * delta))
+		_body_pivot.rotation.z = lerpf(_body_pivot.rotation.z, 0.0, minf(1.0, 8.0 * delta))
+	if _left_arm != null:
+		_left_arm.rotation.x = lerpf(_left_arm.rotation.x, 0.0, minf(1.0, 8.0 * delta))
+		_left_arm.rotation.z = lerpf(_left_arm.rotation.z, 0.0, minf(1.0, 8.0 * delta))
 
 	var player: PlayerController = get_tree().get_first_node_in_group("player") as PlayerController
 
@@ -259,6 +295,13 @@ func _setup_audio() -> void:
 	_step_audio.volume_db = -8.0
 	add_child(_step_audio)
 
+	_alert_audio = AudioStreamPlayer3D.new()
+	_alert_audio.name = "AlertAudio3D"
+	_alert_audio.stream = AudioManager.get_alert_stream()
+	_alert_audio.max_distance = 26.0
+	_alert_audio.volume_db = -3.0
+	add_child(_alert_audio)
+
 
 func _make_psx_mat(color: Color) -> Material:
 	if PSX_LIT_SHADER != null:
@@ -297,22 +340,57 @@ func _build_preacher_visual() -> void:
 	var brass_mat: Material = _make_psx_mat(Color(0.76, 0.56, 0.20))
 
 	_add_part(vis, "RobeSkirt", Vector3(0.64, 0.92, 0.42), Vector3(0.0, 0.46, 0.0), robe_mat)
-	_add_part(vis, "RobeTorso", Vector3(0.56, 0.68, 0.34), Vector3(0.0, 1.24, 0.0), robe_mat)
-	_add_part(vis, "HoodBack", Vector3(0.42, 0.46, 0.38), Vector3(0.0, 1.72, 0.04), hood_mat)
-	_add_part(vis, "HoodPeak", Vector3(0.28, 0.22, 0.28), Vector3(0.0, 2.02, 0.08), hood_mat, Vector3(-12.0, 0.0, 0.0))
+
+	_body_pivot = Node3D.new()
+	_body_pivot.name = "BodyPivot"
+	_body_pivot.position = Vector3(0.0, 0.90, 0.0)
+	vis.add_child(_body_pivot)
+
+	_add_part(_body_pivot, "RobeTorso", Vector3(0.56, 0.68, 0.34), Vector3(0.0, 0.34, 0.0), robe_mat)
+	_add_part(_body_pivot, "HoodBack", Vector3(0.42, 0.46, 0.38), Vector3(0.0, 0.82, 0.04), hood_mat)
+	_add_part(_body_pivot, "HoodPeak", Vector3(0.28, 0.22, 0.28), Vector3(0.0, 1.12, 0.08), hood_mat, Vector3(-12.0, 0.0, 0.0))
 
 	# Máscara dourada solar
-	var mask: MeshInstance3D = _add_part(vis, "SunMask", Vector3(0.38, 0.42, 0.04), Vector3(0.0, 1.70, -0.18), mask_mat)
+	var mask: MeshInstance3D = _add_part(_body_pivot, "SunMask", Vector3(0.38, 0.42, 0.04), Vector3(0.0, 0.80, -0.18), mask_mat)
 	_add_part(mask, "EyeL", Vector3(0.06, 0.10, 0.02), Vector3(-0.08, 0.06, -0.02), dark_mat)
 	_add_part(mask, "EyeR", Vector3(0.06, 0.10, 0.02), Vector3(0.08, 0.06, -0.02), dark_mat)
 	_add_part(mask, "Smile", Vector3(0.20, 0.05, 0.02), Vector3(0.0, -0.08, -0.02), dark_mat)
 
+	# Braço esquerdo (protege a máscara ao levar clarão do lampião)
+	_left_arm = Node3D.new()
+	_left_arm.name = "LeftArm"
+	_left_arm.position = Vector3(-0.38, 0.58, 0.0)
+	_body_pivot.add_child(_left_arm)
+	_add_part(_left_arm, "LeftSleeve", Vector3(0.18, 0.56, 0.20), Vector3(0.0, -0.24, 0.0), robe_mat)
+
 	# Braço direito + Sino de bronze
 	_bell_arm = Node3D.new()
 	_bell_arm.name = "BellArm"
-	_bell_arm.position = Vector3(0.38, 1.48, 0.0)
+	_bell_arm.position = Vector3(0.38, 0.58, 0.0)
 	_bell_arm.rotation.x = -0.25
-	vis.add_child(_bell_arm)
+	_body_pivot.add_child(_bell_arm)
 	_add_part(_bell_arm, "Sleeve", Vector3(0.18, 0.56, 0.20), Vector3(0.0, -0.24, 0.0), robe_mat)
 	_add_part(_bell_arm, "BellHandle", Vector3(0.04, 0.14, 0.04), Vector3(0.0, -0.55, -0.08), brass_mat, Vector3(70.0, 0.0, 0.0))
 	_add_part(_bell_arm, "BellBody", Vector3(0.18, 0.22, 0.18), Vector3(0.0, -0.62, -0.16), brass_mat)
+
+	_stun_particles = CPUParticles3D.new()
+	_stun_particles.name = "FlashStunSmoke"
+	_stun_particles.position = Vector3(0.0, 1.72, -0.20)
+	_stun_particles.one_shot = true
+	_stun_particles.explosiveness = 0.92
+	_stun_particles.emitting = false
+	_stun_particles.amount = 14
+	_stun_particles.lifetime = 0.55
+	var pm: BoxMesh = BoxMesh.new()
+	pm.size = Vector3(0.07, 0.07, 0.07)
+	_stun_particles.mesh = pm
+	var pmat: StandardMaterial3D = StandardMaterial3D.new()
+	pmat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	pmat.albedo_color = Color(0.95, 0.90, 0.78)
+	_stun_particles.material_override = pmat
+	_stun_particles.direction = Vector3(0.0, 0.6, -0.8)
+	_stun_particles.spread = 65.0
+	_stun_particles.gravity = Vector3(0.0, 1.2, 0.0)
+	_stun_particles.initial_velocity_min = 1.6
+	_stun_particles.initial_velocity_max = 3.2
+	vis.add_child(_stun_particles)

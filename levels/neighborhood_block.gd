@@ -22,6 +22,13 @@ func _ready() -> void:
 	rebuild_block()
 
 
+func _exit_tree() -> void:
+	_materials.clear()
+	_textures.clear()
+	_mesh_cache.clear()
+	_shape_cache.clear()
+
+
 func rebuild_block() -> void:
 	for child: Node in get_children():
 		remove_child(child)
@@ -407,8 +414,10 @@ func _build_perimeter_walls() -> void:
 	_add_box(walls, "PlazaTownhouseN", Vector3(10.5, 9.6, 2.8), Vector3(30.75, 4.8, -21.2), "sobrado_brick")
 	_add_box(walls, "PlazaTownhouseN_Cornice", Vector3(10.8, 0.35, 3.1), Vector3(30.75, 9.6, -21.2), "concrete_dark", Vector3.ZERO, false)
 
-	# Barricadas de quarentena ladeando o portão da Avenida da Escola
-	_add_box(walls, "NorthQuarantineWallW", Vector3(9.0, 3.4, 0.6), Vector3(-8.0, 1.7, -20.0), "wall_brick")
+	# Barricadas de quarentena ladeando o portão da Avenida da Escola (com vão oeste X:-9.6..-7.4 para Portão de Atalho!)
+	_add_box(walls, "NorthQuarantineWallW_Left", Vector3(2.9, 3.4, 0.6), Vector3(-11.05, 1.7, -20.0), "wall_brick")
+	_add_box(walls, "NorthQuarantineWallW_Right", Vector3(3.9, 3.4, 0.6), Vector3(-5.45, 1.7, -20.0), "wall_brick")
+	_add_box(walls, "NorthQuarantineWallW_Lintel", Vector3(2.2, 0.8, 0.6), Vector3(-8.5, 3.0, -20.0), "concrete_dark")
 	_add_box(walls, "NorthQuarantineWallE", Vector3(9.0, 3.4, 0.6), Vector3(8.0, 1.7, -20.0), "wall_brick")
 	_add_box(walls, "SchoolGatePillarW", Vector3(1.2, 4.2, 0.8), Vector3(-2.7, 2.1, -20.0), "concrete_dark")
 	_add_box(walls, "SchoolGatePillarE", Vector3(1.2, 4.2, 0.8), Vector3(2.7, 2.1, -20.0), "concrete_dark")

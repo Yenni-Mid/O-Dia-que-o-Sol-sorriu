@@ -5,7 +5,7 @@ extends Node
 const LANTERN_LURE_RANGE: float = 22.0
 const LANTERN_LURE_DELAY: float = 1.6
 const DOOR_CHECK_INTERVAL: float = 2.0
-const DOOR_SPOT_RANGE: float = 4.0
+const DOOR_SPOT_RANGE: float = 5.5
 
 @export var patrol_speed: float = 2.2
 @export var suspicious_speed: float = 3.0
@@ -129,7 +129,7 @@ func _check_open_doors() -> bool:
 		var door: Node3D = node as Node3D
 		if door == null:
 			continue
-		if bool(door.get("is_open")) and bool(door.get("should_stay_closed")):
+		if bool(door.get("is_open")) and bool(door.get("should_stay_closed")) and bool(door.get("opened_by_player")):
 			if _enemy.global_position.distance_to(door.global_position) <= DOOR_SPOT_RANGE:
 				_door_investigate_cd = 14.0
 				_investigate_point(door.global_position)

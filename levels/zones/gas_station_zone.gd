@@ -16,6 +16,12 @@ func _ready() -> void:
 	rebuild_zone()
 
 
+func _exit_tree() -> void:
+	_materials.clear()
+	_mesh_cache.clear()
+	_shape_cache.clear()
+
+
 func rebuild_zone() -> void:
 	for child: Node in get_children():
 		remove_child(child)
@@ -237,9 +243,10 @@ func _build_sewer_shed_and_perimeter() -> void:
 	_add_box(shed, "ShedWallW", Vector3(0.25, 2.6, 3.8), Vector3(-44.8, 1.3, -14.0), "concrete_dark")
 	_add_box(shed, "ShedRoof", Vector3(9.6, 0.22, 4.0), Vector3(-40.1, 2.7, -14.0), "roof")
 
-	# Quarteirão Industrial Oeste (substitui muros lisos por galpões, sobrados e travessa urbana)
-	_add_box(shed, "WestCrossRoadAsphalt", Vector3(3.6, 0.02, 42.0), Vector3(-28.0, 0.005, 1.5), "asphalt", Vector3.ZERO, false)
-	_add_box(shed, "NorthIndustrialRow_A", Vector3(17.5, 9.8, 3.6), Vector3(-35.25, 4.9, -21.2), "brick_dark")
+	# Quarteirão Industrial Oeste (substitui muros lisos por galpões, sobrados e travessa com vão em X:-28.5..-26.0 para Portão de Atalho!)
+	_add_box(shed, "WestCrossRoadAsphalt", Vector3(3.6, 0.02, 43.0), Vector3(-28.0, 0.005, 1.0), "asphalt", Vector3.ZERO, false)
+	_add_box(shed, "NorthIndustrialRow_A", Vector3(15.5, 9.8, 3.6), Vector3(-36.25, 4.9, -21.2), "brick_dark")
+	_add_box(shed, "NorthIndustrialGateArch", Vector3(2.6, 7.2, 3.6), Vector3(-27.25, 6.2, -21.2), "brick_dark")
 	_add_box(shed, "NorthIndustrialRow_B", Vector3(18.5, 10.6, 3.6), Vector3(-56.75, 5.3, -21.2), "brick")
 	_add_box(shed, "NorthFactoryChimney", Vector3(1.6, 15.5, 1.6), Vector3(-54.0, 7.75, -21.5), "brick_dark", Vector3.ZERO, false)
 	_add_box(shed, "WestWarehouseBlock_N", Vector3(4.5, 11.0, 26.0), Vector3(-67.8, 5.5, -5.5), "brick_dark")

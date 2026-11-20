@@ -40,6 +40,9 @@ func _ready() -> void:
 	GameEvents.dialogue_requested.connect(_on_dialogue_requested)
 	GameEvents.vhs_tape_requested.connect(_on_vhs_requested)
 	GameEvents.keypad_requested.connect(_on_keypad_requested)
+	GameEvents.night_transition_requested.connect(_on_night_transition_close)
+	GameEvents.player_died.connect(_on_force_close)
+	GameEvents.sanity_depleted.connect(_on_force_close)
 
 
 func _exit_tree() -> void:
@@ -313,6 +316,16 @@ func _on_vhs_requested(_id: String, _title: String, _lines: Array) -> void:
 
 
 func _on_keypad_requested(_safe: Node, _title: String, _code: String) -> void:
+	if is_open:
+		set_map_open(false, false)
+
+
+func _on_night_transition_close(_night_num: int) -> void:
+	if is_open:
+		set_map_open(false, false)
+
+
+func _on_force_close() -> void:
 	if is_open:
 		set_map_open(false, false)
 

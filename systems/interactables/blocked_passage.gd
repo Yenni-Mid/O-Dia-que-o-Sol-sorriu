@@ -15,6 +15,7 @@ func _ready() -> void:
 	collision_layer = LAYER_ENV_AND_INTERACT
 	collision_mask = 0
 	add_to_group("door_leaf")
+	add_to_group("blocked_passage")
 
 	if passage_type == "boarded_door" and required_tool == "bolt_cutters":
 		required_tool = "crowbar"

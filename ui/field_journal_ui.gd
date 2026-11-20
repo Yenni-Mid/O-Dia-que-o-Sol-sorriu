@@ -49,7 +49,7 @@ func _can_open_journal() -> bool:
 		return false
 	var ui_layer: Node = get_parent()
 	if ui_layer != null:
-		for other_name: String in ["EchoReaderUI", "VHSTapeOverlay", "PauseMenu", "KeypadUI", "DialogueUI"]:
+		for other_name: String in ["EchoReaderUI", "VHSTapeOverlay", "PauseMenu", "KeypadUI", "DialogueUI", "NightSummaryUI"]:
 			var other: Control = ui_layer.get_node_or_null(other_name) as Control
 			if other != null and other.visible:
 				return false

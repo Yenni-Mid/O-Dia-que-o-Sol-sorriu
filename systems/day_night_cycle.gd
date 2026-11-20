@@ -137,7 +137,6 @@ func shelter_at_home_until_next_night() -> void:
 	_dawn_warn_530_sent = false
 	_home_shelter_dwell = 0.0
 
-	GameEvents.night_transition_requested.emit(night_number)
 	skip_to_hour(night_start_hour)
 
 	var player: PlayerController = get_tree().get_first_node_in_group("player") as PlayerController
@@ -146,6 +145,7 @@ func shelter_at_home_until_next_night() -> void:
 
 	SaveManager.set_checkpoint(Vector3(0.0, 0.15, 4.2))
 	AudioManager.play_phase_chime()
+	GameEvents.night_transition_requested.emit(night_number)
 	if night_number == 2:
 		GameEvents.status_message_requested.emit("NOITE 2 (19:15) — O culto deixou uma marca na sua varanda durante o dia.")
 	else:

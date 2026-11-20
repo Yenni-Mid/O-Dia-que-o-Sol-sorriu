@@ -144,13 +144,21 @@ func _draw() -> void:
 	_draw_building(44.0, -21.0, 60.0, -3.0, Color(0.60, 0.50, 0.35, 0.62), "CAPELA", fnt, 9)
 	_draw_building(36.5, 16.5, 69.5, 21.5, Color(0.46, 0.39, 0.29, 0.45), "LOJAS CAPELA", fnt, 7)
 
-	# Subsolo tracejado (Porão, Túnel e Rede de Esgotos)
-	_draw_dashed_box(-8.0, -7.2, 4.0, 1.0, SUB_COL)
-	_draw_dashed_box(-44.4, -6.8, -8.0, -3.8, SUB_COL)
-	_draw_dashed_box(-47.6, -47.6, -44.4, -3.7, SUB_COL)
-	_draw_dashed_box(-53.6, -29.0, -47.6, -23.0, SUB_COL)
-	_draw_dashed_box(-44.4, -15.4, -38.4, -12.6, SUB_COL)
-	_draw_dashed_box(-44.4, -47.4, -38.4, -44.6, SUB_COL)
+	# Subsolo tracejado (Porão, Túnel e Rede de Esgotos) — fica verde/aceso quando o Gerador do esgoto está ligado
+	var gen: Node = get_tree().get_first_node_in_group("oil_generator")
+	var gen_running: bool = (gen != null and bool(gen.get("is_running")))
+	var sewer_col: Color = Color(0.16, 0.50, 0.24, 0.90) if gen_running else SUB_COL
+	_draw_dashed_box(-8.0, -7.2, 4.0, 1.0, sewer_col)
+	_draw_dashed_box(-44.4, -6.8, -8.0, -3.8, sewer_col)
+	_draw_dashed_box(-47.6, -47.6, -44.4, -3.7, sewer_col)
+	_draw_dashed_box(-53.6, -29.0, -47.6, -23.0, sewer_col)
+	_draw_dashed_box(-44.4, -15.4, -38.4, -12.6, sewer_col)
+	_draw_dashed_box(-44.4, -47.4, -38.4, -44.6, sewer_col)
+	if gen_running:
+		var gen_p: Vector2 = _world_to_canvas(Vector2(-50.6, -26.0))
+		draw_arc(gen_p, 6.5, 0.0, TAU, 12, Color(0.22, 0.65, 0.28, 0.95), 1.6)
+		if fnt != null:
+			_draw_free_label(fnt, Vector2(-59.5, -26.0), "GERADOR\nOK", 8, Color(0.14, 0.44, 0.18, 0.95))
 
 	# Rótulos claros em áreas abertas (nunca cortados dentro de caixas estreitas)
 	if fnt != null:
@@ -160,12 +168,23 @@ func _draw() -> void:
 		_draw_free_label(fnt, Vector2(0.0, -34.0), "PÁTIO", 8, INK_COL)
 		_draw_free_label(fnt, Vector2(52.0, 4.8), "CEMITÉRIO", 8, INK_COL)
 
-	# Marcações de sobrevivência estilo Imagem 3: Sóis amarelos, Torre no topo, X vermelhos e becos
-	_draw_sun_doodle(_world_to_canvas(Vector2(38.0, -60.0)), 12.0 if is_diegetic_paper else 14.0)
-	_draw_sun_doodle(_world_to_canvas(Vector2(-54.0, -58.0)), 11.0 if is_diegetic_paper else 13.0)
+	# Checa sanidade atual para rabiscos perturbadores e sóis sinistros (< 45%)
+	var player: PlayerController = get_tree().get_first_node_in_group("player") as PlayerController
+	var sanity_ratio: float = 1.0
+	if player != null and player.sanity_component != null:
+		sanity_ratio = player.sanity_component.get_sanity_ratio()
+	var low_sanity: bool = sanity_ratio < 0.45
+
+	# Marcações de sobrevivência: Sóis amarelos, Torre no topo, X vermelhos e becos
+	_draw_sun_doodle(_world_to_canvas(Vector2(38.0, -60.0)), 12.0 if is_diegetic_paper else 14.0, low_sanity)
+	_draw_sun_doodle(_world_to_canvas(Vector2(-54.0, -58.0)), 11.0 if is_diegetic_paper else 13.0, low_sanity)
 	if fnt != null:
 		_draw_free_label(fnt, Vector2(47.0, -47.0), "SOL QUEIMA\nDE DIA", 8, Color(0.28, 0.18, 0.05))
 		_draw_free_label(fnt, Vector2(-12.0, 27.6), "becos nas sombras", 8, INK_COL)
+
+	# Anotação automática à caneta do código do cofre da Diretoria (1710) após descobrir com Dona Helena ou notas
+	if SaveManager.is_school_code_known() and fnt != null:
+		_draw_school_code_note(fnt, SaveManager.is_safe_unlocked("safe_school"))
 
 	# Seta apontando para a rota segura dos becos sombrios
 	_draw_ink_arrow(_world_to_canvas(Vector2(-15.5, 25.8)), _world_to_canvas(Vector2(-16.0, 4.0)), INK_COL, 1.5)
@@ -186,17 +205,40 @@ func _draw() -> void:
 	# Bilhetinho colado no canto inferior direito ("ÓLEO" + desenhinho de lampião)
 	_draw_oil_sticky_note(fnt)
 
-	# Tambores-Fogueira em tempo real
+	# Cadeados vivos em portas trancadas, passagens bloqueadas e atalhos destraváveis
+	for d_node: Node in get_tree().get_nodes_in_group("door_interactable"):
+		if d_node is Node3D and bool(d_node.get("started_locked")):
+			var d3: Node3D = d_node as Node3D
+			var d_pos: Vector2 = _world_to_canvas(Vector2(d3.global_position.x, d3.global_position.z))
+			_draw_padlock_icon(d_pos, not bool(d_node.get("is_locked")))
+
+	for bp_node: Node in get_tree().get_nodes_in_group("blocked_passage"):
+		if bp_node is Node3D:
+			var bp3: Node3D = bp_node as Node3D
+			var bp_pos: Vector2 = _world_to_canvas(Vector2(bp3.global_position.x, bp3.global_position.z))
+			_draw_padlock_icon(bp_pos, false)
+
+	for sg_node: Node in get_tree().get_nodes_in_group("shortcut_gate"):
+		if sg_node is Node3D:
+			var sg3: Node3D = sg_node as Node3D
+			var sg_pos: Vector2 = _world_to_canvas(Vector2(sg3.global_position.x, sg3.global_position.z))
+			_draw_shortcut_icon(sg_pos, bool(sg_node.get("is_unlocked")))
+
+	# Tambores-Fogueira em tempo real (brilho e raios a tinta quando acesos)
 	for b_node: Node in get_tree().get_nodes_in_group("fire_barrel"):
 		if b_node is Node3D:
 			var b3: Node3D = b_node as Node3D
 			var b_pos: Vector2 = _world_to_canvas(Vector2(b3.global_position.x, b3.global_position.z))
 			var lit: bool = bool(b3.get("is_lit"))
+			if lit:
+				draw_arc(b_pos, 7.6, 0.0, TAU, 12, Color(0.95, 0.56, 0.14, 0.55), 1.4)
+				for r_idx: int in range(4):
+					var ang: float = float(r_idx) * PI * 0.5 + 0.35
+					draw_line(b_pos + Vector2(cos(ang), sin(ang)) * 5.8, b_pos + Vector2(cos(ang), sin(ang)) * 9.2, Color(0.75, 0.24, 0.06, 0.85), 1.2)
 			draw_circle(b_pos, 4.5 if lit else 3.5, Color(0.98, 0.48, 0.12) if lit else Color(0.32, 0.28, 0.24))
 			draw_arc(b_pos, 5.0 if lit else 3.8, 0.0, TAU, 10, INK_COL, 1.2)
 
 	# Jogador em tempo real
-	var player: PlayerController = get_tree().get_first_node_in_group("player") as PlayerController
 	if player != null:
 		var p_pos: Vector2 = _world_to_canvas(Vector2(player.global_position.x, player.global_position.z))
 		var fwd3: Vector3 = -player.global_transform.basis.z
@@ -215,6 +257,10 @@ func _draw() -> void:
 		if fnt != null:
 			var label_y: String = "ESGOTO" if player.global_position.y < -1.2 else ("2º ANDAR" if player.global_position.y > 2.5 else "VOCÊ")
 			draw_string(fnt, p_pos + Vector2(8.0, 4.0), label_y, HORIZONTAL_ALIGNMENT_LEFT, -1, 10, Color(0.65, 0.08, 0.06))
+
+		# Rabiscos perturbadores de alucinação no mapa quando Sanidade < 45%
+		if low_sanity and fnt != null:
+			_draw_low_sanity_scrawls(fnt, sanity_ratio, p_pos)
 
 	# Borda dupla rascunhada + instrução de zoom somente no modo Diário [Tab]
 	draw_rect(Rect2(Vector2(5, 5), size - Vector2(10, 10)), INK_FAINT, false, 1.6)
@@ -278,7 +324,7 @@ func _draw_yellow_street_highlight(w0: Vector2, w1: Vector2) -> void:
 		draw_line(pts[i], pts[i + 1], Color(0.92, 0.78, 0.18, 0.52), 7.0)
 
 
-func _draw_sun_doodle(center: Vector2, radius: float) -> void:
+func _draw_sun_doodle(center: Vector2, radius: float, haunting: bool = false) -> void:
 	draw_circle(center, radius * 0.55, Color(0.92, 0.78, 0.16, 0.35))
 	draw_arc(center, radius * 0.58, 0.0, TAU, 16, SUN_YELLOW, 2.0)
 	for r_i: int in range(8):
@@ -286,6 +332,68 @@ func _draw_sun_doodle(center: Vector2, radius: float) -> void:
 		var p_in: Vector2 = center + Vector2(cos(ang), sin(ang)) * (radius * 0.72)
 		var p_out: Vector2 = center + Vector2(cos(ang), sin(ang)) * (radius * 1.12)
 		draw_line(p_in, p_out, SUN_YELLOW, 1.8)
+	if haunting:
+		draw_circle(center + Vector2(-radius * 0.20, -radius * 0.14), 1.3, RED_X_COL)
+		draw_circle(center + Vector2(radius * 0.20, -radius * 0.14), 1.3, RED_X_COL)
+		draw_arc(center + Vector2(0.0, radius * 0.04), radius * 0.28, 0.25, PI - 0.25, 8, RED_X_COL, 1.4)
+
+
+func _draw_school_code_note(fnt: Font, safe_opened: bool) -> void:
+	var note_pos: Vector2 = _world_to_canvas(Vector2(29.0, -75.0))
+	var safe_pos: Vector2 = _world_to_canvas(Vector2(17.5, -70.6))
+	var txt: String = "COFRE: 1710"
+	var tw: float = fnt.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 9).x
+	var ink: Color = Color(0.28, 0.22, 0.16, 0.68) if safe_opened else Color(0.60, 0.08, 0.07, 0.94)
+	draw_line(note_pos + Vector2(-tw * 0.45, 5.0), safe_pos, ink, 1.1)
+	draw_circle(safe_pos, 3.0, ink)
+	draw_string(fnt, note_pos + Vector2(-tw * 0.5, 2.0), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 9, ink)
+	draw_arc(note_pos + Vector2(0.0, -1.5), maxf(18.0, tw * 0.62), 0.15, TAU - 0.15, 16, ink, 1.2)
+	if safe_opened:
+		draw_line(note_pos + Vector2(-tw * 0.52, 2.0), note_pos + Vector2(tw * 0.52, -5.0), Color(0.16, 0.48, 0.22, 0.90), 1.8)
+
+
+func _draw_padlock_icon(center: Vector2, unlocked: bool) -> void:
+	var col: Color = Color(0.22, 0.48, 0.26, 0.72) if unlocked else RED_X_COL
+	draw_arc(center + Vector2(0.0, -3.5), 2.8, PI, TAU, 8, col, 1.4)
+	var body: Rect2 = Rect2(center + Vector2(-3.5, -2.5), Vector2(7.0, 5.5))
+	draw_rect(body, Color(0.84, 0.72, 0.54, 0.92), true)
+	draw_rect(body, col, false, 1.3)
+	if unlocked:
+		draw_line(center + Vector2(-4.5, 4.0), center + Vector2(4.5, -5.0), Color(0.16, 0.48, 0.22, 0.95), 1.6)
+
+
+func _draw_shortcut_icon(center: Vector2, unlocked: bool) -> void:
+	if not unlocked:
+		_draw_padlock_icon(center, false)
+		return
+	var col: Color = Color(0.14, 0.50, 0.22, 0.94)
+	draw_circle(center, 5.5, Color(0.78, 0.88, 0.70, 0.82))
+	draw_arc(center, 5.5, 0.0, TAU, 12, col, 1.4)
+	draw_line(center + Vector2(-3.5, 0.0), center + Vector2(3.5, 0.0), col, 1.5)
+	draw_line(center + Vector2(0.0, -3.5), center + Vector2(0.0, 3.5), col, 1.5)
+
+
+func _draw_low_sanity_scrawls(fnt: Font, sanity_ratio: float, player_canvas_pos: Vector2) -> void:
+	var intensity: float = clampf((0.45 - sanity_ratio) / 0.30, 0.28, 0.95)
+	var tick: int = Time.get_ticks_msec() / 420
+	var jx: float = sin(float(tick) * 2.7) * 2.5
+	var jy: float = cos(float(tick) * 3.1) * 2.0
+	var scrawl_col: Color = Color(0.68, 0.06, 0.05, intensity)
+
+	var p_sun: Vector2 = _world_to_canvas(Vector2(50.0, -70.0)) + Vector2(jx, jy)
+	draw_string(fnt, p_sun, "O SOL TE VÊ", HORIZONTAL_ALIGNMENT_LEFT, -1, 10, scrawl_col)
+
+	var p_back: Vector2 = _world_to_canvas(Vector2(-60.0, 27.6)) + Vector2(-jx, jy)
+	draw_string(fnt, p_back, "NÃO OLHE PRA TRÁS", HORIZONTAL_ALIGNMENT_LEFT, -1, 10, scrawl_col)
+
+	if sanity_ratio < 0.28:
+		var p_up: Vector2 = _world_to_canvas(Vector2(-60.0, -76.0)) + Vector2(jy, -jx)
+		draw_string(fnt, p_up, "OLHE PARA CIMA", HORIZONTAL_ALIGNMENT_LEFT, -1, 10, scrawl_col)
+		for s_i: int in range(4):
+			var ang: float = float(s_i + (tick % 5)) * 1.45
+			var a_pt: Vector2 = player_canvas_pos + Vector2(cos(ang), sin(ang)) * 13.0
+			var b_pt: Vector2 = player_canvas_pos + Vector2(cos(ang + 0.5), sin(ang + 0.5)) * 23.0
+			draw_line(a_pt, b_pt, Color(0.55, 0.05, 0.05, intensity * 0.72), 1.3)
 
 
 func _draw_red_x(center: Vector2, half_sz: float) -> void:

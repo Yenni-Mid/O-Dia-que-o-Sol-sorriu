@@ -12,6 +12,9 @@ const LAYER_ENV_AND_INTERACT: int = (1 << 0) | (1 << 3)
 @export var key_display_name: String = ""
 @export var should_stay_closed: bool = true
 
+var started_locked: bool = false
+var opened_by_player: bool = false
+var _enemy_acting: bool = false
 var _closed_yaw: float = 0.0
 var _target_yaw: float = 0.0
 var _audio_3d: AudioStreamPlayer3D
@@ -19,6 +22,7 @@ var _audio_3d: AudioStreamPlayer3D
 
 func _ready() -> void:
 	add_to_group("door_interactable")
+	started_locked = is_locked
 	_closed_yaw = rotation_degrees.y
 	_target_yaw = _closed_yaw + (open_angle_deg if is_open else 0.0)
 	if is_open:
@@ -62,6 +66,8 @@ func interact() -> void:
 			return
 
 	is_open = not is_open
+	if not _enemy_acting:
+		opened_by_player = is_open
 	_target_yaw = _closed_yaw + (open_angle_deg if is_open else 0.0)
 	set_physics_process(true)
 	_play_door_sound()
@@ -69,12 +75,24 @@ func interact() -> void:
 
 func open_by_enemy() -> void:
 	if not is_locked and not is_open:
+		_enemy_acting = true
 		interact()
+		_enemy_acting = false
+
+
+func close_by_enemy() -> void:
+	if is_open:
+		is_open = false
+		opened_by_player = false
+		_target_yaw = _closed_yaw
+		set_physics_process(true)
+		_play_door_sound()
 
 
 func close_by_haunt() -> void:
 	if is_open:
 		is_open = false
+		opened_by_player = false
 		_target_yaw = _closed_yaw
 		set_physics_process(true)
 		_play_door_sound()

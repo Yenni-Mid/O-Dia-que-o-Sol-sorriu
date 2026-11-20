@@ -27,6 +27,8 @@
 [ext_resource type="Script" path="res://entities/enemies/lantern_cultist.gd" id="25_cultist"]
 [ext_resource type="Script" path="res://systems/interactables/home_rest_point.gd" id="26_homerest"]
 [ext_resource type="Script" path="res://levels/zones/post_apoc_street_dressing.gd" id="27_postapoc"]
+[ext_resource type="Script" path="res://systems/interactables/survival_radio.gd" id="28_radio"]
+[ext_resource type="Script" path="res://systems/interactables/shortcut_gate.gd" id="29_shortcut"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_775fo"]
 render_priority = 0
@@ -416,6 +418,46 @@ coat_color = Color(0.34, 0.21, 0.26, 1)
 intro_line = "Pensei que nunca abririam essas tábuas... O cofre da Diretoria na Escola usa a data 1710 (17 de Outubro)."
 post_line = "Código 1710 na Diretoria da Escola. Lá dentro trancaram a Chave da Capela."
 request_item = "none"
+
+[node name="NpcSurvivor_Clara" type="StaticBody3D" parent="." unique_id=407004003]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.2, 0.06, 20.05)
+script = ExtResource("24_npc")
+npc_id = "clara"
+npc_name = "Enfermeira Clara"
+coat_color = Color(0.76, 0.78, 0.75, 1)
+request_item = "bottle"
+
+[node name="NpcSurvivor_Rafael" type="StaticBody3D" parent="." unique_id=407004004]
+transform = Transform3D(0.866025, 0, -0.5, 0, 1, 0, 0.5, 0, 0.866025, -11.8, 3.36, 3.4)
+script = ExtResource("24_npc")
+npc_id = "rafael"
+npc_name = "Vigia Rafael"
+coat_color = Color(0.20, 0.24, 0.30, 1)
+request_item = "none"
+
+[node name="SurvivalRadio_House" type="StaticBody3D" parent="." unique_id=407006001]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -1.55, 0.78, 5.25)
+script = ExtResource("28_radio")
+
+[node name="ShortcutGate_SchoolCrossroad" type="Node3D" parent="." unique_id=407007001]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9.6, 0.0, -20.0)
+script = ExtResource("29_shortcut")
+shortcut_id = "shortcut_school_crossroad"
+gate_name = "Portão Lateral da Escola"
+gate_width = 2.2
+gate_height = 2.6
+unlock_side_local = Vector3(0, 0, -1)
+locked_hint_text = "Ferrolho trancado pelo outro lado (Pátio da Escola)."
+
+[node name="ShortcutGate_GasSchoolAlley" type="Node3D" parent="." unique_id=407007002]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -28.5, 0.0, -21.2)
+script = ExtResource("29_shortcut")
+shortcut_id = "shortcut_gas_school"
+gate_name = "Portão da Travessa Industrial"
+gate_width = 2.5
+gate_height = 2.6
+unlock_side_local = Vector3(0, 0, -1)
+locked_hint_text = "Ferrolho trancado pelo lado do Pátio da Escola / Esgoto Norte."
 
 [node name="CodeSafe_School" type="StaticBody3D" parent="." unique_id=407005001]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 17.5, 0.05, -70.6)

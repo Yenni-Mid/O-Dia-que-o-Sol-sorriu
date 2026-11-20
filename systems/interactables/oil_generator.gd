@@ -12,6 +12,7 @@ var _run_time: float = 0.0
 
 
 func _ready() -> void:
+	add_to_group("oil_generator")
 	collision_layer = (1 << 0) | (1 << 3)
 	collision_mask = 0
 	_build_generator_and_gate()
