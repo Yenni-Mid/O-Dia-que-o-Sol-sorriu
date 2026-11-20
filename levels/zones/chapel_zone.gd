@@ -32,8 +32,10 @@ func _init_materials() -> void:
 	_materials["asphalt"] = _make_mat(Color(0.22, 0.22, 0.24))
 	_materials["stripe"] = _make_mat(Color(0.76, 0.62, 0.22))
 	_materials["sidewalk"] = _make_mat(Color(0.54, 0.52, 0.48))
-	_materials["dirt"] = _make_mat(Color(0.32, 0.30, 0.24))
+	_materials["dirt"] = _make_mat(Color(0.29, 0.28, 0.27))
 	_materials["stone"] = _make_mat(Color(0.48, 0.46, 0.45))
+	_materials["old_brick"] = _make_mat(Color(0.48, 0.31, 0.25))
+	_materials["old_brick_dark"] = _make_mat(Color(0.31, 0.21, 0.18))
 	_materials["stone_dark"] = _make_mat(Color(0.28, 0.27, 0.29))
 	_materials["chapel_wall"] = _make_mat(Color(0.58, 0.54, 0.48))
 	_materials["roof"] = _make_mat(Color(0.18, 0.14, 0.15))
@@ -133,11 +135,21 @@ func _build_east_street_and_cemetery() -> void:
 		_add_box(g, "Tombstone_%d" % idx, Vector3(0.85, 1.15, 0.25), Vector3(gp.x, 0.58, gp.y), "stone_dark", Vector3(0.0, 6.0 if (idx % 2 == 0) else -8.0, 0.0), true, true)
 		_add_box(g, "GraveSlab_%d" % idx, Vector3(1.1, 0.12, 1.8), Vector3(gp.x, 0.06, gp.y + 0.9), "stone", Vector3.ZERO, true, true)
 
-	# Muros externos fechando Zona Leste
-	_add_box(g, "EastZoneWallN", Vector3(34.0, 2.8, 0.4), Vector3(53.0, 1.4, -24.0), "stone_dark")
-	_add_box(g, "EastZoneWallE", Vector3(0.4, 3.0, 48.2), Vector3(70.0, 1.5, 0.0), "stone_dark")
-	_add_box(g, "EastZoneWallS", Vector3(34.0, 2.8, 0.4), Vector3(53.0, 1.4, 24.0), "stone_dark")
-	_add_box(g, "CemeteryDeadEndVan", Vector3(2.2, 2.0, 5.4), Vector3(66.5, 1.0, 12.9), "stone_dark", Vector3(0.0, -10.0, 0.0))
+	# Quarteirão Histórico Leste (substitui muros lisos por sobrados antigos, cortiços e rua bloqueada)
+	_add_box(g, "EastNorthTenement_W", Vector3(16.0, 10.2, 4.2), Vector3(44.0, 5.1, -25.2), "old_brick_dark")
+	_add_box(g, "EastNorthTenement_E", Vector3(18.0, 11.0, 4.2), Vector3(62.0, 5.5, -25.2), "old_brick")
+	_add_box(g, "EastEndBlock_N", Vector3(4.5, 11.4, 32.0), Vector3(71.8, 5.7, -7.5), "old_brick_dark")
+	_add_box(g, "EastEndBlock_S", Vector3(4.5, 9.8, 9.0), Vector3(71.8, 4.9, 20.5), "old_brick")
+	# Quarteirão Sul da Capela (lojas antigas e Beco da Capela X: 51.5..54.5)
+	_add_box(g, "EastSouthShopRow_W", Vector3(15.0, 9.4, 7.2), Vector3(43.8, 4.7, 20.4), "old_brick")
+	_add_box(g, "EastSouthShopRow_E", Vector3(15.5, 10.0, 7.2), Vector3(62.2, 5.0, 20.4), "old_brick_dark")
+	_add_box(g, "EastSouthAlleyBack", Vector3(3.6, 8.8, 0.8), Vector3(53.0, 4.4, 24.2), "old_brick_dark")
+	# Barricada de veículos e continuação visual da Avenida Leste além do bloqueio
+	_add_box(g, "CemeteryDeadEndVan", Vector3(2.4, 2.2, 5.6), Vector3(66.5, 1.1, 12.9), "stone_dark", Vector3(0.0, -10.0, 0.0))
+	_add_box(g, "EastRoadBlockWall", Vector3(1.2, 2.2, 7.2), Vector3(69.6, 1.1, 12.9), "stone_dark")
+	_add_box(g, "EastAvenueContinuation", Vector3(16.0, 0.1, 6.6), Vector3(78.0, -0.05, 12.9), "asphalt", Vector3.ZERO, false)
+	_add_box(g, "EastBeyondBldg_N", Vector3(12.0, 12.0, 5.0), Vector3(78.0, 6.0, 5.8), "old_brick_dark", Vector3.ZERO, false)
+	_add_box(g, "EastBeyondBldg_S", Vector3(12.0, 11.0, 5.0), Vector3(78.0, 5.5, 20.0), "old_brick", Vector3.ZERO, false)
 
 
 func _build_chapel() -> void:

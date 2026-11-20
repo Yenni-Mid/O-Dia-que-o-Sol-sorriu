@@ -61,8 +61,12 @@ func _init_materials() -> void:
 	_materials["asphalt"] = _make_mat(Color(0.24, 0.23, 0.25), _textures["asphalt"] as Texture2D, Vector2(14.0, 2.0))
 	_materials["road_stripe"] = _make_mat(Color(0.76, 0.62, 0.22), _textures["concrete"] as Texture2D, Vector2(1.0, 1.0))
 	_materials["sidewalk"] = _make_mat(Color(0.56, 0.54, 0.50), _textures["sidewalk"] as Texture2D, Vector2(10.0, 1.0))
-	_materials["plaza_stone"] = _make_mat(Color(0.48, 0.45, 0.42), _textures["sidewalk"] as Texture2D, Vector2(6.0, 10.0))
-	_materials["dirt_grass"] = _make_mat(Color(0.38, 0.34, 0.25), _textures["dirt_grass"] as Texture2D, Vector2(5.0, 4.0))
+	_materials["plaza_stone"] = _make_mat(Color(0.32, 0.31, 0.30), _textures["sidewalk"] as Texture2D, Vector2(8.0, 12.0))
+	_materials["dirt_grass"] = _make_mat(Color(0.28, 0.27, 0.26), _textures["sidewalk"] as Texture2D, Vector2(10.0, 10.0))
+	_materials["alley_stone"] = _make_mat(Color(0.24, 0.23, 0.22), _textures["asphalt"] as Texture2D, Vector2(6.0, 8.0))
+	_materials["sobrado_brick"] = _make_mat(Color(0.48, 0.34, 0.27), _textures["facade_brick"] as Texture2D, Vector2(4.0, 4.0))
+	_materials["sobrado_dark"] = _make_mat(Color(0.33, 0.31, 0.29), _textures["concrete"] as Texture2D, Vector2(3.0, 4.0))
+	_materials["window_black"] = _make_mat(Color(0.06, 0.06, 0.08))
 	_materials["concrete"] = _make_mat(Color(0.52, 0.50, 0.46), _textures["concrete"] as Texture2D, Vector2(4.0, 2.0))
 	_materials["concrete_dark"] = _make_mat(Color(0.32, 0.31, 0.30), _textures["concrete"] as Texture2D, Vector2(3.0, 2.0))
 	_materials["basement_wall"] = _make_mat(Color(0.28, 0.29, 0.31), _textures["concrete"] as Texture2D, Vector2(4.0, 2.0))
@@ -354,18 +358,32 @@ func _build_ground_and_street() -> void:
 	for i: int in range(-4, 7):
 		_add_box(g, "RoadStripe_%d" % (i + 4), Vector3(2.8, 0.02, 0.16), Vector3(float(i) * 5.4, 0.005, 12.9), "road_stripe", Vector3.ZERO, false)
 
+	# Rua Transversal Norte (X: -26..+36, Z: -19.5..-15.5) ligando os becos e a Avenida da Escola
+	_add_box(g, "NorthCrossRoadAsphalt", Vector3(62.0, 0.02, 4.0), Vector3(5.0, 0.004, -17.5), "asphalt", Vector3.ZERO, false)
+	for j: int in range(-4, 6):
+		_add_box(g, "NorthStripe_%d" % (j + 4), Vector3(2.4, 0.02, 0.14), Vector3(float(j) * 5.6, 0.008, -17.5), "road_stripe", Vector3.ZERO, false)
+
+	# Pisos de paralelepípedo escuro nos becos estreitos (sem colisão extra para não alterar altura do chão)
+	_add_box(g, "AlleyPave_Market", Vector3(2.8, 0.02, 16.5), Vector3(-16.0, 0.004, -0.5), "alley_stone", Vector3.ZERO, false)
+	_add_box(g, "AlleyPave_HouseWest", Vector3(2.7, 0.02, 16.5), Vector3(-9.45, 0.004, -0.5), "alley_stone", Vector3.ZERO, false)
+	_add_box(g, "AlleyPave_HouseEast", Vector3(2.7, 0.02, 16.5), Vector3(9.45, 0.004, -0.5), "alley_stone", Vector3.ZERO, false)
+	_add_box(g, "AlleyPave_NeighborWest", Vector3(2.8, 0.02, 16.5), Vector3(16.0, 0.004, -0.5), "alley_stone", Vector3.ZERO, false)
+	_add_box(g, "AlleyPave_BackLane", Vector3(50.0, 0.02, 3.0), Vector3(0.0, 0.004, -8.7), "alley_stone", Vector3.ZERO, false)
+	_add_box(g, "AlleyPave_SouthWest", Vector3(3.0, 0.02, 6.8), Vector3(-17.0, 0.004, 19.3), "alley_stone", Vector3.ZERO, false)
+	_add_box(g, "AlleyPave_SouthEast", Vector3(3.0, 0.02, 6.8), Vector3(16.0, 0.004, 19.3), "alley_stone", Vector3.ZERO, false)
+
 	# Calçadas Norte e Sul
 	_add_box(g, "SidewalkNorth", Vector3(62.0, 0.12, 1.0), Vector3(5.0, -0.04, 10.1), "sidewalk")
 	_add_box(g, "SidewalkSouthWest", Vector3(23.0, 0.12, 1.0), Vector3(-14.5, -0.04, 15.7), "sidewalk")
 	_add_box(g, "SidewalkSouthEast", Vector3(33.0, 0.12, 1.0), Vector3(19.5, -0.04, 15.7), "sidewalk")
 
-	# Terrenos Oeste (contorna o Mini-Mercado X:-25.5..-17.5, Z:-7.5..+7.0 para preservar o poço da rampa!)
+	# Lotes pavimentados Oeste (contorna o Mini-Mercado X:-25.5..-17.5, Z:-7.5..+7.0 para preservar o poço da rampa!)
 	_add_box(g, "YardWest_NorthStrip", Vector3(18.0, 0.1, 12.5), Vector3(-17.0, -0.05, -13.75), "dirt_grass")
 	_add_box(g, "YardWest_Alley", Vector3(9.5, 0.1, 17.1), Vector3(-12.75, -0.05, 1.05), "dirt_grass")
 	_add_box(g, "YardWest_MarketFront", Vector3(8.5, 0.1, 2.6), Vector3(-21.75, -0.05, 8.3), "dirt_grass")
 	_add_box(g, "YardWest_Edge", Vector3(0.5, 0.1, 14.5), Vector3(-25.75, -0.05, -0.25), "dirt_grass")
 
-	# Terreno Leste entre Casa e Pracinha (X: +8..+25.5, Z: -20..+9.6)
+	# Lotes pavimentados Leste entre Casa e Pracinha (X: +8..+25.5, Z: -20..+9.6)
 	_add_box(g, "YardEast", Vector3(17.5, 0.1, 29.6), Vector3(16.75, -0.05, -5.2), "dirt_grass")
 
 	# Fundo Norte da Casa recortado ao redor do poço da rampa do Porão (vão em X:-1.3..+1.3, Z:-13.0..-7.0)
@@ -373,29 +391,42 @@ func _build_ground_and_street() -> void:
 	_add_box(g, "YardBack_East", Vector3(6.7, 0.1, 13.0), Vector3(4.65, -0.05, -13.5), "dirt_grass")
 	_add_box(g, "YardBack_FarNorth", Vector3(2.6, 0.1, 7.0), Vector3(0.0, -0.05, -16.5), "dirt_grass")
 
-	# Gramado frontal ladeando a varanda
+	# Calçamento frontal ladeando a varanda
 	_add_box(g, "FrontLawnLeft", Vector3(5.0, 0.1, 2.6), Vector3(-5.5, -0.05, 8.3), "dirt_grass")
 	_add_box(g, "FrontLawnRight", Vector3(5.0, 0.1, 2.6), Vector3(5.5, -0.05, 8.3), "dirt_grass")
 
 
 func _build_perimeter_walls() -> void:
 	var walls: Node3D = _create_group("PerimeterWalls")
-	# Muro Norte com portão para a Avenida da Escola (vão livre X: -2.1..+2.1)
-	_add_box(walls, "WallNorthWest", Vector3(22.7, 2.8, 0.4), Vector3(-14.85, 1.4, -20.0), "concrete")
-	_add_box(walls, "WallNorthEast", Vector3(32.7, 2.8, 0.4), Vector3(19.85, 1.4, -20.0), "concrete")
-	_add_box(walls, "SchoolGatePillarW", Vector3(1.4, 3.4, 0.7), Vector3(-2.8, 1.7, -20.0), "concrete_dark")
-	_add_box(walls, "SchoolGatePillarE", Vector3(1.4, 3.4, 0.7), Vector3(2.8, 1.7, -20.0), "concrete_dark")
+	# Fachadas de prédios e bloqueios urbanos na Rua Transversal Norte (vão central livre X: -2.1..+2.1 para a Avenida da Escola)
+	_add_box(walls, "NorthBlockadeBldgW", Vector3(13.5, 9.6, 2.8), Vector3(-19.25, 4.8, -21.2), "sobrado_brick")
+	_add_box(walls, "NorthBlockadeBldgW_Trim", Vector3(13.8, 0.4, 3.0), Vector3(-19.25, 9.6, -21.2), "concrete_dark")
+	_add_box(walls, "NorthBlockadeBldgE", Vector3(23.5, 10.2, 2.8), Vector3(24.25, 5.1, -21.2), "sobrado_dark")
+	_add_box(walls, "NorthBlockadeBldgE_Trim", Vector3(23.8, 0.4, 3.0), Vector3(24.25, 10.2, -21.2), "concrete_dark")
+	# Barricadas de quarentena ladeando o portão da Avenida da Escola
+	_add_box(walls, "NorthQuarantineWallW", Vector3(9.0, 3.4, 0.6), Vector3(-8.0, 1.7, -20.0), "wall_brick")
+	_add_box(walls, "NorthQuarantineWallE", Vector3(9.0, 3.4, 0.6), Vector3(8.0, 1.7, -20.0), "wall_brick")
+	_add_box(walls, "SchoolGatePillarW", Vector3(1.4, 4.2, 0.9), Vector3(-2.8, 2.1, -20.0), "concrete_dark")
+	_add_box(walls, "SchoolGatePillarE", Vector3(1.4, 4.2, 0.9), Vector3(2.8, 2.1, -20.0), "concrete_dark")
+	_add_box(walls, "SchoolGateArchBeam", Vector3(7.0, 0.8, 0.9), Vector3(0.0, 4.4, -20.0), "concrete_dark")
 
-	# Muro Oeste aberto na pista da Rua Principal (Z: +9.6..+16.2) rumo ao Posto de Gasolina
-	_add_box(walls, "WallWestNorth", Vector3(0.4, 3.2, 29.8), Vector3(-26.0, 1.6, -5.3), "concrete")
-	_add_box(walls, "WallWestSouth", Vector3(0.4, 3.2, 8.8), Vector3(-26.0, 1.6, 20.6), "concrete")
+	# Sobrado Norte da Pracinha (fecha o canto NE com arquitetura urbana em vez de muro liso)
+	_add_box(walls, "PlazaTownhouseN", Vector3(10.2, 9.2, 4.0), Vector3(30.6, 4.6, -16.5), "sobrado_brick")
+	_add_box(walls, "PlazaTownhouseN_Cornice", Vector3(10.5, 0.35, 4.3), Vector3(30.6, 9.2, -16.5), "concrete_dark")
 
-	# Muro Leste aberto na pista da Rua Principal (Z: +9.6..+16.2) rumo ao Cemitério e Capela
-	_add_box(walls, "WallEastNorth", Vector3(0.4, 3.2, 29.8), Vector3(36.0, 1.6, -5.3), "concrete")
-	_add_box(walls, "WallEastSouth", Vector3(0.4, 3.2, 8.8), Vector3(36.0, 1.6, 20.6), "concrete")
+	# Divisa Oeste com o Quarteirão do Posto: aberta na Rua Principal (Z: +9.6..+16.2) e na Rua Transversal Norte (Z: -19.8..-15.2)
+	_add_box(walls, "WestBoundaryTenement", Vector3(1.4, 8.8, 24.4), Vector3(-26.0, 4.4, -2.8), "sobrado_dark")
+	_add_box(walls, "WestBoundarySouthShop", Vector3(1.4, 8.4, 8.8), Vector3(-26.0, 4.2, 20.6), "sobrado_brick")
 
-	_add_box(walls, "WallSouthWest", Vector3(23.0, 3.0, 0.4), Vector3(-14.5, 1.5, 16.4), "concrete_dark")
-	_add_box(walls, "WallSouthEast", Vector3(33.0, 3.0, 0.4), Vector3(19.5, 1.5, 16.4), "concrete_dark")
+	# Divisa Leste com o Cemitério/Capela: arco de passagem urbana na Pracinha (Z: -2.0..+4.0) + Rua Principal aberta
+	_add_box(walls, "EastBoundaryNorthBldg", Vector3(1.8, 9.0, 17.6), Vector3(36.0, 4.5, -10.8), "sobrado_dark")
+	_add_box(walls, "EastBoundaryMidPillar", Vector3(1.6, 4.6, 5.4), Vector3(36.0, 2.3, 6.7), "wall_brick")
+	_add_box(walls, "EastBoundaryArchTop", Vector3(1.6, 3.8, 6.4), Vector3(36.0, 6.5, 1.0), "sobrado_brick")
+	_add_box(walls, "EastBoundarySouthShop", Vector3(1.6, 8.6, 8.8), Vector3(36.0, 4.3, 20.6), "sobrado_brick")
+
+	# Fundo dos Becos Sul sem saída (Z = 22.8) e fachadas contínuas nos trechos sem beco
+	_add_box(walls, "AlleySouthWest_BackWall", Vector3(3.6, 8.5, 0.6), Vector3(-17.0, 4.25, 22.8), "sobrado_dark")
+	_add_box(walls, "AlleySouthEast_BackWall", Vector3(3.6, 8.5, 0.6), Vector3(16.0, 4.25, 22.8), "sobrado_dark")
 
 
 # --------------------------------------------------------------------------- Mini-Mercado Explorável
@@ -554,12 +585,47 @@ func _build_neighbor_buildings() -> void:
 	_add_box(neighbor, "NeighborLowWallW", Vector3(1.9, 0.95, 0.25), Vector3(18.65, 0.48, 9.4), "concrete_dark")
 	_add_box(neighbor, "NeighborLowWallE", Vector3(3.9, 0.95, 0.25), Vector3(23.35, 0.48, 9.4), "concrete_dark")
 
-	# Garagens / Muros Sul atrás da calçada sul
+	# Quarteirão Sul contínuo (sobrados e lojas geminadas com Beco Sul Oeste X:-18.5..-15.5, Beco do Abrigo X:-3.2..+3.2 e Beco Sul Leste X:+14.5..+17.5)
 	var south_row: Node3D = Node3D.new()
 	south_row.name = "SouthBuildings"
 	bldgs.add_child(south_row)
-	_add_box(south_row, "GarageWest", Vector3(14.0, 4.4, 7.0), Vector3(-14.0, 2.2, 20.5), "wall_brick")
-	_add_box(south_row, "GarageEast", Vector3(22.0, 4.8, 7.0), Vector3(18.0, 2.4, 20.5), "neighbor_stucco")
+	_add_box(south_row, "SouthBlock_FarWest", Vector3(7.0, 9.6, 7.0), Vector3(-22.0, 4.8, 20.0), "sobrado_brick")
+	_add_box(south_row, "SouthBlock_MidWest", Vector3(12.3, 11.2, 7.0), Vector3(-9.35, 5.6, 20.0), "wall_brick")
+	_add_box(south_row, "SouthBlock_MidEast", Vector3(11.3, 10.4, 7.0), Vector3(8.85, 5.2, 20.0), "neighbor_stucco")
+	_add_box(south_row, "SouthBlock_FarEast", Vector3(18.0, 9.8, 7.0), Vector3(26.5, 4.9, 20.0), "sobrado_brick")
+	# Pontes/arcos superiores sobre as entradas dos Becos Sul (Y: 3.8..9.6)
+	_add_box(south_row, "SouthAlleyW_Overpass", Vector3(3.0, 5.4, 3.5), Vector3(-17.0, 6.5, 18.4), "sobrado_dark")
+	_add_box(south_row, "SouthAlleyE_Overpass", Vector3(3.0, 5.4, 3.5), Vector3(16.0, 6.5, 18.4), "sobrado_dark")
+
+	# Sobrados Urbanos Interiores dividindo os terrenos largos em becos estreitos de 2.7m-3.0m
+	# 1. Sobrado Oeste (X: -14.5..-10.9) cria Beco do Mercado (X: -17.5..-14.5) e Beco Oeste da Casa (X: -10.9..-8.0)
+	var sobrado_w: Node3D = Node3D.new()
+	sobrado_w.name = "SobradoOeste"
+	bldgs.add_child(sobrado_w)
+	_add_box(sobrado_w, "WingNorth", Vector3(3.6, 9.4, 5.7), Vector3(-12.7, 4.7, -4.15), "sobrado_brick")
+	_add_box(sobrado_w, "WingSouth", Vector3(3.6, 9.4, 5.7), Vector3(-12.7, 4.7, 4.15), "sobrado_brick")
+	_add_box(sobrado_w, "UpperBridge", Vector3(3.6, 6.2, 2.6), Vector3(-12.7, 6.3, 0.0), "sobrado_dark")
+	_add_box(sobrado_w, "RoofLedge", Vector3(3.9, 0.35, 14.3), Vector3(-12.7, 9.4, 0.0), "concrete_dark")
+
+	# 2. Sobrado Leste (X: +10.9..+14.5) cria Beco Leste da Casa (X: +8.0..+10.9) e Beco da Vizinha (X: +14.5..+17.5)
+	var sobrado_e: Node3D = Node3D.new()
+	sobrado_e.name = "SobradoLeste"
+	bldgs.add_child(sobrado_e)
+	_add_box(sobrado_e, "WingNorth", Vector3(3.6, 9.0, 5.7), Vector3(12.7, 4.5, -4.15), "sobrado_dark")
+	_add_box(sobrado_e, "WingSouth", Vector3(3.6, 9.0, 5.7), Vector3(12.7, 4.5, 4.15), "wall_brick")
+	_add_box(sobrado_e, "UpperBridge", Vector3(3.6, 5.8, 2.6), Vector3(12.7, 6.1, 0.0), "sobrado_brick")
+	_add_box(sobrado_e, "RoofLedge", Vector3(3.9, 0.35, 14.3), Vector3(12.7, 9.0, 0.0), "concrete_dark")
+
+	# 3. Cortiços Traseiros Norte (Z: -14.8..-10.4) criam a Viela Traseira (Z: -10.4..-7.0) e a Rua Transversal Norte (Z: -19.8..-14.8)
+	var corticos: Node3D = Node3D.new()
+	corticos.name = "CorticosNorte"
+	bldgs.add_child(corticos)
+	_add_box(corticos, "CorticoWest_A", Vector3(7.5, 8.8, 4.4), Vector3(-21.25, 4.4, -12.6), "sobrado_dark")
+	_add_box(corticos, "CorticoWest_B", Vector3(3.8, 9.6, 4.4), Vector3(-12.8, 4.8, -12.6), "sobrado_brick")
+	_add_box(corticos, "CorticoWest_Arch", Vector3(2.8, 5.4, 4.2), Vector3(-16.1, 6.5, -12.6), "wall_brick")
+	_add_box(corticos, "CorticoEast_A", Vector3(3.8, 9.2, 4.4), Vector3(12.8, 4.6, -12.6), "sobrado_brick")
+	_add_box(corticos, "CorticoEast_B", Vector3(7.5, 8.6, 4.4), Vector3(21.25, 4.3, -12.6), "sobrado_dark")
+	_add_box(corticos, "CorticoEast_Arch", Vector3(2.8, 5.2, 4.2), Vector3(16.1, 6.4, -12.6), "wall_brick")
 
 
 func _build_cult_plaza() -> void:
@@ -580,7 +646,6 @@ func _build_cult_plaza() -> void:
 	_add_box(plaza, "AltarMirrorShard", Vector3(0.95, 1.4, 0.08), Vector3(30.5, 2.0, -0.6), "tower_altar", Vector3(0.0, 0.0, 7.0))
 	_build_cult_sign(plaza, "PlazaTotemL", Vector3(28.5, 0.0, 7.2), -15.0)
 	_build_cult_sign(plaza, "PlazaTotemR", Vector3(33.0, 0.0, -8.5), 25.0)
-	_build_dead_tree(plaza, "PlazaDeadTree", Vector3(34.2, 0.0, -14.0), 1.2)
 
 
 # --------------------------------------------------------------------------- Props da Rua & Horizonte
@@ -644,10 +709,9 @@ func _build_street_props_and_covers() -> void:
 	_build_cult_sign(props, "CultSign_West", Vector3(-16.2, 0.0, 11.1), 22.0)
 	_build_cult_sign(props, "CultSign_East", Vector3(17.2, 0.0, 11.4), -28.0)
 
-	# 5. Árvores Secas Low-Poly
-	_build_dead_tree(props, "DeadTree_West", Vector3(-11.2, 0.0, -4.5), 1.0)
-	_build_dead_tree(props, "DeadTree_East", Vector3(14.5, 0.0, -6.5), 1.15)
-	_build_dead_tree(props, "DeadTree_Market", Vector3(-18.5, 0.0, 10.6), 0.9)
+	# 5. Postes e Marcos Urbanos de Beco (substituindo árvores de quintal por arquitetura urbana)
+	_add_box(props, "AlleyBollard_West", Vector3(0.28, 1.1, 0.28), Vector3(-11.0, 0.55, 8.8), "rust")
+	_add_box(props, "AlleyBollard_East", Vector3(0.28, 1.1, 0.28), Vector3(11.0, 0.55, 8.8), "rust")
 
 
 func _build_cult_sign(parent_node: Node3D, sign_name: String, pos: Vector3, yaw_deg: float) -> void:

@@ -280,14 +280,14 @@ func _build_abandoned_city_facades() -> void:
 	g.name = "AbandonedCityFacades"
 	add_child(g)
 
-	# 1. Cânion de sobrados e prédios degradados ao sul da rua principal (sem fechar o Abrigo X:-4..+4)
+	# 1. Segunda fileira de prédios altos atrás do Quarteirão Sul (Z = 25.8) formando cânion urbano profundo
 	var south_blocks: Array[Dictionary] = [
-		{"pos": Vector3(-50.0, 5.5, 22.0), "size": Vector3(16.0, 11.0, 6.5), "mat": "ruin_brick"},
-		{"pos": Vector3(-34.0, 4.6, 21.8), "size": Vector3(13.0, 9.2, 6.5), "mat": "ruin_concrete"},
-		{"pos": Vector3(-14.0, 6.2, 23.0), "size": Vector3(14.4, 12.4, 5.4), "mat": "ruin_brick"},
-		{"pos": Vector3(17.0, 6.4, 23.0), "size": Vector3(18.0, 12.8, 5.4), "mat": "ruin_concrete"},
-		{"pos": Vector3(32.5, 5.0, 21.5), "size": Vector3(9.5, 10.0, 6.0), "mat": "ruin_brick"},
-		{"pos": Vector3(52.0, 5.5, 22.5), "size": Vector3(18.0, 11.0, 6.5), "mat": "ruin_concrete"},
+		{"pos": Vector3(-54.0, 7.2, 26.2), "size": Vector3(16.0, 14.4, 5.5), "mat": "ruin_brick"},
+		{"pos": Vector3(-35.0, 6.6, 26.2), "size": Vector3(15.0, 13.2, 5.5), "mat": "ruin_concrete"},
+		{"pos": Vector3(-16.0, 7.8, 26.0), "size": Vector3(15.0, 15.6, 5.2), "mat": "ruin_brick"},
+		{"pos": Vector3(15.0, 7.6, 26.0), "size": Vector3(16.0, 15.2, 5.2), "mat": "ruin_concrete"},
+		{"pos": Vector3(33.0, 6.8, 26.0), "size": Vector3(12.0, 13.6, 5.4), "mat": "ruin_brick"},
+		{"pos": Vector3(53.0, 7.4, 26.2), "size": Vector3(18.0, 14.8, 5.5), "mat": "ruin_concrete"},
 	]
 	for i: int in range(south_blocks.size()):
 		var b: Dictionary = south_blocks[i]
@@ -296,22 +296,38 @@ func _build_abandoned_city_facades() -> void:
 		var mk: String = str(b["mat"])
 		_add_box(g, "SouthTenement_%d" % i, sz, ps, mk, Vector3.ZERO, false)
 		_add_box(g, "SouthCornice_%d" % i, Vector3(sz.x + 0.5, 0.35, sz.z + 0.4), Vector3(ps.x, ps.y * 2.0, ps.z), "ruin_dark", Vector3.ZERO, false)
-		# Janelas escuras na fachada virada para a rua (-Z)
 		for wx_off: float in [-sz.x * 0.28, 0.0, sz.x * 0.28]:
-			_add_box(g, "SouthWinHi", Vector3(1.5, 2.0, 0.14), Vector3(ps.x + wx_off, 7.6, ps.z - sz.z * 0.5 - 0.02), "win_dark", Vector3.ZERO, false, 78.0)
+			_add_box(g, "SouthWinHi", Vector3(1.5, 2.0, 0.14), Vector3(ps.x + wx_off, 10.6, ps.z - sz.z * 0.5 - 0.02), "win_dark", Vector3.ZERO, false, 78.0)
 
-	# 2. Andar superior em ruína sobre o Mini-Mercado (cria cânion no beco igual ao esboço)
-	_add_box(g, "MarketUpperTenement", Vector3(8.0, 4.4, 14.4), Vector3(-21.5, 6.8, -0.25), "ruin_brick", Vector3.ZERO, false)
-	_add_box(g, "MarketUpperCornice", Vector3(8.5, 0.35, 14.9), Vector3(-21.5, 9.1, -0.25), "ruin_dark", Vector3.ZERO, false)
+	# 2. Andar superior em ruína sobre o Mini-Mercado e Casa Vizinha (fecha o cânion vertical dos becos)
+	_add_box(g, "MarketUpperTenement", Vector3(8.0, 4.8, 14.4), Vector3(-21.5, 7.0, -0.25), "ruin_brick", Vector3.ZERO, false)
+	_add_box(g, "MarketUpperCornice", Vector3(8.5, 0.35, 14.9), Vector3(-21.5, 9.5, -0.25), "ruin_dark", Vector3.ZERO, false)
+	_add_box(g, "NeighborUpperTenement", Vector3(8.0, 4.6, 14.4), Vector3(21.5, 6.7, 0.25), "ruin_concrete", Vector3.ZERO, false)
+	_add_box(g, "NeighborUpperCornice", Vector3(8.5, 0.35, 14.9), Vector3(21.5, 9.1, 0.25), "ruin_dark", Vector3.ZERO, false)
 	for wz: float in [-4.5, 0.0, 4.2]:
-		_add_box(g, "MarketUpperWinE", Vector3(0.12, 1.7, 1.3), Vector3(-17.46, 6.6, wz), "win_dark", Vector3.ZERO, false, 68.0)
+		_add_box(g, "MarketUpperWinE", Vector3(0.12, 1.7, 1.3), Vector3(-17.46, 6.8, wz), "win_dark", Vector3.ZERO, false, 68.0)
+		_add_box(g, "NeighborUpperWinW", Vector3(0.12, 1.7, 1.3), Vector3(17.46, 6.6, wz), "win_dark", Vector3.ZERO, false, 68.0)
+		# Janelas e sacadas de ferro nos Sobrados Oeste e Leste (voltadas para os becos)
+		_add_box(g, "SobradoW_WinW", Vector3(0.12, 1.6, 1.2), Vector3(-14.54, 6.0, wz), "win_dark", Vector3.ZERO, false, 64.0)
+		_add_box(g, "SobradoW_WinE", Vector3(0.12, 1.6, 1.2), Vector3(-10.86, 6.0, wz), "win_dark", Vector3.ZERO, false, 64.0)
+		_add_box(g, "SobradoE_WinW", Vector3(0.12, 1.6, 1.2), Vector3(10.86, 5.8, wz), "win_dark", Vector3.ZERO, false, 64.0)
+		_add_box(g, "SobradoE_WinE", Vector3(0.12, 1.6, 1.2), Vector3(14.54, 5.8, wz), "win_dark", Vector3.ZERO, false, 64.0)
 
-	# 3. Ruínas laterais na Avenida da Escola (fora das rotas de patrulha X = ±10)
-	_add_box(g, "SchoolAvenueRuinW", Vector3(7.5, 8.4, 12.0), Vector3(-20.0, 4.2, -33.0), "ruin_brick", Vector3.ZERO, true)
-	_add_box(g, "SchoolAvenueRuinE", Vector3(7.5, 9.0, 12.0), Vector3(19.0, 4.5, -33.0), "ruin_concrete", Vector3.ZERO, true)
-	for wy: float in [2.6, 5.8]:
-		_add_box(g, "RuinWinW", Vector3(0.14, 1.5, 1.8), Vector3(-16.22, wy, -33.0), "win_dark", Vector3.ZERO, false, 64.0)
-		_add_box(g, "RuinWinE", Vector3(0.14, 1.5, 1.8), Vector3(15.22, wy, -33.0), "win_dark", Vector3.ZERO, false, 64.0)
+	# 3. Vigas, tubulações aéreas e passadiços metálicos cruzando o alto dos becos (Y = 4.2..7.5, igual à Imagem 2)
+	_add_box(g, "AlleyMarket_OverbeamA", Vector3(3.0, 0.35, 0.45), Vector3(-16.0, 5.2, 3.2), "ruin_dark", Vector3.ZERO, false, 60.0)
+	_add_box(g, "AlleyMarket_OverbeamB", Vector3(3.0, 0.35, 0.45), Vector3(-16.0, 6.4, -3.2), "ruin_dark", Vector3.ZERO, false, 60.0)
+	_add_box(g, "AlleyMarket_FireBalcony", Vector3(0.75, 0.18, 2.8), Vector3(-14.85, 4.6, 2.0), "rust_sheet", Vector3.ZERO, false, 58.0)
+	_add_box(g, "AlleyHouseW_Overbeam", Vector3(2.9, 0.32, 0.40), Vector3(-9.45, 5.4, -2.5), "ruin_dark", Vector3.ZERO, false, 60.0)
+	_add_box(g, "AlleyHouseE_Overbeam", Vector3(2.9, 0.32, 0.40), Vector3(9.45, 5.4, 2.2), "ruin_dark", Vector3.ZERO, false, 60.0)
+	_add_box(g, "AlleyNeighbor_OverbeamA", Vector3(3.0, 0.35, 0.45), Vector3(16.0, 5.1, 2.8), "ruin_dark", Vector3.ZERO, false, 60.0)
+	_add_box(g, "AlleyNeighbor_OverbeamB", Vector3(3.0, 0.35, 0.45), Vector3(16.0, 6.3, -3.0), "ruin_dark", Vector3.ZERO, false, 60.0)
+	_add_box(g, "AlleyNeighbor_FireBalcony", Vector3(0.75, 0.18, 2.8), Vector3(14.85, 4.5, -1.5), "rust_sheet", Vector3.ZERO, false, 58.0)
+
+	# 4. Detalhes de janelas nos prédios laterais da Avenida da Escola
+	for wy: float in [3.2, 6.4]:
+		for wz_av: float in [-35.0, -30.0, -25.0]:
+			_add_box(g, "RuinWinW", Vector3(0.14, 1.5, 1.6), Vector3(-14.20, wy, wz_av), "win_dark", Vector3.ZERO, false, 64.0)
+			_add_box(g, "RuinWinE", Vector3(0.14, 1.5, 1.6), Vector3(14.45, wy, wz_av), "win_dark", Vector3.ZERO, false, 64.0)
 
 
 func _build_graffiti_murals() -> void:
@@ -319,19 +335,26 @@ func _build_graffiti_murals() -> void:
 	m.name = "GraffitiMurals"
 	add_child(m)
 
-	# Murais grafiteados encostados nas fachadas dos becos e muros perimetrais
+	# Murais grafiteados encostados nas paredes de tijolo dos becos estreitos
 	var panels: Array[Dictionary] = [
-		# Beco Oeste do Mini-Mercado (visível logo ao sair na rua ou andar pelo beco)
+		# Beco do Mini-Mercado (paredes X=-17.46 e X=-14.54)
 		{"pos": Vector3(-17.34, 1.75, 2.2), "size": Vector3(0.04, 3.0, 5.2), "mat": "graffiti_a"},
-		{"pos": Vector3(-17.34, 1.65, -1.6), "size": Vector3(0.04, 2.6, 3.2), "mat": "graffiti_b"},
-		# Parede Oeste da Casa Principal no beco
+		{"pos": Vector3(-17.34, 1.65, -1.8), "size": Vector3(0.04, 2.6, 3.0), "mat": "graffiti_b"},
+		{"pos": Vector3(-14.54, 1.70, 3.6), "size": Vector3(0.04, 2.8, 4.2), "mat": "graffiti_b"},
+		{"pos": Vector3(-14.54, 1.65, -3.8), "size": Vector3(0.04, 2.6, 3.8), "mat": "graffiti_a"},
+		# Beco Oeste da Casa Principal (paredes X=-10.86 e X=-8.15)
+		{"pos": Vector3(-10.86, 1.65, 3.4), "size": Vector3(0.04, 2.7, 4.0), "mat": "graffiti_a"},
 		{"pos": Vector3(-8.15, 1.65, -2.2), "size": Vector3(0.04, 2.8, 4.8), "mat": "graffiti_b"},
-		# Beco Leste da Casa Vizinha & Pracinha
-		{"pos": Vector3(17.45, 1.65, 1.5), "size": Vector3(0.04, 2.8, 4.8), "mat": "graffiti_a"},
+		# Beco Leste da Casa & Beco da Vizinha (paredes X=+8.15, +10.86, +14.54, +17.45)
 		{"pos": Vector3(8.15, 1.65, 2.2), "size": Vector3(0.04, 2.8, 4.2), "mat": "graffiti_b"},
-		# Muros ao redor do Portão da Escola e Posto
-		{"pos": Vector3(-7.5, 1.35, -19.76), "size": Vector3(5.6, 2.4, 0.04), "mat": "graffiti_a"},
-		{"pos": Vector3(9.5, 1.35, -19.76), "size": Vector3(5.6, 2.4, 0.04), "mat": "graffiti_b"},
+		{"pos": Vector3(10.86, 1.65, -3.5), "size": Vector3(0.04, 2.6, 3.8), "mat": "graffiti_a"},
+		{"pos": Vector3(14.54, 1.70, 3.5), "size": Vector3(0.04, 2.8, 4.2), "mat": "graffiti_b"},
+		{"pos": Vector3(17.45, 1.65, 1.5), "size": Vector3(0.04, 2.8, 4.8), "mat": "graffiti_a"},
+		# Becos Sul Oeste e Leste + Barricadas do Portão da Escola e Posto
+		{"pos": Vector3(-18.45, 1.65, 19.2), "size": Vector3(0.04, 2.6, 4.2), "mat": "graffiti_a"},
+		{"pos": Vector3(14.55, 1.65, 19.2), "size": Vector3(0.04, 2.6, 4.2), "mat": "graffiti_b"},
+		{"pos": Vector3(-7.5, 1.35, -19.65), "size": Vector3(5.6, 2.4, 0.04), "mat": "graffiti_a"},
+		{"pos": Vector3(9.5, 1.35, -19.65), "size": Vector3(5.6, 2.4, 0.04), "mat": "graffiti_b"},
 		{"pos": Vector3(-46.0, 1.45, 0.2), "size": Vector3(0.04, 2.5, 3.8), "mat": "graffiti_a"},
 	]
 	for idx: int in range(panels.size()):
@@ -344,18 +367,31 @@ func _build_alley_and_curb_clutter() -> void:
 	c.name = "AlleyAndCurbClutter"
 	add_child(c)
 
-	# Caixotes, chapas corrugadas inclinadas, caçambas e sacos de lixo nas bordas de becos/meio-fios
-	_add_box(c, "AlleyLeanSheet", Vector3(0.08, 2.1, 1.8), Vector3(-16.95, 1.0, 1.6), "rust_sheet", Vector3(0.0, 6.0, -14.0), true, 48.0)
-	_add_box(c, "AlleyCrateLow", Vector3(0.95, 0.72, 0.95), Vector3(-16.6, 0.36, 3.5), "crate_wood", Vector3(0.0, 14.0, 0.0), true, 48.0)
-	_add_box(c, "AlleyTrashA", Vector3(0.65, 0.55, 0.65), Vector3(-15.9, 0.28, 5.8), "trash_bag", Vector3(0.0, 22.0, 0.0), false, 42.0)
-	_add_box(c, "AlleyTrashB", Vector3(0.55, 0.48, 0.58), Vector3(-16.3, 0.24, 6.4), "trash_bag", Vector3(0.0, -18.0, 0.0), false, 42.0)
+	# Beco do Mini-Mercado (X: -17.5..-14.5) — caixotes, chapas inclinadas e sacos nas laterais deixando passagem livre no centro
+	_add_box(c, "AlleyLeanSheet", Vector3(0.08, 2.1, 1.8), Vector3(-17.05, 1.0, 1.6), "rust_sheet", Vector3(0.0, 6.0, -14.0), true, 48.0)
+	_add_box(c, "AlleyCrateLow", Vector3(0.85, 0.72, 0.85), Vector3(-14.95, 0.36, 3.4), "crate_wood", Vector3(0.0, 14.0, 0.0), true, 48.0)
+	_add_box(c, "AlleyCrateNorth", Vector3(0.80, 0.68, 0.80), Vector3(-14.95, 0.34, -5.6), "crate_wood", Vector3(0.0, -10.0, 0.0), true, 48.0)
+	_add_box(c, "AlleyTrashA", Vector3(0.65, 0.55, 0.65), Vector3(-16.9, 0.28, 5.9), "trash_bag", Vector3(0.0, 22.0, 0.0), false, 42.0)
+	_add_box(c, "AlleyTrashB", Vector3(0.55, 0.48, 0.58), Vector3(-15.0, 0.24, 6.2), "trash_bag", Vector3(0.0, -18.0, 0.0), false, 42.0)
 
-	# Lado Leste perto da casa vizinha (encostado na parede Oeste em X=17.4)
-	_add_box(c, "EastAlleyDumpster", Vector3(1.1, 1.15, 2.0), Vector3(16.7, 0.58, -1.8), "dumpster", Vector3(0.0, 4.0, 0.0), true, 52.0)
-	_add_box(c, "EastAlleyCrate", Vector3(0.9, 0.85, 0.9), Vector3(8.7, 0.43, 4.8), "crate_wood", Vector3(0.0, -12.0, 0.0), true, 48.0)
+	# Beco Oeste da Casa (X: -10.9..-8.0) e Viela Traseira (Z: -10.4..-7.0)
+	_add_box(c, "WestHouseAlleyCrate", Vector3(0.78, 0.72, 0.78), Vector3(-10.45, 0.36, -3.2), "crate_wood", Vector3(0.0, 9.0, 0.0), true, 48.0)
+	_add_box(c, "BackLaneDumpsterW", Vector3(1.9, 1.1, 0.95), Vector3(-19.5, 0.55, -9.8), "dumpster", Vector3(0.0, 3.0, 0.0), true, 50.0)
+	_add_box(c, "BackLaneDumpsterE", Vector3(1.9, 1.1, 0.95), Vector3(19.5, 0.55, -9.8), "dumpster", Vector3(0.0, -4.0, 0.0), true, 50.0)
 
-	# Calçada Sul e Posto / Capela (fora da faixa central do asfalto)
-	_add_box(c, "SouthCurbDumpster", Vector3(2.2, 1.2, 1.1), Vector3(-19.5, 0.6, 15.8), "dumpster", Vector3(0.0, -6.0, 0.0), true, 54.0)
+	# Beco Leste da Casa (X: +8.0..+10.9) e Beco da Vizinha (X: +14.5..+17.5)
+	_add_box(c, "EastAlleyDumpster", Vector3(0.95, 1.15, 1.9), Vector3(16.95, 0.58, -1.8), "dumpster", Vector3(0.0, 4.0, 0.0), true, 52.0)
+	_add_box(c, "EastAlleySheet", Vector3(0.08, 1.9, 1.6), Vector3(14.90, 0.92, 2.4), "rust_sheet", Vector3(0.0, -5.0, 12.0), true, 48.0)
+	_add_box(c, "EastAlleyCrate", Vector3(0.82, 0.80, 0.82), Vector3(8.55, 0.40, 4.8), "crate_wood", Vector3(0.0, -12.0, 0.0), true, 48.0)
+
+	# Becos Sul sem saída (X = -17.0 e X = +16.0, Z = 16.5..22.5)
+	_add_box(c, "SouthAlleyW_Crate", Vector3(0.9, 0.78, 0.9), Vector3(-17.8, 0.39, 20.6), "crate_wood", Vector3(0.0, 16.0, 0.0), true, 48.0)
+	_add_box(c, "SouthAlleyW_Trash", Vector3(0.7, 0.55, 0.7), Vector3(-16.2, 0.28, 21.6), "trash_bag", Vector3.ZERO, false, 42.0)
+	_add_box(c, "SouthAlleyE_Crate", Vector3(0.9, 0.78, 0.9), Vector3(16.8, 0.39, 20.8), "crate_wood", Vector3(0.0, -14.0, 0.0), true, 48.0)
+	_add_box(c, "SouthAlleyE_Sheet", Vector3(0.08, 1.8, 1.5), Vector3(15.0, 0.88, 19.6), "rust_sheet", Vector3(0.0, 4.0, 12.0), true, 48.0)
+
+	# Calçada Sul e Posto / Capela (fora da faixa central do asfalto e fora das entradas dos Becos Sul)
+	_add_box(c, "SouthCurbDumpster", Vector3(2.2, 1.2, 1.1), Vector3(-21.5, 0.6, 15.8), "dumpster", Vector3(0.0, -6.0, 0.0), true, 54.0)
 	_add_box(c, "SouthCurbBarrier", Vector3(2.1, 0.78, 0.45), Vector3(10.5, 0.39, 15.8), "barrier", Vector3(0.0, 8.0, 0.0), true, 52.0)
 	_add_box(c, "GasCurbCrates", Vector3(1.1, 0.9, 1.1), Vector3(-31.2, 0.45, 8.8), "crate_wood", Vector3(0.0, 18.0, 0.0), true, 50.0)
 	_add_box(c, "GasCurbSheet", Vector3(1.8, 1.4, 0.08), Vector3(-32.4, 0.7, 8.6), "rust_sheet", Vector3(16.0, 10.0, 0.0), true, 48.0)
@@ -368,15 +404,18 @@ func _build_ground_litter_and_puddles() -> void:
 	add_child(lit)
 
 	var spots: Array[Vector2] = [
-		# Beco do Mini-Mercado
-		Vector2(-15.4, 4.2), Vector2(-14.6, 1.8), Vector2(-13.8, -0.8), Vector2(-12.8, 2.5),
-		Vector2(-15.8, -3.0), Vector2(-10.4, 0.4), Vector2(-9.6, 3.6), Vector2(-12.2, 6.2),
+		# Beco do Mini-Mercado (X: -17.2..-14.8) e Beco Oeste da Casa (X: -10.5..-8.4)
+		Vector2(-15.9, 4.8), Vector2(-16.2, 2.2), Vector2(-15.6, -0.6), Vector2(-16.1, -3.4),
+		Vector2(-15.8, -5.8), Vector2(-9.5, 4.2), Vector2(-9.2, 0.8), Vector2(-9.6, -4.0),
+		# Beco Leste da Casa (X: 8.4..10.5), Beco da Vizinha (X: 14.8..17.2) e Becos Sul
+		Vector2(9.4, 3.6), Vector2(9.6, -2.4), Vector2(15.8, 4.4), Vector2(16.1, 1.2),
+		Vector2(15.7, -3.6), Vector2(-17.0, 18.5), Vector2(-16.8, 21.0), Vector2(16.0, 19.2),
 		# Rua Principal e calçadas
 		Vector2(-18.5, 11.4), Vector2(-11.0, 14.2), Vector2(-3.2, 11.8), Vector2(3.8, 14.0),
 		Vector2(8.5, 11.2), Vector2(15.2, 13.8), Vector2(19.5, 11.4), Vector2(28.0, 14.2),
-		# Avenida Oeste (Posto) e Avenida Norte (Escola)
+		# Avenida Oeste (Posto), Rua Transversal Norte e Avenida da Escola
 		Vector2(-30.5, 12.0), Vector2(-36.5, 14.2), Vector2(-42.0, 11.5), Vector2(-49.0, 13.6),
-		Vector2(-1.4, -22.5), Vector2(1.6, -26.0), Vector2(-1.0, -32.5), Vector2(1.5, -39.0),
+		Vector2(-16.0, -17.2), Vector2(16.0, -17.4), Vector2(-1.4, -22.5), Vector2(1.6, -26.0),
 		# Pracinha e Cemitério
 		Vector2(27.5, -1.5), Vector2(32.5, 2.2), Vector2(40.5, 12.2), Vector2(49.5, 7.8),
 	]

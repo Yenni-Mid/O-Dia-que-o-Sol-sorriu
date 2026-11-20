@@ -24,9 +24,3 @@ func _ready() -> void:
 		if player != null:
 			player.global_position = SaveManager.checkpoint_position
 			GameEvents.status_message_requested.emit("Retornando ao último refúgio salvo.")
-	else:
-		call_deferred("_announce_expedition_start")
-
-
-func _announce_expedition_start() -> void:
-	GameEvents.status_message_requested.emit("Noite 1 (19:15) — Saia da Casa para explorar. Volte antes de clarear (05:00)!")

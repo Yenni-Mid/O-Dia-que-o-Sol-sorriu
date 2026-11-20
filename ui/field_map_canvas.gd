@@ -83,16 +83,26 @@ func _draw() -> void:
 
 	var fnt: Font = get_theme_default_font()
 
-	# Ruas e avenidas principais
+	# Ruas, avenidas e travessas urbanas
 	_draw_area(-66.0, 10.6, 70.0, 15.2, Color(0.56, 0.52, 0.46, 0.55), INK_COL, "AVENIDA PRINCIPAL", fnt, 10)
+	_draw_area(-26.0, -19.5, 36.0, -15.5, Color(0.56, 0.52, 0.46, 0.45), INK_COL, "RUA TRANSVERSAL NORTE", fnt, 8)
+	_draw_area(-29.8, -19.5, -26.2, 9.6, Color(0.56, 0.52, 0.46, 0.42), INK_COL, "", fnt, 8)
 	_draw_area(-2.6, -48.0, 2.6, -20.0, Color(0.58, 0.55, 0.49, 0.65), INK_COL, "", fnt, 9)
 
-	# Terrenos & Pontos conhecidos
+	# Quarteirão Central & Becos Urbanos
 	_draw_area(-3.0, 15.5, 3.0, 25.0, Color(0.65, 0.60, 0.50, 0.7), INK_COL, "ABRIGO", fnt, 8)
+	_draw_area(-25.5, 16.5, -18.5, 23.5, Color(0.60, 0.54, 0.46, 0.65), INK_COL, "", fnt, 8)
+	_draw_area(-15.5, 16.5, -3.2, 23.5, Color(0.60, 0.54, 0.46, 0.65), INK_COL, "QUARTEIRÃO SUL", fnt, 8)
+	_draw_area(3.2, 16.5, 14.5, 23.5, Color(0.60, 0.54, 0.46, 0.65), INK_COL, "", fnt, 8)
+	_draw_area(17.5, 16.5, 35.5, 23.5, Color(0.60, 0.54, 0.46, 0.65), INK_COL, "LOJAS SUL", fnt, 8)
 	_draw_area(-8.0, -7.0, 8.0, 7.0, Color(0.72, 0.64, 0.48, 0.85), INK_COL, "CASA", fnt, 10)
+	_draw_area(-14.5, -7.0, -10.9, 7.0, Color(0.64, 0.55, 0.46, 0.80), INK_COL, "SOBRADO", fnt, 7)
+	_draw_area(10.9, -7.0, 14.5, 7.0, Color(0.64, 0.55, 0.46, 0.80), INK_COL, "SOBRADO", fnt, 7)
+	_draw_area(-25.0, -14.8, -10.9, -10.4, Color(0.60, 0.52, 0.44, 0.78), INK_COL, "CORTIÇOS", fnt, 7)
+	_draw_area(10.9, -14.8, 25.0, -10.4, Color(0.60, 0.52, 0.44, 0.78), INK_COL, "CORTIÇOS", fnt, 7)
 	_draw_area(-25.5, -7.5, -17.5, 7.0, Color(0.72, 0.58, 0.48, 0.85), INK_COL, "MERCADO", fnt, 9)
 	_draw_area(17.5, -7.0, 25.5, 7.5, Color(0.68, 0.62, 0.54, 0.80), INK_COL, "VIZINHA", fnt, 8)
-	_draw_area(25.5, -20.0, 36.0, 9.6, Color(0.64, 0.60, 0.56, 0.75), INK_COL, "PRACINHA", fnt, 9)
+	_draw_area(25.5, -14.5, 36.0, 9.6, Color(0.64, 0.60, 0.56, 0.75), INK_COL, "PRACINHA", fnt, 9)
 
 	# Zona Oeste: Posto Sol & Óleo
 	_draw_area(-57.0, -16.5, -32.0, 9.6, Color(0.60, 0.58, 0.52, 0.50), INK_COL, "", fnt, 9)

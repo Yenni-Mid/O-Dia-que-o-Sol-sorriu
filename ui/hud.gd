@@ -26,6 +26,7 @@ var _stamina_target: float = 100.0
 
 var _vitals_panel: Control
 var _right_hud: Control
+var _obj_panel: PanelContainer
 var _lantern_icon: TextureRect
 var _sanity_eye_icon: TextureRect
 var _posture_icon: TextureRect
@@ -48,6 +49,7 @@ var _hiding_overlay: Control
 
 var _confession_timer: float = 0.0
 var _toast_timer: float = 0.0
+var _obj_panel_timer: float = 4.5
 var _pulse_time: float = 0.0
 var _radio_level: float = 0.0
 var _is_dawn_urgent: bool = false
@@ -129,12 +131,18 @@ func _process(delta: float) -> void:
 		_confession_label.modulate.a = clampf(_confession_timer / 0.8, 0.0, 1.0)
 	if _toast_timer > 0.0 and _toast_label != null:
 		_toast_timer -= delta
-		_toast_label.modulate.a = clampf(_toast_timer / 0.8, 0.0, 1.0)
+		_toast_label.modulate.a = clampf(_toast_timer / 0.65, 0.0, 1.0)
+	if _obj_panel != null:
+		if _obj_panel_timer > 0.0:
+			_obj_panel_timer -= delta
+			_obj_panel.modulate.a = clampf(_obj_panel_timer / 0.9, 0.0, 1.0)
+		else:
+			_obj_panel.modulate.a = 0.0
 	if _radio_label != null and _radio_level > 0.03:
 		var freq: float = lerpf(4.0, 16.0, _radio_level)
 		_radio_label.modulate.a = 0.55 + 0.45 * absf(sin(_pulse_time * freq))
 	if _clock_label != null:
-		_clock_label.modulate.a = (0.58 + 0.42 * absf(sin(_pulse_time * 5.0))) if _is_dawn_urgent else 1.0
+		_clock_label.modulate.a = (0.58 + 0.42 * absf(sin(_pulse_time * 5.0))) if _is_dawn_urgent else 0.86
 
 
 # --------------------------------------------------------------------------- Layout
@@ -183,34 +191,36 @@ func _build_layout() -> void:
 	_prompt_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	add_child(_prompt_label)
 
-	# Confissões (topo central)
-	_confession_label = _make_label(18, Color(1.0, 0.86, 0.5))
-	_confession_label.set_anchors_preset(Control.PRESET_CENTER_TOP)
-	_confession_label.offset_left = -380.0
-	_confession_label.offset_right = 380.0
-	_confession_label.offset_top = 56.0
-	_confession_label.offset_bottom = 110.0
+	# Confissões / legendas diegéticas discretas na base da tela
+	_confession_label = _make_label(14, Color(0.86, 0.80, 0.68, 0.90))
+	_confession_label.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	_confession_label.offset_left = -320.0
+	_confession_label.offset_right = 320.0
+	_confession_label.offset_top = -54.0
+	_confession_label.offset_bottom = -22.0
 	_confession_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_confession_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_confession_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_confession_label.modulate.a = 0.0
 	add_child(_confession_label)
 
-	# Toast de mensagens/coleta
-	_toast_label = _make_label(19, Color(0.95, 0.88, 0.68))
-	_toast_label.set_anchors_preset(Control.PRESET_CENTER)
-	_toast_label.offset_left = -360.0
-	_toast_label.offset_right = 360.0
-	_toast_label.offset_top = -126.0
-	_toast_label.offset_bottom = -92.0
+	# Avisos curtos discretos na mesma faixa inferior (sem poluir o meio da tela)
+	_toast_label = _make_label(14, Color(0.86, 0.80, 0.68, 0.90))
+	_toast_label.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	_toast_label.offset_left = -320.0
+	_toast_label.offset_right = 320.0
+	_toast_label.offset_top = -54.0
+	_toast_label.offset_bottom = -22.0
 	_toast_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_toast_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_toast_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_toast_label.modulate.a = 0.0
 	add_child(_toast_label)
 
-	# Objetivo compacto (topo esquerdo com filete âmbar)
-	var obj_panel: PanelContainer = PanelContainer.new()
-	obj_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	obj_panel.position = Vector2(22.0, 18.0)
+	# Objetivo compacto (aparece no início / ao coletar Eco e depois desvanece)
+	_obj_panel = PanelContainer.new()
+	_obj_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_obj_panel.position = Vector2(22.0, 18.0)
 	var obj_style: StyleBoxFlat = StyleBoxFlat.new()
 	obj_style.bg_color = Color(0.03, 0.025, 0.02, 0.56)
 	obj_style.border_color = UiTheme.AMBER
@@ -219,13 +229,13 @@ func _build_layout() -> void:
 	obj_style.content_margin_right = 12.0
 	obj_style.content_margin_top = 5.0
 	obj_style.content_margin_bottom = 5.0
-	obj_panel.add_theme_stylebox_override("panel", obj_style)
-	add_child(obj_panel)
+	_obj_panel.add_theme_stylebox_override("panel", obj_style)
+	add_child(_obj_panel)
 
 	var obj_box: VBoxContainer = VBoxContainer.new()
 	obj_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	obj_box.add_theme_constant_override("separation", 0)
-	obj_panel.add_child(obj_box)
+	_obj_panel.add_child(obj_box)
 	var obj_title: Label = _make_label(11, UiTheme.AMBER)
 	obj_title.text = "OBJETIVO"
 	obj_box.add_child(obj_title)
@@ -233,7 +243,7 @@ func _build_layout() -> void:
 	_objective_label.text = "Sobreviva. Procure os Ecos deixados nas sombras."
 	obj_box.add_child(_objective_label)
 
-	# Topo direito (Relógio + Rádio)
+	# Topo direito (Relógio discreto + Rádio)
 	var top_right: VBoxContainer = VBoxContainer.new()
 	top_right.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	top_right.set_anchors_preset(Control.PRESET_TOP_RIGHT)
@@ -243,9 +253,9 @@ func _build_layout() -> void:
 	top_right.add_theme_constant_override("separation", 3)
 	add_child(top_right)
 
-	_clock_label = _make_label(14, UiTheme.AMBER)
+	_clock_label = _make_label(13, Color(0.82, 0.68, 0.44))
 	_clock_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	_clock_label.text = "NOITE 1 | 19:15 — NOITE [CULTISTAS À SOLTA]"
+	_clock_label.text = "NOITE 1  •  19:15"
 	top_right.add_child(_clock_label)
 
 	_radio_label = _make_label(13, Color(1.0, 0.42, 0.25))
@@ -541,11 +551,13 @@ func _on_echo_opened(data: EchoData) -> void:
 		return
 	_collected_ids[data.echo_id] = true
 	_update_objective()
+	_obj_panel_timer = 4.5
 	GameEvents.echo_collected.emit(_collected_ids.size(), _total_echoes)
 	if _toast_label != null:
-		_toast_label.text = "ECO RECOLHIDO  %d/%d" % [_collected_ids.size(), _total_echoes]
+		_confession_timer = 0.0
+		_toast_label.text = "Eco recolhido (%d/%d)" % [_collected_ids.size(), _total_echoes]
 		_toast_label.modulate.a = 1.0
-		_toast_timer = 3.0
+		_toast_timer = 2.1
 
 
 func _on_oil_changed(current: float, max_val: float) -> void:
@@ -591,9 +603,12 @@ func _on_interaction_prompt_changed(prompt_text: String) -> void:
 func _on_confession_triggered(text: String) -> void:
 	if _confession_label == null:
 		return
+	_toast_timer = 0.0
+	if _toast_label != null:
+		_toast_label.modulate.a = 0.0
 	_confession_label.text = text
 	_confession_label.modulate.a = 1.0
-	_confession_timer = 4.0
+	_confession_timer = 3.2
 
 
 func _on_player_hidden_changed(is_hidden: bool) -> void:
@@ -608,7 +623,7 @@ func _on_player_hidden_changed(is_hidden: bool) -> void:
 		_zone_label.add_theme_color_override("font_color", COLOR_BONE)
 
 
-func _on_time_of_day_changed(hour: float, is_night: bool, phase_name: String) -> void:
+func _on_time_of_day_changed(hour: float, is_night: bool, _phase_name: String) -> void:
 	if _clock_label == null:
 		return
 	var total_minutes: int = int(floorf(hour * 60.0))
@@ -617,10 +632,11 @@ func _on_time_of_day_changed(hour: float, is_night: bool, phase_name: String) ->
 	var night_prefix: String = ""
 	var dn: Node = get_tree().get_first_node_in_group("day_night")
 	if dn != null and dn.has_method("get_night_number"):
-		night_prefix = "NOITE %d | " % int(dn.call("get_night_number"))
-	_clock_label.text = "%s%02d:%02d — %s" % [night_prefix, hh, mm, phase_name]
+		night_prefix = "NOITE %d  •  " % int(dn.call("get_night_number"))
 	_is_dawn_urgent = (hour >= 5.0 and hour < 6.0)
-	var col: Color = Color(1.0, 0.56, 0.22) if _is_dawn_urgent else (Color(0.95, 0.32, 0.28) if is_night else UiTheme.AMBER)
+	var suffix: String = "  [CLAREANDO]" if _is_dawn_urgent else ("" if is_night else "  [SOL]")
+	_clock_label.text = "%s%02d:%02d%s" % [night_prefix, hh, mm, suffix]
+	var col: Color = Color(1.0, 0.56, 0.22) if _is_dawn_urgent else Color(0.82, 0.68, 0.44)
 	_clock_label.add_theme_color_override("font_color", col)
 
 
@@ -672,6 +688,9 @@ func _on_radio_interference_changed(level: float) -> void:
 func _on_status_message_requested(text: String) -> void:
 	if _toast_label == null or text.is_empty():
 		return
+	_confession_timer = 0.0
+	if _confession_label != null:
+		_confession_label.modulate.a = 0.0
 	_toast_label.text = text
 	_toast_label.modulate.a = 1.0
-	_toast_timer = 3.2
+	_toast_timer = 2.1

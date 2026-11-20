@@ -105,16 +105,16 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 11.2)
 [node name="LunaticYard_Waypoints" type="Node3D" parent="." unique_id=402001001]
 
 [node name="WP_WestYard" type="Marker3D" parent="LunaticYard_Waypoints" unique_id=402001002]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11.5, 0.1, 5.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9.5, 0.1, 5.5)
 
 [node name="WP_NorthWest" type="Marker3D" parent="LunaticYard_Waypoints" unique_id=402001003]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11.5, 0.1, -14.8)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9.5, 0.1, -8.8)
 
 [node name="WP_NorthEast" type="Marker3D" parent="LunaticYard_Waypoints" unique_id=402001004]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11.5, 0.1, -14.8)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9.5, 0.1, -8.8)
 
 [node name="WP_EastYard" type="Marker3D" parent="LunaticYard_Waypoints" unique_id=402001005]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11.5, 0.1, 5.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9.5, 0.1, 5.5)
 
 [node name="PreacherEnemy_Waypoints" type="Node3D" parent="." unique_id=402002001]
 
@@ -313,7 +313,7 @@ transform = Transform3D(1.4, 0, 0, 0, 1, 0, 0, 0, 0.72, -14.5, -3.15, -5.3)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 0.1, 11.2)
 
 [node name="LunaticYard" parent="." unique_id=2079065499 instance=ExtResource("5_d8n8u")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11.5, 0.1, -12)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9.5, 0.1, -8.5)
 
 [node name="PreacherEnemy" type="CharacterBody3D" parent="." unique_id=2079065550]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 30.5, 0.1, 4.0)

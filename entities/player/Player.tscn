@@ -69,7 +69,7 @@ script = ExtResource("3_fmb3c")
 mesh = SubResource("CylinderMesh_2rv2u")
 
 [node name="OmniLight3D" type="OmniLight3D" parent="HeadPivot/HandPivot/LanternSystem" unique_id=2139733489]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.05, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.14, 0.08, -0.22)
 visible = false
 light_color = Color(1, 0.615686, 0.231373, 1)
 light_energy = 1.35

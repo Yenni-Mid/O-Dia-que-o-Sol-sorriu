@@ -60,13 +60,10 @@ func _process(delta: float) -> void:
 		AudioManager.play_phase_chime()
 		if is_night:
 			GameEvents.night_started.emit()
-			GameEvents.status_message_requested.emit("A NOITE CAIU — Os Cultistas caçam a luz do lampião!")
 		else:
 			GameEvents.day_started.emit()
 			if cycle_mode == 0:
-				GameEvents.status_message_requested.emit("O SOL SORRIDENTE NASCEU — Entre na Casa principal imediatamente!")
-			else:
-				GameEvents.status_message_requested.emit("O SOL SORRIDENTE NASCEU — Os Cultistas recuaram. Evite a luz direta!")
+				GameEvents.status_message_requested.emit("06:00 — O sol nasceu. Entre na Casa agora!")
 
 	if cycle_mode == 0:
 		_process_night_expedition(delta)
@@ -81,11 +78,11 @@ func _process_night_expedition(delta: float) -> void:
 			_dawn_warn_500_sent = true
 			AudioManager.play_dawn_warning()
 			GameEvents.dawn_approaching.emit(night_number)
-			GameEvents.status_message_requested.emit("ESTÁ CLAREANDO (05:00) — Volte para dentro da Casa antes das 06:00!")
+			GameEvents.status_message_requested.emit("05:00 — O céu está clareando. Volte para casa.")
 		if current_hour >= 5.5 and not _dawn_warn_530_sent:
 			_dawn_warn_530_sent = true
 			AudioManager.play_dawn_warning()
-			GameEvents.status_message_requested.emit("ALVORADA IMINENTE (05:30) — Corra para casa agora!")
+			GameEvents.status_message_requested.emit("05:30 — Alvorada iminente! Volte para casa.")
 
 	if not is_night:
 		if is_player_inside_home():

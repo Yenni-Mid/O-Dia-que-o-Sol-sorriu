@@ -151,7 +151,6 @@ func _trigger_alarm(alert_pos: Vector3) -> void:
 	else:
 		AudioManager.play_bell_alarm()
 	GameEvents.alarm_triggered.emit(alert_pos)
-	GameEvents.status_message_requested.emit("O PREGADOR TOCOU O SINO! Cultistas estão vindo!")
 
 
 func _on_player_noise_emitted(origin: Vector3, radius: float) -> void:

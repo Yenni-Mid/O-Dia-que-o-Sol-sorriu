@@ -194,8 +194,8 @@ func _build_lantern_model() -> void:
 	skin_mat.roughness = 0.85
 
 	var sleeve_mat: StandardMaterial3D = StandardMaterial3D.new()
-	sleeve_mat.albedo_color = Color(0.24, 0.21, 0.16)
-	sleeve_mat.roughness = 0.9
+	sleeve_mat.albedo_color = Color(0.14, 0.12, 0.10)
+	sleeve_mat.roughness = 0.92
 
 	var tank_mesh: CylinderMesh = CylinderMesh.new()
 	tank_mesh.top_radius = 0.070
@@ -243,28 +243,28 @@ func _build_lantern_model() -> void:
 	handle_top.size = Vector3(0.115, 0.012, 0.012)
 	_add_lantern_part("HandleTop", handle_top, Vector3(0.0, 0.158, 0.0), brass_mat)
 
-	# Mão e manga segurando a alça superior em 1ª pessoa (estilo PS1)
+	# Mão e manga segurando a alça superior em 1ª pessoa (compacta para não bloquear a visão)
 	var hand_group: Node3D = Node3D.new()
 	hand_group.name = "HandGroup"
-	hand_group.position = Vector3(0.035, 0.178, 0.035)
+	hand_group.position = Vector3(0.025, 0.155, 0.045)
 	hand_group.rotation_degrees = Vector3(-16.0, -18.0, -14.0)
 	lantern_mesh.add_child(hand_group)
 
 	var palm_b: BoxMesh = BoxMesh.new()
-	palm_b.size = Vector3(0.088, 0.044, 0.072)
-	_add_part_to(hand_group, "HandPalm", palm_b, Vector3(0.0, 0.0, 0.012), skin_mat)
+	palm_b.size = Vector3(0.068, 0.036, 0.056)
+	_add_part_to(hand_group, "HandPalm", palm_b, Vector3(0.0, 0.0, 0.010), skin_mat)
 
 	var finger_b: BoxMesh = BoxMesh.new()
-	finger_b.size = Vector3(0.082, 0.026, 0.038)
-	_add_part_to(hand_group, "FingerGrip", finger_b, Vector3(-0.01, -0.026, -0.018), skin_mat)
+	finger_b.size = Vector3(0.064, 0.022, 0.030)
+	_add_part_to(hand_group, "FingerGrip", finger_b, Vector3(-0.008, -0.022, -0.014), skin_mat)
 
 	var thumb_b: BoxMesh = BoxMesh.new()
-	thumb_b.size = Vector3(0.032, 0.024, 0.048)
-	_add_part_to(hand_group, "ThumbGrip", thumb_b, Vector3(-0.042, -0.010, 0.008), skin_mat)
+	thumb_b.size = Vector3(0.026, 0.020, 0.038)
+	_add_part_to(hand_group, "ThumbGrip", thumb_b, Vector3(-0.034, -0.008, 0.006), skin_mat)
 
 	var sleeve_b: BoxMesh = BoxMesh.new()
-	sleeve_b.size = Vector3(0.095, 0.082, 0.19)
-	_add_part_to(hand_group, "CoatSleeve", sleeve_b, Vector3(0.045, 0.005, 0.125), sleeve_mat)
+	sleeve_b.size = Vector3(0.072, 0.064, 0.17)
+	_add_part_to(hand_group, "CoatSleeve", sleeve_b, Vector3(0.038, 0.004, 0.115), sleeve_mat)
 
 	# Chama em duas camadas (halo âmbar + núcleo brilhante)
 	var flame_outer_box: BoxMesh = BoxMesh.new()
