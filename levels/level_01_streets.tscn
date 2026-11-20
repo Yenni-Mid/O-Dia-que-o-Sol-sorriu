@@ -362,7 +362,7 @@ passage_size = Vector3(2.9, 2.8, 0.26)
 label_name = "Sala de Aula 01"
 
 [node name="FireBarrel_Yard" type="StaticBody3D" parent="." unique_id=407003001]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9.5, 0, 8.2)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12.7, 0, 8.5)
 script = ExtResource("22_barrel")
 barrel_id = "barrel_yard"
 barrel_name = "Tambor do Quintal"

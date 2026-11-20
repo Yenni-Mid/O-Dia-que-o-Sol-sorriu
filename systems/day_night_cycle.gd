@@ -243,21 +243,27 @@ func _apply_lighting() -> void:
 	if _world_env != null and _world_env.environment != null:
 		var env: Environment = _world_env.environment
 		if is_night:
-			env.ambient_light_color = Color(0.28, 0.34, 0.48).lerp(Color(0.56, 0.45, 0.40), pre_dawn)
-			env.ambient_light_energy = lerpf(0.24, 0.46, pre_dawn)
-			env.fog_light_color = Color(0.08, 0.10, 0.16).lerp(Color(0.46, 0.32, 0.24), pre_dawn)
+			env.ambient_light_color = Color(0.28, 0.32, 0.42).lerp(Color(0.62, 0.46, 0.34), pre_dawn)
+			env.ambient_light_energy = lerpf(0.24, 0.48, pre_dawn)
+			env.fog_light_color = Color(0.14, 0.13, 0.14).lerp(Color(0.62, 0.42, 0.22), pre_dawn)
+			env.fog_density = lerpf(0.0235, 0.029, pre_dawn)
+			env.fog_height = 4.2
+			env.fog_height_density = lerpf(0.14, 0.18, pre_dawn)
 			if env.sky != null and env.sky.sky_material is ProceduralSkyMaterial:
 				var sky_mat: ProceduralSkyMaterial = env.sky.sky_material as ProceduralSkyMaterial
-				sky_mat.sky_top_color = Color(0.03, 0.04, 0.09).lerp(Color(0.14, 0.13, 0.20), pre_dawn)
-				sky_mat.sky_horizon_color = Color(0.10, 0.12, 0.20).lerp(Color(0.76, 0.40, 0.24), pre_dawn)
-				sky_mat.ground_horizon_color = Color(0.07, 0.08, 0.12).lerp(Color(0.32, 0.21, 0.16), pre_dawn)
+				sky_mat.sky_top_color = Color(0.05, 0.05, 0.08).lerp(Color(0.26, 0.20, 0.18), pre_dawn)
+				sky_mat.sky_horizon_color = Color(0.19, 0.16, 0.14).lerp(Color(0.84, 0.52, 0.24), pre_dawn)
+				sky_mat.ground_horizon_color = Color(0.11, 0.10, 0.09).lerp(Color(0.40, 0.26, 0.16), pre_dawn)
 		else:
-			var amb_day: Color = Color(0.64, 0.66, 0.72).lerp(Color(0.58, 0.46, 0.38), dusk_weight)
+			var amb_day: Color = Color(0.66, 0.64, 0.58).lerp(Color(0.58, 0.46, 0.36), dusk_weight)
 			env.ambient_light_color = amb_day
 			env.ambient_light_energy = lerpf(0.72, 0.48, dusk_weight)
-			env.fog_light_color = Color(0.55, 0.50, 0.42).lerp(Color(0.52, 0.34, 0.22), dusk_weight)
+			env.fog_light_color = Color(0.64, 0.54, 0.34).lerp(Color(0.56, 0.36, 0.22), dusk_weight)
+			env.fog_density = lerpf(0.025, 0.028, dusk_weight)
+			env.fog_height = 4.5
+			env.fog_height_density = 0.15
 			if env.sky != null and env.sky.sky_material is ProceduralSkyMaterial:
 				var sky_mat: ProceduralSkyMaterial = env.sky.sky_material as ProceduralSkyMaterial
-				sky_mat.sky_top_color = Color(0.25, 0.28, 0.33).lerp(Color(0.14, 0.12, 0.18), dusk_weight)
-				sky_mat.sky_horizon_color = Color(0.74, 0.60, 0.36).lerp(Color(0.78, 0.38, 0.20), dusk_weight)
-				sky_mat.ground_horizon_color = Color(0.42, 0.34, 0.24).lerp(Color(0.32, 0.20, 0.14), dusk_weight)
+				sky_mat.sky_top_color = Color(0.32, 0.30, 0.24).lerp(Color(0.18, 0.14, 0.16), dusk_weight)
+				sky_mat.sky_horizon_color = Color(0.84, 0.68, 0.36).lerp(Color(0.80, 0.40, 0.20), dusk_weight)
+				sky_mat.ground_horizon_color = Color(0.46, 0.36, 0.24).lerp(Color(0.34, 0.21, 0.14), dusk_weight)

@@ -108,11 +108,17 @@ func _trigger_zone_oneshot(zone: String, pos: Vector3, is_night: bool, hour: flo
 		return
 	var stream: AudioStream = null
 	var vol: float = -14.0
+	var pitch: float = randf_range(0.86, 1.14)
+	var in_alley: bool = absf(pos.x) > 8.0 and absf(pos.x) < 26.5 and pos.z > -16.5 and pos.z < 9.2
 	if zone == "underground":
 		stream = AudioManager.get_sewer_drip_stream()
 		vol = randf_range(-13.0, -8.0)
 	elif zone == "outdoor":
-		if pos.x > 34.0 or (hour >= 5.0 and hour < 7.0):
+		if in_alley and randf() < 0.55:
+			stream = AudioManager.get_sewer_drip_stream()
+			vol = randf_range(-16.0, -11.5)
+			pitch = randf_range(0.62, 0.82)
+		elif pos.x > 34.0 or (hour >= 5.0 and hour < 7.0):
 			stream = AudioManager.get_crow_stream()
 			vol = randf_range(-15.0, -11.0)
 		elif is_night:
@@ -122,7 +128,7 @@ func _trigger_zone_oneshot(zone: String, pos: Vector3, is_night: bool, hour: flo
 	if stream != null:
 		_oneshot_player.stream = stream
 		_oneshot_player.volume_db = vol
-		_oneshot_player.pitch_scale = randf_range(0.86, 1.14)
+		_oneshot_player.pitch_scale = pitch
 		_oneshot_player.play()
 
 

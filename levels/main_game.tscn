@@ -44,10 +44,13 @@ glow_intensity = 0.55
 glow_bloom = 0.04
 glow_hdr_threshold = 1.0
 fog_enabled = true
-fog_light_color = Color(0.55, 0.5, 0.42, 1)
-fog_density = 0.0105
-fog_sky_affect = 0.35
-fog_aerial_perspective = 0.35
+fog_light_color = Color(0.55, 0.48, 0.36, 1)
+fog_sun_scatter = 0.22
+fog_density = 0.024
+fog_aerial_perspective = 0.48
+fog_sky_affect = 0.68
+fog_height = 4.2
+fog_height_density = 0.14
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_5lvy4"]
 shader = ExtResource("4_u4di8")

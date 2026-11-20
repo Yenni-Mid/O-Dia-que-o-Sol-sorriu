@@ -104,18 +104,26 @@ func _draw() -> void:
 	_draw_area(17.5, -7.0, 25.5, 7.5, Color(0.68, 0.62, 0.54, 0.80), INK_COL, "VIZINHA", fnt, 8)
 	_draw_area(25.5, -14.5, 36.0, 9.6, Color(0.64, 0.60, 0.56, 0.75), INK_COL, "PRACINHA", fnt, 9)
 
-	# Zona Oeste: Posto Sol & Óleo
+	# Zona Oeste: Posto Sol & Óleo e Quarteirão Industrial
 	_draw_area(-57.0, -16.5, -32.0, 9.6, Color(0.60, 0.58, 0.52, 0.50), INK_COL, "", fnt, 9)
+	_draw_area(-60.0, -16.5, -48.5, -10.5, Color(0.62, 0.52, 0.44, 0.78), INK_COL, "GALPÃO", fnt, 7)
 	_draw_area(-57.0, -6.0, -46.0, 4.0, Color(0.74, 0.50, 0.42, 0.85), INK_COL, "POSTO", fnt, 9)
 	_draw_area(-41.0, 0.5, -32.0, 7.5, Color(0.78, 0.45, 0.35, 0.75), INK_COL, "BOMBAS", fnt, 8)
+	_draw_area(-64.5, 16.5, -30.0, 21.5, Color(0.60, 0.54, 0.46, 0.65), INK_COL, "COMÉRCIO OESTE", fnt, 7)
 
-	# Zona Norte: Escola Municipal Aurora Solar
+	# Zona Norte: Avenida da Escola & Escola Municipal Aurora Solar
 	_draw_area(-26.0, -48.0, 24.0, -20.0, Color(0.58, 0.56, 0.50, 0.40), INK_COL, "PÁTIO DA ESCOLA", fnt, 9)
+	_draw_area(-23.8, -39.5, -14.5, -22.2, Color(0.64, 0.55, 0.46, 0.80), INK_COL, "ED. AURORA", fnt, 7)
+	_draw_area(-37.0, -39.0, -27.5, -24.0, Color(0.60, 0.52, 0.44, 0.75), INK_COL, "ANEXO", fnt, 7)
+	_draw_area(14.5, -40.2, 24.0, -22.2, Color(0.64, 0.55, 0.46, 0.80), INK_COL, "ED. SOLAR", fnt, 7)
 	_draw_area(-24.0, -72.0, 22.0, -48.0, Color(0.70, 0.66, 0.52, 0.88), INK_COL, "ESCOLA MUNICIPAL AURORA SOLAR", fnt, 10)
 
-	# Zona Leste: Cemitério e Capela
+	# Zona Leste: Cemitério, Sobrados Coloniais e Capela
 	_draw_area(36.0, -24.0, 66.0, 9.6, Color(0.52, 0.54, 0.48, 0.45), INK_COL, "", fnt, 9)
+	_draw_area(37.2, -19.5, 40.8, -4.5, Color(0.64, 0.55, 0.46, 0.78), INK_COL, "", fnt, 7)
+	_draw_area(63.4, -19.5, 68.2, -4.5, Color(0.64, 0.55, 0.46, 0.78), INK_COL, "", fnt, 7)
 	_draw_area(44.0, -21.0, 60.0, -3.0, Color(0.72, 0.62, 0.46, 0.88), INK_COL, "CAPELA", fnt, 10)
+	_draw_area(36.5, 16.5, 69.5, 21.5, Color(0.60, 0.54, 0.46, 0.65), INK_COL, "LOJAS DA CAPELA", fnt, 7)
 	if fnt != null:
 		draw_string(fnt, _world_to_canvas(Vector2(38.5, 4.5)), "CEMITÉRIO", HORIZONTAL_ALIGNMENT_LEFT, -1, 9, INK_COL)
 
